@@ -2,6 +2,9 @@
 // 選択中試験
 // ======================================
 
+// ここでは localStorage に保存した資格名を取得
+// Cloudflare API では exam_id を受け取るため、
+// 必要なら数値 ID に変換する処理を追加してください。
 const selectedExam =
   localStorage.getItem("selectedExam")
   || "AWS CCP";
@@ -321,9 +324,10 @@ importButton.addEventListener("click", async () => {
 
     for (const questionData of validQuestions) {
 
+      // Cloudflare Pages / Workers 側で公開された API エンドポイントへ送信
       const response =
         await fetch(
-          "./api/questions/import",
+          "/api/questions/import",
           {
             method: "POST",
 
@@ -350,6 +354,16 @@ importButton.addEventListener("click", async () => {
 
           }
         );
+
+      // レスポンスが成功でなければ、JSON 変換前にエラー内容を取得してログに表示
+      if (!response.ok) {
+        const errorText = await response.text();
+        addLog(
+          `APIエラー ${response.status}: ${errorText}`,
+          "error"
+        );
+        continue;
+      }
 
       const result =
         await response.json();
