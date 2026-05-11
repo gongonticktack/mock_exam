@@ -323,7 +323,7 @@ importButton.addEventListener("click", async () => {
 
       const response =
         await fetch(
-          "/api/questions/import",
+          "./api/questions/import",
           {
             method: "POST",
 
