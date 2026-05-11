@@ -6,10 +6,7 @@ routes = [
   { pattern = "/api/questions/import", zone_name = "gongonticktack.workers.dev" }
 ]
 
-[build]
-command = "echo 'No build step'"
-
-[d1_databases]
+[[d1_databases]]
 binding = "examDB"
 database_name = "exam_db"
 database_id = "your-database-id"
