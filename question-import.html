@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+  <!-- 文字コード -->
+  <meta charset="UTF-8">
+
+  <!-- レスポンシブ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- タイトル -->
+  <title>問題登録 | QualiStudy</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="question-import.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- FontAwesome -->
+  <script
+    src="https://kit.fontawesome.com/7b8b7bdbb8.js"
+    crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+
+  <!-- ========================= -->
+  <!-- サイドバー -->
+  <!-- ========================= -->
+
+  <aside class="sidebar">
+
+    <div class="logo">
+
+      <i class="fa-solid fa-graduation-cap"></i>
+
+      <span>QualiStudy</span>
+
+    </div>
+
+    <div class="selected-exam">
+
+      <p class="label">
+        登録対象資格
+      </p>
+
+      <h2 id="exam-name">
+        AWS CCP
+      </h2>
+
+    </div>
+
+  </aside>
+
+  <!-- ========================= -->
+  <!-- メイン -->
+  <!-- ========================= -->
+
+  <main class="main-content">
+
+    <!-- タイトル -->
+    <section class="page-header">
+
+      <h1>
+        問題インポート
+      </h1>
+
+      <p>
+        Excelファイルから問題を一括登録します
+      </p>
+
+    </section>
+
+    <!-- インポートカード -->
+    <section class="import-card">
+
+      <!-- Excel形式 -->
+      <div class="format-box">
+
+        <h2>
+          Excel形式
+        </h2>
+
+<pre>
+category | question | choices | answers
+
+EC2 | EC2とは？ | DB,仮想サーバ,CDN | 2
+IAM | IAMの機能は？ | 認証,認可,CDN,監視 | 1,2
+</pre>
+
+      </div>
+
+      <!-- アップロード -->
+      <div class="upload-area">
+
+        <i class="fa-solid fa-file-excel excel-icon"></i>
+
+        <h2>
+          Excelファイルを選択
+        </h2>
+
+        <p>
+          .xlsx / .xls 対応
+        </p>
+
+        <!-- ファイル入力 -->
+        <input
+          type="file"
+          id="excel-file"
+          accept=".xlsx,.xls">
+
+        <!-- ボタン -->
+        <button id="import-btn">
+
+          <i class="fa-solid fa-upload"></i>
+
+          インポート開始
+
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- ログ -->
+    <section class="log-card">
+
+      <h2>
+        インポートログ
+      </h2>
+
+      <div id="log-area">
+
+        <p>
+          まだインポートされていません
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JS -->
+  <script src="question-import.js"></script>
+
+</body>
+
+</html>

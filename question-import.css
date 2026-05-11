@@ -1,0 +1,284 @@
+/* ========================= */
+/* 初期化 */
+/* ========================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* body */
+body {
+
+  font-family: "Noto Sans JP", sans-serif;
+
+  background:
+    radial-gradient(circle at top left,
+      #1e1b4b,
+      #0b1120);
+
+  color: white;
+
+  min-height: 100vh;
+
+  display: flex;
+}
+
+/* ========================= */
+/* サイドバー */
+/* ========================= */
+
+.sidebar {
+
+  width: 280px;
+
+  padding: 28px;
+
+  background:
+    rgba(10, 15, 30, 0.85);
+
+  border-right:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(12px);
+}
+
+/* ロゴ */
+.logo {
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  font-size: 28px;
+  font-weight: bold;
+
+  color: #b4a7ff;
+
+  margin-bottom: 60px;
+}
+
+/* 選択資格 */
+.selected-exam {
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  border-radius: 20px;
+
+  padding: 24px;
+}
+
+/* ラベル */
+.label {
+
+  color: #bbbbbb;
+
+  margin-bottom: 12px;
+}
+
+/* ========================= */
+/* メイン */
+/* ========================= */
+
+.main-content {
+
+  flex: 1;
+
+  padding: 40px;
+}
+
+/* ヘッダー */
+.page-header {
+
+  margin-bottom: 30px;
+}
+
+/* タイトル */
+.page-header h1 {
+
+  font-size: 42px;
+
+  margin-bottom: 12px;
+}
+
+/* 説明 */
+.page-header p {
+
+  color: #cfcfcf;
+}
+
+/* ========================= */
+/* カード */
+/* ========================= */
+
+.import-card {
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 24px;
+
+  margin-bottom: 24px;
+}
+
+/* 共通カード */
+.format-box,
+.upload-area,
+.log-card {
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.06);
+
+  border-radius: 28px;
+
+  padding: 30px;
+
+  backdrop-filter: blur(12px);
+}
+
+/* タイトル */
+.format-box h2,
+.upload-area h2,
+.log-card h2 {
+
+  margin-bottom: 20px;
+}
+
+/* pre */
+pre {
+
+  background:
+    rgba(0, 0, 0, 0.3);
+
+  padding: 20px;
+
+  border-radius: 16px;
+
+  overflow-x: auto;
+
+  line-height: 1.8;
+}
+
+/* ========================= */
+/* Upload */
+/* ========================= */
+
+.upload-area {
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Excelアイコン */
+.excel-icon {
+
+  font-size: 90px;
+
+  color: #8b7dff;
+
+  margin-bottom: 20px;
+}
+
+/* 説明 */
+.upload-area p {
+
+  color: #cfcfcf;
+
+  margin-bottom: 24px;
+}
+
+/* input */
+input[type="file"] {
+
+  margin-bottom: 24px;
+
+  color: white;
+}
+
+/* ボタン */
+#import-btn {
+
+  background:
+    linear-gradient(135deg,
+      #6d5dfc,
+      #8b7dff);
+
+  border: none;
+
+  color: white;
+
+  padding: 16px 28px;
+
+  border-radius: 18px;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+/* hover */
+#import-btn:hover {
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 0 28px rgba(124, 92, 255, 0.5);
+}
+
+/* ========================= */
+/* ログ */
+/* ========================= */
+
+#log-area {
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+/* 成功 */
+.log-success {
+
+  color: #4ade80;
+}
+
+/* エラー */
+.log-error {
+
+  color: #f87171;
+}
+
+/* ========================= */
+/* スマホ */
+/* ========================= */
+
+@media(max-width: 1100px) {
+
+  body {
+
+    flex-direction: column;
+  }
+
+  .sidebar {
+
+    width: 100%;
+  }
+
+  .import-card {
+
+    grid-template-columns: 1fr;
+  }
+
+}
