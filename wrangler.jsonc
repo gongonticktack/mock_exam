@@ -10,5 +10,14 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  "d1": {
+    "bindings": [
+      {
+        "binding": "examDB",
+        "database_name": "mock_exam",
+        "database_id": "6528bc19-69df-4337-8326-7f5ac2d2bc6a"
+      }
+    ]
+  }
 }

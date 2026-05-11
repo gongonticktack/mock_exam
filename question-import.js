@@ -131,7 +131,7 @@ const examName =
   document.getElementById("exam-name");
 
 examName.textContent =
-  selectedExam;
+  selectedExamName;
 
 // ======================================
 // HTML取得
