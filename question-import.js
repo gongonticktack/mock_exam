@@ -29,6 +29,18 @@ const fileInput =
 const logArea =
   document.getElementById("log-area");
 
+const confirmCard =
+  document.getElementById("confirm-card");
+
+const confirmList =
+  document.getElementById("confirm-list");
+
+const confirmOkBtn =
+  document.getElementById("confirm-ok-btn");
+
+const confirmCancelBtn =
+  document.getElementById("confirm-cancel-btn");
+
 // ======================================
 // インポート処理
 // ======================================
@@ -317,80 +329,13 @@ importButton.addEventListener("click", async () => {
     }
 
     // ======================================
-    // API送信
+    // 確認画面表示
     // ======================================
 
-    let successCount = 0;
+    // グローバル変数に保存
+    window.validQuestions = validQuestions;
 
-    for (const questionData of validQuestions) {
-
-      // Cloudflare Pages / Workers 側で公開された API エンドポイントへ送信
-      const response =
-        await fetch(
-          "/api/questions/import",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body: JSON.stringify({
-
-              exam_id:
-                selectedExam,
-
-              category:
-                questionData.category,
-
-              question:
-                questionData.question,
-
-              choices:
-                questionData.choices
-
-            })
-
-          }
-        );
-
-      // レスポンスが成功でなければ、JSON 変換前にエラー内容を取得してログに表示
-      if (!response.ok) {
-        const errorText = await response.text();
-        addLog(
-          `APIエラー ${response.status}: ${errorText}`,
-          "error"
-        );
-        continue;
-      }
-
-      const result =
-        await response.json();
-
-      if (result.success) {
-
-        successCount++;
-
-      } else {
-
-        addLog(
-          `登録失敗: ${questionData.question}`,
-          "error"
-        );
-
-      }
-
-    }
-
-    // ======================================
-    // 完了
-    // ======================================
-
-    addLog(
-      `${successCount}件の問題を登録しました`,
-      "success"
-    );
+    showConfirmScreen(validQuestions);
 
   } catch (error) {
 
@@ -406,27 +351,137 @@ importButton.addEventListener("click", async () => {
 });
 
 // ======================================
-// ログ表示
+// 確認画面表示
 // ======================================
 
-function addLog(message, type) {
+function showConfirmScreen(questions) {
 
-  const p =
-    document.createElement("p");
+  // 確認リストをクリア
+  confirmList.innerHTML = "";
 
-  p.textContent =
-    message;
+  // 各問題を表示
+  questions.forEach((questionData, index) => {
 
-  if (type === "success") {
+    const itemDiv = document.createElement("div");
+    itemDiv.classList.add("confirm-item");
 
-    p.classList.add("log-success");
+    itemDiv.innerHTML = `
+      <h3>問題 ${index + 1}</h3>
+      <p><strong>カテゴリ:</strong> ${questionData.category}</p>
+      <p><strong>質問:</strong> ${questionData.question}</p>
+      <p><strong>選択肢:</strong></p>
+      <ul>
+        ${questionData.choices.map(choice => `
+          <li class="${choice.is_correct ? 'correct' : ''}">
+            ${choice.choice_index}. ${choice.content} ${choice.is_correct ? '(正解)' : ''}
+          </li>
+        `).join('')}
+      </ul>
+    `;
 
-  } else {
+    confirmList.appendChild(itemDiv);
 
-    p.classList.add("log-error");
+  });
+
+  // 確認画面を表示
+  confirmCard.style.display = "block";
+
+}
+
+// ======================================
+// 確認OKボタン
+// ======================================
+
+confirmOkBtn.addEventListener("click", async () => {
+
+  // 確認画面を隠す
+  confirmCard.style.display = "none";
+
+  // ログ初期化
+  logArea.innerHTML = "";
+
+  // 現在の validQuestions を取得（グローバル変数として保存）
+  const questionsToImport = window.validQuestions;
+
+  // API送信
+  let successCount = 0;
+
+  for (const questionData of questionsToImport) {
+
+    // Cloudflare Pages / Workers 側で公開された API エンドポイントへ送信
+    const response =
+      await fetch(
+        "/api/questions/import",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            exam_id:
+              selectedExam,
+
+            category:
+              questionData.category,
+
+            question:
+              questionData.question,
+
+            choices:
+              questionData.choices
+
+          })
+
+        }
+      );
+
+    // レスポンスが成功でなければ、JSON 変換前にエラー内容を取得してログに表示
+    if (!response.ok) {
+      const errorText = await response.text();
+      addLog(
+        `APIエラー ${response.status}: ${errorText}`,
+        "error"
+      );
+      continue;
+    }
+
+    const result =
+      await response.json();
+
+    if (result.success) {
+
+      successCount++;
+
+    } else {
+
+      addLog(
+        `登録失敗: ${questionData.question}`,
+        "error"
+      );
+
+    }
 
   }
 
-  logArea.prepend(p);
+  // 完了
+  addLog(
+    `${successCount}件の問題を登録しました`,
+    "success"
+  );
 
-}
+});
+
+// ======================================
+// 確認キャンセルボタン
+// ======================================
+
+confirmCancelBtn.addEventListener("click", () => {
+
+  // 確認画面を隠す
+  confirmCard.style.display = "none";
+
+});

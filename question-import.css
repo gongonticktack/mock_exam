@@ -248,6 +248,154 @@ input[type="file"] {
   gap: 12px;
 }
 
+/* ========================= */
+/* 確認画面 */
+/* ========================= */
+
+.confirm-card {
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.06);
+
+  border-radius: 28px;
+
+  padding: 30px;
+
+  backdrop-filter: blur(12px);
+}
+
+.confirm-card h2 {
+
+  margin-bottom: 20px;
+}
+
+.confirm-card p {
+
+  color: #cfcfcf;
+
+  margin-bottom: 24px;
+}
+
+#confirm-list {
+
+  margin-bottom: 24px;
+}
+
+.confirm-item {
+
+  background:
+    rgba(0, 0, 0, 0.2);
+
+  border-radius: 16px;
+
+  padding: 20px;
+
+  margin-bottom: 16px;
+}
+
+.confirm-item h3 {
+
+  margin-bottom: 12px;
+}
+
+.confirm-item p {
+
+  color: #cfcfcf;
+
+  margin-bottom: 8px;
+}
+
+.confirm-item ul {
+
+  list-style: none;
+
+  padding-left: 20px;
+}
+
+.confirm-item li {
+
+  margin-bottom: 4px;
+}
+
+.confirm-item li.correct {
+
+  color: #4ade80;
+}
+
+.confirm-buttons {
+
+  display: flex;
+
+  gap: 16px;
+
+  justify-content: center;
+}
+
+#confirm-ok-btn {
+
+  background:
+    linear-gradient(135deg,
+      #6d5dfc,
+      #8b7dff);
+
+  border: none;
+
+  color: white;
+
+  padding: 16px 28px;
+
+  border-radius: 18px;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+#confirm-ok-btn:hover {
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 0 28px rgba(124, 92, 255, 0.5);
+}
+
+#confirm-cancel-btn {
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.1);
+
+  color: #d8d8d8;
+
+  padding: 14px 18px;
+
+  border-radius: 14px;
+
+  font-size: 14px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+#confirm-cancel-btn:hover {
+
+  border-color: #8b7dff;
+
+  color: white;
+
+  background:
+    rgba(139, 125, 255, 0.1);
+}
+
 /* 成功 */
 .log-success {
 
