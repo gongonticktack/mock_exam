@@ -1,4 +1,30 @@
 // ======================================
+// ログ表示
+// ======================================
+
+function addLog(message, type) {
+
+  const p =
+    document.createElement("p");
+
+  p.textContent =
+    message;
+
+  if (type === "success") {
+
+    p.classList.add("log-success");
+
+  } else {
+
+    p.classList.add("log-error");
+
+  }
+
+  logArea.prepend(p);
+
+}
+
+// ======================================
 // 選択中試験
 // ======================================
 
@@ -365,19 +391,45 @@ function showConfirmScreen(questions) {
     const itemDiv = document.createElement("div");
     itemDiv.classList.add("confirm-item");
 
-    itemDiv.innerHTML = `
-      <h3>問題 ${index + 1}</h3>
-      <p><strong>カテゴリ:</strong> ${questionData.category}</p>
-      <p><strong>質問:</strong> ${questionData.question}</p>
-      <p><strong>選択肢:</strong></p>
-      <ul>
-        ${questionData.choices.map(choice => `
-          <li class="${choice.is_correct ? 'correct' : ''}">
-            ${choice.choice_index}. ${choice.content} ${choice.is_correct ? '(正解)' : ''}
-          </li>
-        `).join('')}
-      </ul>
-    `;
+    // タイトル
+    const title = document.createElement("h3");
+    title.textContent = `問題 ${index + 1}`;
+    itemDiv.appendChild(title);
+
+    // カテゴリ
+    const categoryP = document.createElement("p");
+    const categoryStrong = document.createElement("strong");
+    categoryStrong.textContent = "カテゴリ: ";
+    categoryP.appendChild(categoryStrong);
+    categoryP.appendChild(document.createTextNode(questionData.category));
+    itemDiv.appendChild(categoryP);
+
+    // 質問
+    const questionP = document.createElement("p");
+    const questionStrong = document.createElement("strong");
+    questionStrong.textContent = "質問: ";
+    questionP.appendChild(questionStrong);
+    questionP.appendChild(document.createTextNode(questionData.question));
+    itemDiv.appendChild(questionP);
+
+    // 選択肢ラベル
+    const choicesLabel = document.createElement("p");
+    const choicesStrong = document.createElement("strong");
+    choicesStrong.textContent = "選択肢:";
+    choicesLabel.appendChild(choicesStrong);
+    itemDiv.appendChild(choicesLabel);
+
+    // 選択肢リスト
+    const ul = document.createElement("ul");
+    questionData.choices.forEach(choice => {
+      const li = document.createElement("li");
+      if (choice.is_correct) {
+        li.classList.add("correct");
+      }
+      li.textContent = `${choice.choice_index}. ${choice.content} ${choice.is_correct ? '(正解)' : ''}`;
+      ul.appendChild(li);
+    });
+    itemDiv.appendChild(ul);
 
     confirmList.appendChild(itemDiv);
 
