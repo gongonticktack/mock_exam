@@ -9,4 +9,4 @@ routes = [
 [[d1_databases]]
 binding = "examDB"
 database_name = "exam_db"
-database_id = "your-database-id"
+database_id = "6528bc19-69df-4337-8326-7f5ac2d2bc6a"
