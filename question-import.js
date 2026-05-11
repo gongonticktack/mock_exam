@@ -1,10 +1,4 @@
 // ======================================
-// SheetJS読み込み確認
-// index.html側で以下を追加必要
-// <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-// ======================================
-
-// ======================================
 // 選択中試験
 // ======================================
 
@@ -340,7 +334,7 @@ importButton.addEventListener("click", async () => {
 
             body: JSON.stringify({
 
-              exam_name:
+              exam_id:
                 selectedExam,
 
               category:
