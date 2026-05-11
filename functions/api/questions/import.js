@@ -2,6 +2,8 @@ export default {
 
   async fetch(request, env) {
 
+    console.log('API called:', request.method, request.url);
+
     // CORS ヘッダー
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
@@ -11,6 +13,7 @@ export default {
 
     // OPTIONS リクエスト（プリフライト）を処理
     if (request.method === 'OPTIONS') {
+      console.log('OPTIONS request handled');
       return new Response(null, {
         status: 200,
         headers: corsHeaders,
@@ -19,7 +22,7 @@ export default {
 
     // POSTのみ許可
     if (request.method !== "POST") {
-
+      console.log('Method not allowed:', request.method);
       return new Response(
         "Method Not Allowed",
         {
@@ -30,69 +33,100 @@ export default {
 
     }
 
+    console.log('Processing POST request');
+
     // JSON取得
     const body =
       await request.json();
 
-    // question登録
-    const result =
-      await env.examDB
-        .prepare(`
-          INSERT INTO questions
-          (
-            exam_id,
-            category,
-            question,
-            explanation
+    console.log('Body:', body);
+
+    try {
+
+      // question登録
+      const result =
+        await env.examDB
+          .prepare(`
+            INSERT INTO questions
+            (
+              exam_id,
+              category,
+              question,
+              explanation
+            )
+            VALUES (?, ?, ?, ?)
+          `)
+          .bind(
+            body.exam_id,
+            body.category,
+            body.question,
+            ""
           )
-          VALUES (?, ?, ?, ?)
-        `)
-        .bind(
-          body.exam_id,
-          body.category,
-          body.question,
-          ""
-        )
-        .run();
+          .run();
 
-    // question_id取得
-    const questionId =
-      result.meta.last_row_id;
+      console.log('Question inserted, result:', result);
 
-    // choices登録
-    for (const choice of body.choices) {
+      // question_id取得
+      const questionId =
+        result.meta.last_row_id;
 
-      await env.examDB
-        .prepare(`
-          INSERT INTO choices
-          (
-            question_id,
-            choice_index,
-            content,
-            is_correct
+      console.log('Question ID:', questionId);
+
+      // choices登録
+      for (const choice of body.choices) {
+
+        await env.examDB
+          .prepare(`
+            INSERT INTO choices
+            (
+              question_id,
+              choice_index,
+              content,
+              is_correct
+            )
+            VALUES (?, ?, ?, ?)
+          `)
+          .bind(
+            questionId,
+            choice.choice_index,
+            choice.content,
+            choice.is_correct
           )
-          VALUES (?, ?, ?, ?)
-        `)
-        .bind(
-          questionId,
-          choice.choice_index,
-          choice.content,
-          choice.is_correct
-        )
-        .run();
+          .run();
+
+        console.log('Choice inserted:', choice);
+
+      }
+
+      console.log('All data inserted successfully');
+
+      // OK
+      return Response.json({
+
+        success: true,
+
+        questionId
+
+      }, {
+        headers: corsHeaders,
+      });
+
+    } catch (error) {
+
+      console.error('Database error:', error);
+
+      return Response.json({
+
+        success: false,
+
+        error: error.message
+
+      }, {
+        status: 500,
+        headers: corsHeaders,
+      });
 
     }
-
-    // OK
-    return Response.json({
-
-      success: true,
-
-      questionId
-
-    }, {
-      headers: corsHeaders,
-    });
 
   }
 
