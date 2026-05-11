@@ -5,6 +5,7 @@
 const exams = [
 
   {
+    id: 1,
     shortName: "AWS CCP",
 
     title: "AWS Cloud Practitioner",
@@ -24,6 +25,7 @@ const exams = [
   },
 
   {
+    id: 2,
     shortName: "UML L2",
 
     title: "UMLモデリング技能認定 L2",
@@ -43,6 +45,7 @@ const exams = [
   },
 
   {
+    id: 3,
     shortName: "HTML5 L1",
 
     title: "HTML5 Professional Level1",
@@ -62,6 +65,7 @@ const exams = [
   },
 
   {
+    id: 4,
     shortName: "アジャイル",
 
     title: "アジャイル開発技術者試験",

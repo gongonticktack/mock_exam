@@ -25,15 +25,106 @@ function addLog(message, type) {
 }
 
 // ======================================
+// 資格データ
+// ======================================
+
+const exams = [
+
+  {
+    id: 1,
+    shortName: "AWS CCP",
+
+    title: "AWS Cloud Practitioner",
+
+    description:
+      "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
+
+    stats: {
+
+      questions: 320,
+      accuracy: "78%",
+      studyTime: "18時間",
+      studyDays: "12日"
+
+    }
+
+  },
+
+  {
+    id: 2,
+    shortName: "UML L2",
+
+    title: "UMLモデリング技能認定 L2",
+
+    description:
+      "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
+
+    stats: {
+
+      questions: 180,
+      accuracy: "61%",
+      studyTime: "9時間",
+      studyDays: "5日"
+
+    }
+
+  },
+
+  {
+    id: 3,
+    shortName: "HTML5 L1",
+
+    title: "HTML5 Professional Level1",
+
+    description:
+      "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
+
+    stats: {
+
+      questions: 250,
+      accuracy: "83%",
+      studyTime: "14時間",
+      studyDays: "10日"
+
+    }
+
+  },
+
+  {
+    id: 4,
+    shortName: "アジャイル",
+
+    title: "アジャイル開発技術者試験",
+
+    description:
+      "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
+
+    stats: {
+
+      questions: 90,
+      accuracy: "92%",
+      studyTime: "5時間",
+      studyDays: "3日"
+
+    }
+
+  }
+
+];
+
+// ======================================
 // 選択中試験
 // ======================================
 
 // ここでは localStorage に保存した資格名を取得
 // Cloudflare API では exam_id を受け取るため、
 // 必要なら数値 ID に変換する処理を追加してください。
-const selectedExam =
+const selectedExamName =
   localStorage.getItem("selectedExam")
   || "AWS CCP";
+
+// exams 配列から ID を取得
+const selectedExam = exams.find(exam => exam.shortName === selectedExamName)?.id || 1;
 
 // 資格名表示
 const examName =
