@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+  <!-- 文字コード -->
+  <meta charset="UTF-8" />
+
+  <!-- スマホ対応 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- タイトル -->
+  <title>QualiStudy</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script
+    src="https://kit.fontawesome.com/7b8b7bdbb8.js"
+    crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+
+  <!-- ========================= -->
+  <!-- サイドバー -->
+  <!-- ========================= -->
+
+  <aside class="sidebar">
+
+    <!-- ロゴ -->
+    <div class="logo">
+
+      <i class="fa-solid fa-graduation-cap"></i>
+
+      <span>QualiStudy</span>
+
+    </div>
+
+    <!-- メニュー -->
+    <div class="menu">
+
+      <p class="menu-title">
+        資格一覧
+      </p>
+
+      <!-- AWS -->
+      <button class="exam-card active">
+
+        <i class="fa-solid fa-cloud"></i>
+
+        <div>
+          <h3>AWS CCP</h3>
+          <p>AWS Cloud Practitioner</p>
+        </div>
+
+      </button>
+
+      <!-- UML -->
+      <button class="exam-card">
+
+        <i class="fa-solid fa-diagram-project"></i>
+
+        <div>
+          <h3>UML L2</h3>
+          <p>UMLモデリング技能認定</p>
+        </div>
+
+      </button>
+
+      <!-- HTML -->
+      <button class="exam-card">
+
+        <i class="fa-solid fa-code"></i>
+
+        <div>
+          <h3>HTML5 L1</h3>
+          <p>HTML5 Professional</p>
+        </div>
+
+      </button>
+
+      <!-- アジャイル -->
+      <button class="exam-card">
+
+        <i class="fa-solid fa-rotate"></i>
+
+        <div>
+          <h3>アジャイル</h3>
+          <p>アジャイル開発技術者</p>
+        </div>
+
+      </button>
+
+    </div>
+
+    <!-- 資格追加 -->
+    <button class="add-btn">
+
+      <i class="fa-solid fa-plus"></i>
+
+      新しい資格を追加
+
+    </button>
+
+  </aside>
+
+  <!-- ========================= -->
+  <!-- メイン -->
+  <!-- ========================= -->
+
+  <main class="main-content">
+
+    <!-- 上部 -->
+    <header class="topbar">
+
+      <button class="login-btn">
+
+        <i class="fa-regular fa-user"></i>
+
+        ログイン（後で実装）
+
+      </button>
+
+    </header>
+
+    <!-- メインカード -->
+    <section class="hero-card">
+
+      <!-- 左 -->
+      <div class="hero-left">
+
+        <span class="badge">
+          選択中の資格
+        </span>
+
+        <h1 id="exam-title">
+          AWS Cloud Practitioner
+        </h1>
+
+        <p id="exam-description">
+          AWSの基礎知識を問う入門資格。
+          クラウド、セキュリティ、料金、
+          サービスなど幅広く出題されます。
+        </p>
+
+        <!-- ボタン -->
+        <div class="hero-buttons">
+
+          <!-- 学習開始 -->
+          <button class="start-btn">
+
+            <i class="fa-solid fa-play"></i>
+
+            学習を開始する
+
+          </button>
+
+          <!-- 問題追加 -->
+          <button class="import-btn">
+
+            <i class="fa-solid fa-file-import"></i>
+
+            問題を追加
+
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- 右 -->
+      <div class="hero-right">
+
+        <i class="fa-solid fa-cloud hero-icon"></i>
+
+      </div>
+
+    </section>
+
+    <!-- ステータス -->
+    <section class="stats">
+
+      <!-- 問題数 -->
+      <div class="stat-card">
+
+        <i class="fa-regular fa-file-lines"></i>
+
+        <div>
+          <p>問題数</p>
+          <h2 id="stat-questions">320問</h2>
+        </div>
+
+      </div>
+
+      <!-- 正答率 -->
+      <div class="stat-card">
+
+        <i class="fa-solid fa-bullseye"></i>
+
+        <div>
+          <p>正答率</p>
+          <h2 id="stat-accuracy">78%</h2>
+        </div>
+
+      </div>
+
+      <!-- 学習時間 -->
+      <div class="stat-card">
+
+        <i class="fa-regular fa-clock"></i>
+
+        <div>
+          <p>学習時間</p>
+          <h2 id="stat-study-time">18時間</h2>
+        </div>
+
+      </div>
+
+      <!-- 学習日数 -->
+      <div class="stat-card">
+
+        <i class="fa-regular fa-calendar"></i>
+
+        <div>
+          <p>学習日数</p>
+          <h2 id="stat-study-days">12日</h2>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- 下部 -->
+    <section class="bottom-grid">
+
+      <!-- 履歴 -->
+      <div class="history-card">
+
+        <h2>
+          最近の学習履歴
+        </h2>
+
+        <ul>
+
+          <li>EC2 インスタンスの基本</li>
+          <li>IAM ユーザーとグループ</li>
+          <li>S3 ストレージの仕組み</li>
+
+        </ul>
+
+      </div>
+
+      <!-- 苦手 -->
+      <div class="weak-card">
+
+        <h2>
+          苦手分野 TOP3
+        </h2>
+
+        <div class="weak-item">
+          <span>IAM</span>
+          <span>45%</span>
+        </div>
+
+        <div class="weak-item">
+          <span>VPC</span>
+          <span>55%</span>
+        </div>
+
+        <div class="weak-item">
+          <span>セキュリティ</span>
+          <span>60%</span>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- JS -->
+  <script src="app.js"></script>
+
+</body>
+
+</html>
