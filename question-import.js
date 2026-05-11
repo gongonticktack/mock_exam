@@ -329,7 +329,7 @@ importButton.addEventListener("click", async () => {
 
       const response =
         await fetch(
-          "/api/questions/import",
+          "https://bold-dream-4d01.gongonticktack.workers.dev",
           {
             method: "POST",
 
