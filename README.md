@@ -1,69 +1,68 @@
 # mock_exam
 
-Cloudflare Workers/Pages を使用した資格試験学習プラットフォーム
+Cloudflare Pages + Supabase を使用した資格試験学習プラットフォーム
 
 ## セットアップ手順
 
-### 1. D1データベースの作成
+### 1. Supabaseプロジェクトの作成
 
-```bash
-wrangler d1 create mock_exam
-```
+1. [Supabase](https://supabase.com) にアクセスしてプロジェクトを作成
+2. 新しいプロジェクトのデータベース（PostgreSQL）を初期化
 
-### 2. wrangler.jsonc にデータベースIDを設定
+### 2. データベーススキーマの作成
 
-上記コマンド実行後、出力された `database_id` を `wrangler.jsonc` の以下の部分に入力してください：
-
-```json
-"d1": {
-  "bindings": [
-    {
-      "binding": "examDB",
-      "database_name": "mock_exam",
-      "database_id": "YOUR_DATABASE_ID_HERE"
-    }
-  ]
-}
-```
-
-### 3. データベーススキーマの初期化
-
-```bash
-wrangler d1 execute mock_exam --file=./schema.sql
-```
-
-schema.sql の内容：
+SupabaseのSQLエディタで以下のSQLを実行：
 
 ```sql
 -- 問題テーブル
-CREATE TABLE IF NOT EXISTS questions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE questions (
+  id BIGSERIAL PRIMARY KEY,
   exam_id INTEGER NOT NULL,
-  category TEXT NOT NULL,
+  category VARCHAR(255) NOT NULL,
   question TEXT NOT NULL,
   explanation TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 選択肢テーブル
-CREATE TABLE IF NOT EXISTS choices (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  question_id INTEGER NOT NULL,
+CREATE TABLE choices (
+  id BIGSERIAL PRIMARY KEY,
+  question_id BIGINT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
   choice_index INTEGER NOT NULL,
   content TEXT NOT NULL,
-  is_correct INTEGER DEFAULT 0,
-  FOREIGN KEY (question_id) REFERENCES questions(id)
+  is_correct INTEGER DEFAULT 0
 );
 
 -- インデックス
-CREATE INDEX IF NOT EXISTS idx_questions_exam_id ON questions(exam_id);
-CREATE INDEX IF NOT EXISTS idx_choices_question_id ON choices(question_id);
+CREATE INDEX idx_questions_exam_id ON questions(exam_id);
+CREATE INDEX idx_choices_question_id ON choices(question_id);
+
+-- RLSポリシー（すべてのユーザーで読み取り・書き込み許可）
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE choices ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations on questions" ON questions
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on choices" ON choices
+  FOR ALL USING (true) WITH CHECK (true);
 ```
+
+### 3. 環境変数の設定
+
+`wrangler.jsonc` の `env.production.vars` に以下を設定：
+
+```json
+"SUPABASE_URL": "https://your-project.supabase.co",
+"SUPABASE_ANON_KEY": "your-anon-key"
+```
+
+URLとキーはSupabaseプロジェクトの設定画面から取得できます。
 
 ### 4. デプロイ
 
 ```bash
-wrangler deploy
+wrangler pages deploy
 ```
 
 ## ファイル構成
