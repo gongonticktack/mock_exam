@@ -1,6 +1,11 @@
 // ======================================
-// 選択中試験名
-// 本来はURLやLocalStorageから取得
+// SheetJS読み込み確認
+// index.html側で以下を追加必要
+// <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+// ======================================
+
+// ======================================
+// 選択中試験
 // ======================================
 
 const selectedExam =
@@ -8,8 +13,11 @@ const selectedExam =
   || "AWS CCP";
 
 // 資格名表示
-document.getElementById("exam-name")
-  .textContent = selectedExam;
+const examName =
+  document.getElementById("exam-name");
+
+examName.textContent =
+  selectedExam;
 
 // ======================================
 // HTML取得
@@ -25,16 +33,19 @@ const logArea =
   document.getElementById("log-area");
 
 // ======================================
-// インポートボタン押下
+// インポート処理
 // ======================================
 
 importButton.addEventListener("click", async () => {
+
+  // ログ初期化
+  logArea.innerHTML = "";
 
   // ファイル取得
   const file =
     fileInput.files[0];
 
-  // 未選択チェック
+  // 未選択
   if (!file) {
 
     addLog(
@@ -43,59 +54,342 @@ importButton.addEventListener("click", async () => {
     );
 
     return;
+
   }
-
-  // FormData作成
-  const formData = new FormData();
-
-  // ファイル追加
-  formData.append("excel", file);
-
-  // 試験名追加
-  formData.append(
-    "examName",
-    selectedExam
-  );
 
   try {
 
-    // API送信
-    const response =
-      await fetch(
-        "/api/questions/import",
-        {
-          method: "POST",
-          body: formData
-        }
-      );
+    // ArrayBuffer化
+    const buffer =
+      await file.arrayBuffer();
 
-    // JSON化
-    const result =
-      await response.json();
+    // workbook生成
+    const workbook =
+      XLSX.read(buffer);
 
-    // 成功
-    if (result.success) {
+    // 先頭シート取得
+    const sheetName =
+      workbook.SheetNames[0];
+
+    const sheet =
+      workbook.Sheets[sheetName];
+
+    // JSON変換
+    const rows =
+      XLSX.utils.sheet_to_json(sheet, {
+        defval: ""
+      });
+
+    // 空チェック
+    if (rows.length === 0) {
 
       addLog(
-        `${result.count}件の問題を登録しました`,
-        "success"
-      );
-
-    } else {
-
-      addLog(
-        result.message,
+        "Excelにデータがありません",
         "error"
       );
 
+      return;
+
     }
+
+    // ======================================
+    // 必須列確認
+    // ======================================
+
+    const requiredColumns = [
+      "category",
+      "question",
+      "choices",
+      "answers"
+    ];
+
+    const firstRow = rows[0];
+
+    for (const column of requiredColumns) {
+
+      if (!(column in firstRow)) {
+
+        addLog(
+          `列 '${column}' が存在しません`,
+          "error"
+        );
+
+        return;
+
+      }
+
+    }
+
+    // ======================================
+    // バリデーション
+    // ======================================
+
+    const validQuestions = [];
+
+    rows.forEach((row, index) => {
+
+      // Excel行番号
+      // headerが1行あるため+2
+      const rowNumber =
+        index + 2;
+
+      // trim
+      const category =
+        String(row.category).trim();
+
+      const question =
+        String(row.question).trim();
+
+      const choicesRaw =
+        String(row.choices).trim();
+
+      const answersRaw =
+        String(row.answers).trim();
+
+      // ======================================
+      // category
+      // ======================================
+
+      if (!category) {
+
+        addLog(
+          `${rowNumber}行目: category が空です`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // ======================================
+      // question
+      // ======================================
+
+      if (!question) {
+
+        addLog(
+          `${rowNumber}行目: question が空です`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // ======================================
+      // choices
+      // ======================================
+
+      if (!choicesRaw) {
+
+        addLog(
+          `${rowNumber}行目: choices が空です`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // カンマ分割
+      const choices =
+        choicesRaw
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v);
+
+      // 選択肢数
+      if (choices.length < 2) {
+
+        addLog(
+          `${rowNumber}行目: choices は2個以上必要です`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // ======================================
+      // answers
+      // ======================================
+
+      if (!answersRaw) {
+
+        addLog(
+          `${rowNumber}行目: answers が空です`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // 数値配列化
+      const answers =
+        answersRaw
+          .split(",")
+          .map((v) => Number(v.trim()));
+
+      // 数値チェック
+      const invalidAnswer =
+        answers.find((v) => Number.isNaN(v));
+
+      if (invalidAnswer !== undefined) {
+
+        addLog(
+          `${rowNumber}行目: answers は数値で入力してください`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // 範囲チェック
+      const outOfRange =
+        answers.find(
+          (v) =>
+            v < 1 ||
+            v > choices.length
+        );
+
+      if (outOfRange !== undefined) {
+
+        addLog(
+          `${rowNumber}行目: answers の値 '${outOfRange}' が choices 数を超えています`,
+          "error"
+        );
+
+        return;
+
+      }
+
+      // ======================================
+      // API用データ変換
+      // ======================================
+
+      const formattedChoices =
+        choices.map((choice, idx) => {
+
+          return {
+
+            choice_index:
+              idx + 1,
+
+            content:
+              choice,
+
+            is_correct:
+              answers.includes(idx + 1)
+                ? 1
+                : 0
+
+          };
+
+        });
+
+      validQuestions.push({
+
+        category,
+
+        question,
+
+        choices: formattedChoices
+
+      });
+
+    });
+
+    // ======================================
+    // エラーがある場合停止
+    // ======================================
+
+    const hasError =
+      logArea.querySelector(".log-error");
+
+    if (hasError) {
+
+      addLog(
+        "エラーがあるため登録を中止しました",
+        "error"
+      );
+
+      return;
+
+    }
+
+    // ======================================
+    // API送信
+    // ======================================
+
+    let successCount = 0;
+
+    for (const questionData of validQuestions) {
+
+      const response =
+        await fetch(
+          "/api/questions/import",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+
+              exam_name:
+                selectedExam,
+
+              category:
+                questionData.category,
+
+              question:
+                questionData.question,
+
+              choices:
+                questionData.choices
+
+            })
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        successCount++;
+
+      } else {
+
+        addLog(
+          `登録失敗: ${questionData.question}`,
+          "error"
+        );
+
+      }
+
+    }
+
+    // ======================================
+    // 完了
+    // ======================================
+
+    addLog(
+      `${successCount}件の問題を登録しました`,
+      "success"
+    );
 
   } catch (error) {
 
     console.error(error);
 
     addLog(
-      "インポート中にエラーが発生しました",
+      "Excel読み込み中にエラーが発生しました",
       "error"
     );
 
@@ -104,7 +398,7 @@ importButton.addEventListener("click", async () => {
 });
 
 // ======================================
-// ログ追加
+// ログ表示
 // ======================================
 
 function addLog(message, type) {
@@ -112,9 +406,9 @@ function addLog(message, type) {
   const p =
     document.createElement("p");
 
-  p.textContent = message;
+  p.textContent =
+    message;
 
-  // class設定
   if (type === "success") {
 
     p.classList.add("log-success");
