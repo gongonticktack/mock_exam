@@ -165,6 +165,39 @@ examCards.forEach((card, index) => {
 });
 
 // ======================================
+// 問題追加ボタン
+// ======================================
+
+// ボタン取得
+const importButton =
+  document.querySelector(".import-btn");
+
+// クリックイベント
+importButton.addEventListener("click", () => {
+
+  // 現在activeの資格取得
+  const activeCard =
+    document.querySelector(".exam-card.active");
+
+  // 資格名取得
+  const selectedExam =
+    activeCard.querySelector("h3")
+      .textContent;
+
+  // LocalStorage保存
+  localStorage.setItem(
+    "selectedExam",
+    selectedExam
+  );
+
+  // 登録ページへ移動
+  window.location.href =
+    "question-import.html";
+
+});
+
+
+// ======================================
 // 初期表示
 // ======================================
 
