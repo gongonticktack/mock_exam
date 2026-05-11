@@ -2,13 +2,29 @@ export default {
 
   async fetch(request, env) {
 
+    // CORS ヘッダー
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
+    // OPTIONS リクエスト（プリフライト）を処理
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
     // POSTのみ許可
     if (request.method !== "POST") {
 
       return new Response(
         "Method Not Allowed",
         {
-          status: 405
+          status: 405,
+          headers: corsHeaders,
         }
       );
 
@@ -74,6 +90,8 @@ export default {
 
       questionId
 
+    }, {
+      headers: corsHeaders,
     });
 
   }
