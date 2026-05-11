@@ -50,14 +50,14 @@ CREATE POLICY "Allow all operations on choices" ON choices
 
 ### 3. 環境変数の設定
 
-`wrangler.jsonc` の `env.production.vars` に以下を設定：
+`.env.production` ファイルを作成して、以下を入力：
 
-```json
-"SUPABASE_URL": "https://your-project.supabase.co",
-"SUPABASE_ANON_KEY": "your-anon-key"
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
-URLとキーはSupabaseプロジェクトの設定画面から取得できます。
+または、Cloudflare Pages設定画面で環境変数を設定してください。
 
 ### 4. デプロイ
 

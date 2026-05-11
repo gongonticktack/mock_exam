@@ -11,12 +11,8 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "env": {
-    "production": {
-      "vars": {
-        "SUPABASE_URL": "https://zitegvqzczynprrrrlcz.supabase.co",
-        "SUPABASE_ANON_KEY": "sb_publishable_YAydndIRcmE9ZtQANo4O-Q_qhyr3GwM"
-      }
-    }
+  "vars": {
+    "SUPABASE_URL": "https://zitegvqzczynprrrrlcz.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_YAydndIRcmE9ZtQANo4O-Q_qhyr3GwM"
   }
 }
