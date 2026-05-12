@@ -87,12 +87,13 @@ async function initPage() {
   const params = new URLSearchParams(window.location.search);
   const examIdFromQuery = Number(params.get("examId"));
   const questionIndexFromQuery = Number(params.get("questionIndex")) || 0;
+  const selectedExamFromQuery = params.get("selectedExam");
 
   // localStorageから選択中の資格を取得
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
 
-  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'questionIndexFromQuery=', questionIndexFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
+  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'selectedExamFromQuery=', selectedExamFromQuery, 'questionIndexFromQuery=', questionIndexFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
 
   // 資格データ
   const exams = [
@@ -115,7 +116,16 @@ async function initPage() {
 
   console.log('initPage: using currentExamId=', currentExamId);
   const currentExam = exams.find(e => e.id === currentExamId);
-  const selectedExamName = storedExamName || currentExam?.shortName || "AWS CCP";
+  const selectedExamName = selectedExamFromQuery || storedExamName || currentExam?.shortName || "AWS CCP";
+
+  // selectedExamFromQuery があれば、それに応じて currentExamId を修復
+  if (selectedExamName) {
+    const fallbackExam = exams.find(e => e.shortName === selectedExamName);
+    if (fallbackExam && fallbackExam.id !== currentExamId) {
+      currentExamId = fallbackExam.id;
+      console.log('initPage: recovered currentExamId from selectedExamName=', currentExamId);
+    }
+  }
 
   // ヘッダーに資格名を表示
   document.getElementById("exam-name-header").textContent = selectedExamName;

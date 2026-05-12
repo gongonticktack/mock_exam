@@ -354,7 +354,7 @@ startButton.addEventListener("click", () => {
 
   // 学習ページへ移動
   window.location.href =
-    `study.html?examId=${selectedExamId}&questionIndex=${startIndex}`;
+    `study.html?examId=${selectedExamId}&selectedExam=${encodeURIComponent(selectedExam)}&questionIndex=${startIndex}`;
 
 });
 
