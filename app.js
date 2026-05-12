@@ -231,6 +231,10 @@ function updateExam(index) {
     }
   });
 
+  // localStorage に選択中の資格を保存
+  localStorage.setItem("selectedExamId", exam.id);
+  localStorage.setItem("selectedExam", exam.shortName);
+
 }
 
 // ======================================

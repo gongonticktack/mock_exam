@@ -57,30 +57,45 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function initPage() {
 
+  function appendErrorLog(prefix, message) {
+    const errorLog = document.getElementById('error-log');
+    if (!errorLog) {
+      return;
+    }
+    const p = document.createElement('p');
+    p.textContent = `${new Date().toLocaleString()}: ${prefix}: ${message}`;
+    errorLog.appendChild(p);
+    errorLog.style.display = 'block';
+    errorLog.style.zIndex = '9999';
+  }
+
   // エラーハンドラー設定
   window.onerror = function(message, source, lineno, colno, error) {
-    const errorLog = document.getElementById('error-log');
-    if (errorLog) {
-      const errorMsg = `${new Date().toLocaleString()}: ERROR: ${message} at ${source}:${lineno}:${colno}`;
-      const p = document.createElement('p');
-      p.textContent = errorMsg;
-      errorLog.appendChild(p);
-      errorLog.style.display = 'block';
-    }
+    appendErrorLog('ERROR', `${message} at ${source}:${lineno}:${colno}${error ? ` (${error.name})` : ''}`);
   };
 
-  // console.logをオーバーライドしてHTMLにも表示
+  window.addEventListener('unhandledrejection', (event) => {
+    appendErrorLog('UNHANDLEDREJECTION', event.reason ? event.reason.toString() : 'Promise rejected');
+  });
+
+  // console.* をオーバーライドしてHTMLにも表示
   const originalConsoleLog = console.log;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+
   console.log = function(...args) {
     originalConsoleLog.apply(console, args);
-    const errorLog = document.getElementById('error-log');
-    if (errorLog) {
-      const msg = args.join(' ');
-      const p = document.createElement('p');
-      p.textContent = `${new Date().toLocaleString()}: LOG: ${msg}`;
-      errorLog.appendChild(p);
-      errorLog.style.display = 'block';
-    }
+    appendErrorLog('LOG', args.join(' '));
+  };
+
+  console.warn = function(...args) {
+    originalConsoleWarn.apply(console, args);
+    appendErrorLog('WARN', args.join(' '));
+  };
+
+  console.error = function(...args) {
+    originalConsoleError.apply(console, args);
+    appendErrorLog('ERROR', args.join(' '));
   };
 
   // URLクエリからexamIdと問題インデックスを取得
@@ -105,27 +120,35 @@ async function initPage() {
 
   ];
 
-  // examIdを優先的に使用
-  if (examIdFromQuery && !Number.isNaN(examIdFromQuery)) {
-    currentExamId = examIdFromQuery;
-  } else if (storedExamId && !Number.isNaN(storedExamId)) {
-    currentExamId = storedExamId;
-  } else {
-    currentExamId = 1;
-  }
+  let selectedExamName = selectedExamFromQuery || storedExamName;
+  let selectedExamId = null;
 
-  console.log('initPage: using currentExamId=', currentExamId);
-  const currentExam = exams.find(e => e.id === currentExamId);
-  const selectedExamName = selectedExamFromQuery || storedExamName || currentExam?.shortName || "AWS CCP";
-
-  // selectedExamFromQuery があれば、それに応じて currentExamId を修復
   if (selectedExamName) {
-    const fallbackExam = exams.find(e => e.shortName === selectedExamName);
-    if (fallbackExam && fallbackExam.id !== currentExamId) {
-      currentExamId = fallbackExam.id;
-      console.log('initPage: recovered currentExamId from selectedExamName=', currentExamId);
+    const examFromName = exams.find(e => e.shortName === selectedExamName);
+    if (examFromName) {
+      selectedExamId = examFromName.id;
     }
   }
+
+  if (!selectedExamId && examIdFromQuery && !Number.isNaN(examIdFromQuery)) {
+    selectedExamId = examIdFromQuery;
+  }
+
+  if (!selectedExamId && storedExamId && !Number.isNaN(storedExamId)) {
+    selectedExamId = storedExamId;
+  }
+
+  if (!selectedExamId) {
+    selectedExamId = 1;
+  }
+
+  const currentExam = exams.find(e => e.id === selectedExamId);
+  if (!selectedExamName) {
+    selectedExamName = currentExam?.shortName || "AWS CCP";
+  }
+
+  currentExamId = selectedExamId;
+  console.log('initPage: resolved currentExamId=', currentExamId, 'selectedExamName=', selectedExamName);
 
   // ヘッダーに資格名を表示
   document.getElementById("exam-name-header").textContent = selectedExamName;
