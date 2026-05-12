@@ -144,7 +144,7 @@
 
   <!-- 設定を読み込んでからJSを実行 -->
   <script>
-    fetch('supabase-config.json')
+    fetch('/supabase-config.json')
       .then(response => {
         if (!response.ok) {
           throw new Error('supabase-config.jsonが見つかりません');
@@ -155,7 +155,7 @@
         window.SUPABASE_CONFIG = config.supabase;
         // 設定完了後に study.js を読み込む
         const script = document.createElement('script');
-        script.src = 'study.js';
+        script.src = '/study.js';
         document.body.appendChild(script);
       })
       .catch(error => {
