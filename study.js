@@ -35,7 +35,7 @@ function initSupabase() {
 // 初期化
 // ======================================
 
-window.addEventListener('DOMContentLoaded', async () => {
+async function startStudyApp() {
 
   // Supabase初期化
   if (!initSupabase()) {
@@ -49,7 +49,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   // ページを読み込む
   await initPage();
 
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', startStudyApp);
+} else {
+  startStudyApp();
+}
 
 // ======================================
 // ページ初期化
