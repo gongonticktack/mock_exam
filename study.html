@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+  <!-- 文字コード -->
+  <meta charset="UTF-8" />
+
+  <!-- スマホ対応 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- タイトル -->
+  <title>学習 | QualiStudy</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="study.css" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script
+    src="https://kit.fontawesome.com/7b8b7bdbb8.js"
+    crossorigin="anonymous"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body>
+
+  <!-- ========================= -->
+  <!-- ヘッダー -->
+  <!-- ========================= -->
+
+  <header class="study-header">
+
+    <div class="header-left">
+
+      <button id="back-btn" class="back-btn">
+
+        <i class="fa-solid fa-arrow-left"></i>
+
+        戻る
+
+      </button>
+
+      <h1 id="exam-name-header">AWS CCP</h1>
+
+    </div>
+
+    <div class="header-right">
+
+      <div class="progress-info">
+
+        <span id="progress-text">1 / 10</span>
+
+      </div>
+
+    </div>
+
+  </header>
+
+  <!-- ========================= -->
+  <!-- プログレスバー -->
+  <!-- ========================= -->
+
+  <div class="progress-bar-container">
+
+    <div id="progress-bar" class="progress-bar"></div>
+
+  </div>
+
+  <!-- ========================= -->
+  <!-- メイン -->
+  <!-- ========================= -->
+
+  <main class="study-main">
+
+    <!-- 問題カード -->
+    <section class="question-card">
+
+      <!-- カテゴリ -->
+      <div class="question-header">
+
+        <span id="question-category" class="category-badge">EC2</span>
+
+      </div>
+
+      <!-- 質問テキスト -->
+      <h2 id="question-text">
+        EC2とは何ですか？
+      </h2>
+
+      <!-- 選択肢 -->
+      <div id="choices-container" class="choices-container">
+
+        <!-- チェックボックス型選択肢がここに表示される -->
+
+      </div>
+
+      <!-- 解説（回答後に表示） -->
+      <div id="explanation-box" class="explanation-box" style="display: none;">
+
+        <h3>解説</h3>
+
+        <p id="explanation-text"></p>
+
+      </div>
+
+      <!-- 結果表示（回答後に表示） -->
+      <div id="result-box" class="result-box" style="display: none;">
+
+        <div id="result-content" class="result-content"></div>
+
+      </div>
+
+    </section>
+
+    <!-- 操作ボタン -->
+    <section class="action-buttons">
+
+      <button id="answer-btn" class="answer-btn">
+
+        <i class="fa-solid fa-check-circle"></i>
+
+        回答する
+
+      </button>
+
+      <button id="next-btn" class="next-btn" style="display: none;">
+
+        <i class="fa-solid fa-arrow-right"></i>
+
+        次の問題
+
+      </button>
+
+    </section>
+
+  </main>
+
+  <!-- 設定を読み込んでからJSを実行 -->
+  <script>
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.jsonが見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        // 設定完了後に study.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'study.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('設定ファイル読み込みエラー:', error);
+        alert('Supabase設定ファイルが見つかりません');
+      });
+  </script>
+
+</body>
+
+</html>

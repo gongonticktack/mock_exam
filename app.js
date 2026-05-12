@@ -200,6 +200,37 @@ importButton.addEventListener("click", () => {
 
 });
 
+// ======================================
+// 学習開始ボタン
+// ======================================
+
+// ボタン取得
+const startButton =
+  document.querySelector(".start-btn");
+
+// クリックイベント
+startButton.addEventListener("click", () => {
+
+  // 現在activeの資格取得
+  const activeCard =
+    document.querySelector(".exam-card.active");
+
+  // 資格名取得
+  const selectedExam =
+    activeCard.querySelector("h3")
+      .textContent;
+
+  // LocalStorage保存
+  localStorage.setItem(
+    "selectedExam",
+    selectedExam
+  );
+
+  // 学習ページへ移動
+  window.location.href =
+    "study.html";
+
+});
 
 // ======================================
 // 初期表示

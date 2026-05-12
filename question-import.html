@@ -184,18 +184,28 @@ IAM | IAMの機能は？ | 認証,認可,CDN,監視 | 1,2
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Supabase 設定 -->
+  <!-- 設定を読み込んでからJSを実行 -->
   <script>
-    // wrangler.jsonc から取得した設定情報
-    // または環境に合わせて直接設定してください
-    window.SUPABASE_CONFIG = {
-      url: "https://zitegvqzczynprrrrlcz.supabase.co", // https://your-project.supabase.co のような形式
-      key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppdGVndnF6Y3p5bnBycnJybGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTQ3NDcsImV4cCI6MjA5NDA5MDc0N30.zqACnMJnbo7KN5EF1lC6E8Di2Y9jM906z0u_nn0UyEM"  // Anon Key を入力してください
-    };
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.jsonが見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        // 設定完了後に question-import.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'question-import.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('設定ファイル読み込みエラー:', error);
+        alert('Supabase設定ファイルが見つかりません');
+      });
   </script>
 
-  <!-- JS -->
-  <script src="question-import.js"></script>
 </body>
 
 </html>
