@@ -710,3 +710,18 @@ confirmCancelBtn.addEventListener("click", () => {
   confirmCard.style.display = "none";
 
 });
+
+// ======================================
+// エラーハンドラー設定
+// ======================================
+
+window.onerror = function(message, source, lineno, colno, error) {
+  const errorLog = document.getElementById('error-log');
+  if (errorLog) {
+    const errorMsg = `${new Date().toLocaleString()}: ${message} at ${source}:${lineno}:${colno}`;
+    const p = document.createElement('p');
+    p.textContent = errorMsg;
+    errorLog.appendChild(p);
+    errorLog.style.display = 'block';
+  }
+};

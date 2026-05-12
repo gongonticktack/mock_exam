@@ -57,6 +57,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function initPage() {
 
+  // エラーハンドラー設定
+  window.onerror = function(message, source, lineno, colno, error) {
+    const errorLog = document.getElementById('error-log');
+    if (errorLog) {
+      const errorMsg = `${new Date().toLocaleString()}: ${message} at ${source}:${lineno}:${colno}`;
+      const p = document.createElement('p');
+      p.textContent = errorMsg;
+      errorLog.appendChild(p);
+      errorLog.style.display = 'block';
+    }
+  };
+
   // URLクエリからexamIdを取得
   const params = new URLSearchParams(window.location.search);
   const examIdFromQuery = Number(params.get("examId"));
