@@ -13,6 +13,8 @@ const exams = [
     description:
       "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
 
+    icon: "fa-cloud",
+
     stats: {
 
       questions: 320,
@@ -20,7 +22,19 @@ const exams = [
       studyTime: "18時間",
       studyDays: "12日"
 
-    }
+    },
+
+    history: [
+      "EC2 インスタンスの基本",
+      "IAM ユーザーとグループ",
+      "S3 ストレージの仕組み"
+    ],
+
+    weakness: [
+      { name: "IAM", rate: "45%" },
+      { name: "VPC", rate: "55%" },
+      { name: "セキュリティ", rate: "60%" }
+    ]
 
   },
 
@@ -33,6 +47,8 @@ const exams = [
     description:
       "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
 
+    icon: "fa-diagram-project",
+
     stats: {
 
       questions: 180,
@@ -40,7 +56,19 @@ const exams = [
       studyTime: "9時間",
       studyDays: "5日"
 
-    }
+    },
+
+    history: [
+      "クラス図の記法",
+      "シーケンス図の作成",
+      "ユースケース図"
+    ],
+
+    weakness: [
+      { name: "シーケンス図", rate: "40%" },
+      { name: "ステートマシン", rate: "50%" },
+      { name: "コンポーネント図", rate: "65%" }
+    ]
 
   },
 
@@ -53,6 +81,8 @@ const exams = [
     description:
       "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
 
+    icon: "fa-code",
+
     stats: {
 
       questions: 250,
@@ -60,7 +90,19 @@ const exams = [
       studyTime: "14時間",
       studyDays: "10日"
 
-    }
+    },
+
+    history: [
+      "HTML5の新要素",
+      "CSS Flexbox",
+      "JavaScript DOM操作"
+    ],
+
+    weakness: [
+      { name: "Canvas API", rate: "35%" },
+      { name: "Web Storage", rate: "45%" },
+      { name: "Geolocation", rate: "55%" }
+    ]
 
   },
 
@@ -73,6 +115,8 @@ const exams = [
     description:
       "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
 
+    icon: "fa-rotate",
+
     stats: {
 
       questions: 90,
@@ -80,7 +124,19 @@ const exams = [
       studyTime: "5時間",
       studyDays: "3日"
 
-    }
+    },
+
+    history: [
+      "スクラムの役割",
+      "XPのプラクティス",
+      "アジャイルマニフェスト"
+    ],
+
+    weakness: [
+      { name: "テスト駆動開発", rate: "30%" },
+      { name: "継続的インテグレーション", rate: "40%" },
+      { name: "ペアプログラミング", rate: "50%" }
+    ]
 
   }
 
@@ -117,6 +173,15 @@ const statStudyTime =
 const statStudyDays =
   document.getElementById("stat-study-days");
 
+const heroIcon =
+  document.querySelector(".hero-icon");
+
+const historyList =
+  document.querySelector(".history-card ul");
+
+const weaknessItems =
+  document.querySelectorAll(".weak-item");
+
 // ======================================
 // 画面更新
 // ======================================
@@ -134,6 +199,9 @@ function updateExam(index) {
   examDescription.textContent =
     exam.description;
 
+  // アイコン
+  heroIcon.className = `fa-solid ${exam.icon} hero-icon`;
+
   // ステータス
   statQuestions.textContent =
     `${exam.stats.questions}問`;
@@ -146,6 +214,22 @@ function updateExam(index) {
 
   statStudyDays.textContent =
     exam.stats.studyDays;
+
+  // 学習履歴
+  historyList.innerHTML = "";
+  exam.history.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    historyList.appendChild(li);
+  });
+
+  // 苦手分野
+  weaknessItems.forEach((item, i) => {
+    if (exam.weakness[i]) {
+      item.querySelector("span:first-child").textContent = exam.weakness[i].name;
+      item.querySelector("span:last-child").textContent = exam.weakness[i].rate;
+    }
+  });
 
 }
 
