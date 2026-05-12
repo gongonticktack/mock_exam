@@ -532,17 +532,3 @@ function showCompletionScreen() {
   });
 
 }
-
-// ======================================
-// 戻るボタン
-// ======================================
-
-document.getElementById("back-btn").addEventListener("click", () => {
-
-  // 現在の学習状態を保存（次回のセッションで復帰するため）
-  localStorage.setItem("lastStudyExamId", currentExamId);
-  localStorage.setItem("lastQuestionIndex", currentQuestionIndex);
-
-  window.location.href = "index.html";
-
-});
