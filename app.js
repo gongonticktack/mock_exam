@@ -1,6 +1,7 @@
 // ======================================
-// 資格データ
+// 📚 資格（試験）データ
 // ======================================
+// 各試験の情報を定義しています
 
 const exams = [
 
@@ -255,8 +256,7 @@ examCards.forEach((card, index) => {
     // active追加
     card.classList.add("active");
 
-    console.log('Exam card clicked - index:', index, 'examId:', exams[index].id, 'examName:', exams[index].shortName);
-
+    // 👆 クリックされた試験の情報をメイン表示に反映
     // 更新
     updateExam(index);
 
@@ -294,8 +294,7 @@ importButton.addEventListener("click", () => {
     selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
   }
 
-  console.log('Import button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam);
-
+  // 🔄 ブラウザ保存の機能を使って選択情報を保持
   // LocalStorage保存
   localStorage.setItem(
     "selectedExamId",
@@ -339,8 +338,7 @@ startButton.addEventListener("click", () => {
     selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
   }
 
-  console.log('Start button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam, 'activeCard.dataset:', activeCard?.dataset);
-
+  // 📖 学習ページへ移動 - URLパラメータで試験情報を渡します
   // LocalStorage保存
   localStorage.setItem(
     "selectedExamId",
@@ -363,39 +361,8 @@ startButton.addEventListener("click", () => {
 });
 
 // ======================================
-// 初期表示
+// 🎯 ページロード時の初期処理
 // ======================================
 
+// 最初に表示する試験（AWS CCP：id=0）
 updateExam(0);
-
-// ======================================
-// エラーハンドラー設定
-// ======================================
-
-window.onerror = function(message, source, lineno, colno, error) {
-  const errorLog = document.getElementById('error-log');
-  if (errorLog) {
-    const errorMsg = `${new Date().toLocaleString()}: ERROR: ${message} at ${source}:${lineno}:${colno}`;
-    const p = document.createElement('p');
-    p.textContent = errorMsg;
-    errorLog.appendChild(p);
-    errorLog.style.display = 'block';
-  }
-};
-
-// ======================================
-// console.logをオーバーライドしてHTMLにも表示
-// ======================================
-
-const originalConsoleLog = console.log;
-console.log = function(...args) {
-  originalConsoleLog.apply(console, args);
-  const errorLog = document.getElementById('error-log');
-  if (errorLog) {
-    const msg = args.join(' ');
-    const p = document.createElement('p');
-    p.textContent = `${new Date().toLocaleString()}: LOG: ${msg}`;
-    errorLog.appendChild(p);
-    errorLog.style.display = 'block';
-  }
-};

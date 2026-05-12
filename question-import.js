@@ -1,6 +1,7 @@
 // ======================================
-// Supabase 初期化
+// ☁️ Supabase（クラウドDB）初期化
 // ======================================
+// 問題登録用のデータベース接続を初期化
 
 let supabaseClient = null;
 
@@ -10,7 +11,7 @@ function initSupabase() {
 
   if (!config.url || !config.key) {
 
-    console.error('Supabaseの設定が不足しています。question-import.htmlのSUPABASE_CONFIGを設定してください。');
+    alert('Supabaseの設定が不足しています');
 
     return false;
 
@@ -483,8 +484,6 @@ importButton.addEventListener("click", async () => {
 
   } catch (error) {
 
-    console.error(error);
-
     addLog(
       "Excel読み込み中にエラーが発生しました",
       "error"
@@ -609,8 +608,6 @@ confirmOkBtn.addEventListener("click", async () => {
 
       if (questionError) {
 
-        console.error('Question insert error:', questionError);
-
         addLog(
           `問題の登録に失敗: ${questionData.question}`,
           "error"
@@ -633,8 +630,7 @@ confirmOkBtn.addEventListener("click", async () => {
 
       }
 
-      console.log('Question inserted, ID:', questionId);
-
+      // ✅ 問題がDBに登録されたので、次は選択肢を登録
       // ======================================
       // 選択肢を登録
       // ======================================
@@ -659,8 +655,6 @@ confirmOkBtn.addEventListener("click", async () => {
 
       if (choiceError) {
 
-        console.error('Choices insert error:', choiceError);
-
         addLog(
           `選択肢の登録に失敗: ${questionData.question}`,
           "error"
@@ -670,8 +664,7 @@ confirmOkBtn.addEventListener("click", async () => {
 
       }
 
-      console.log('Choices inserted');
-
+      // ✅ 問題と選択肢の登録が完了
       successCount++;
 
       addLog(
@@ -680,8 +673,6 @@ confirmOkBtn.addEventListener("click", async () => {
       );
 
     } catch (error) {
-
-      console.error('Error during registration:', error);
 
       addLog(
         `エラーが発生しました: ${error.message}`,
@@ -692,7 +683,7 @@ confirmOkBtn.addEventListener("click", async () => {
 
   }
 
-  // 完了
+  // 🎉 登録完了メッセージ
   addLog(
     `${successCount}件の問題を登録しました`,
     "success"
@@ -706,18 +697,10 @@ confirmOkBtn.addEventListener("click", async () => {
 
 confirmCancelBtn.addEventListener("click", () => {
 
-  // 確認画面を隠す
+  // ❌ 確認画面を隠す
   confirmCard.style.display = "none";
 
 });
-
-// ======================================
-// エラーハンドラー設定
-// ======================================
-
-window.onerror = function(message, source, lineno, colno, error) {
-  const errorLog = document.getElementById('error-log');
-  if (errorLog) {
     const errorMsg = `${new Date().toLocaleString()}: ERROR: ${message} at ${source}:${lineno}:${colno}`;
     const p = document.createElement('p');
     p.textContent = errorMsg;

@@ -1,6 +1,7 @@
 // ======================================
-// Supabase 初期化
+// ☁️ Supabase（クラウドDB）初期化
 // ======================================
+// 問題取得用のデータベース接続
 
 let supabaseClient = null;
 let questions = [];
@@ -12,11 +13,9 @@ function initSupabase() {
 
   const config = window.SUPABASE_CONFIG;
 
-  console.log('Loaded Supabase config:', config);
-
   if (!config || !config.url || !config.key) {
 
-    console.error('Supabaseの設定が不足しています。study.htmlのSUPABASE_CONFIGを設定してください。');
+    alert('Supabaseの設定が不足しています。study.htmlのSUPABASE_CONFIGを設定してください.');
 
     return false;
 
@@ -32,7 +31,7 @@ function initSupabase() {
 }
 
 // ======================================
-// 初期化
+// 🚀 アプリケーション開始
 // ======================================
 
 async function startStudyApp() {
@@ -58,51 +57,11 @@ if (document.readyState === 'loading') {
 }
 
 // ======================================
-// ページ初期化
+// 📄 ページ初期化
 // ======================================
+// 試験選択情報を取得して、問題を読み込みます
 
 async function initPage() {
-
-  function appendErrorLog(prefix, message) {
-    const errorLog = document.getElementById('error-log');
-    if (!errorLog) {
-      return;
-    }
-    const p = document.createElement('p');
-    p.textContent = `${new Date().toLocaleString()}: ${prefix}: ${message}`;
-    errorLog.appendChild(p);
-    errorLog.style.display = 'block';
-    errorLog.style.zIndex = '9999';
-  }
-
-  // エラーハンドラー設定
-  window.onerror = function(message, source, lineno, colno, error) {
-    appendErrorLog('ERROR', `${message} at ${source}:${lineno}:${colno}${error ? ` (${error.name})` : ''}`);
-  };
-
-  window.addEventListener('unhandledrejection', (event) => {
-    appendErrorLog('UNHANDLEDREJECTION', event.reason ? event.reason.toString() : 'Promise rejected');
-  });
-
-  // console.* をオーバーライドしてHTMLにも表示
-  const originalConsoleLog = console.log;
-  const originalConsoleWarn = console.warn;
-  const originalConsoleError = console.error;
-
-  console.log = function(...args) {
-    originalConsoleLog.apply(console, args);
-    appendErrorLog('LOG', args.join(' '));
-  };
-
-  console.warn = function(...args) {
-    originalConsoleWarn.apply(console, args);
-    appendErrorLog('WARN', args.join(' '));
-  };
-
-  console.error = function(...args) {
-    originalConsoleError.apply(console, args);
-    appendErrorLog('ERROR', args.join(' '));
-  };
 
   // URLクエリからexamIdと問題インデックスを取得
   const params = new URLSearchParams(window.location.search);
@@ -113,8 +72,6 @@ async function initPage() {
   // localStorageから選択中の資格を取得
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
-
-  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'selectedExamFromQuery=', selectedExamFromQuery, 'questionIndexFromQuery=', questionIndexFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
 
   // 資格データ
   const exams = [
@@ -154,18 +111,18 @@ async function initPage() {
   }
 
   currentExamId = selectedExamId;
-  console.log('initPage: resolved currentExamId=', currentExamId, 'selectedExamName=', selectedExamName);
 
   // ヘッダーに資格名を表示
   document.getElementById("exam-name-header").textContent = selectedExamName;
 
   // DBから問題を取得
-  console.log('initPage: start loading questions for examId=', currentExamId);
   await loadQuestions();
 
-  // URLパラメータで指定された問題インデックスを使用
-  const startIndex = Math.min(questionIndexFromQuery, Math.max(0, questions.length - 1));
-  console.log('initPage: starting from question index=', startIndex);
+  // 問題をランダムにシャッフル
+  shuffleQuestions();
+
+  // URLパラメータで指定された問題インデックスを使用（ただしシャッフル後は0から開始）
+  const startIndex = 0;
 
   // 問題を表示
   if (questions.length > 0) {
@@ -174,7 +131,6 @@ async function initPage() {
 
   } else {
 
-    console.warn('initPage: no questions loaded for examId=', currentExamId);
     alert('問題がありません');
 
   }
@@ -182,8 +138,9 @@ async function initPage() {
 }
 
 // ======================================
-// DBから問題を取得
+// 📚 選択した試験の問題をDB取得
 // ======================================
+// Supab aseから問題と選択肢を取得します
 
 async function loadQuestions() {
 
@@ -198,8 +155,6 @@ async function loadQuestions() {
 
     if (questionsError) {
 
-      console.error('Questions fetch error:', questionsError);
-
       alert('問題の取得に失敗しました');
 
       return;
@@ -207,8 +162,6 @@ async function loadQuestions() {
     }
 
     if (!questionsData || questionsData.length === 0) {
-
-      console.warn('questionsData is empty or missing for exam_id', currentExamId);
 
       alert('該当する問題が見つかりませんでした');
 
@@ -230,8 +183,6 @@ async function loadQuestions() {
 
       if (choicesError) {
 
-        console.error('Choices fetch error:', choicesError);
-
         continue;
 
       }
@@ -247,11 +198,7 @@ async function loadQuestions() {
 
     questions = questionsWithChoices;
 
-    console.log('loadQuestions: questions loaded count=', questions.length, 'for examId=', currentExamId, questions);
-
   } catch (error) {
-
-    console.error('Error loading questions:', error);
 
     alert('問題の読み込み中にエラーが発生しました');
 
@@ -260,8 +207,28 @@ async function loadQuestions() {
 }
 
 // ======================================
-// 問題を表示
+// 🎲 問題をランダムにシャッフル
 // ======================================
+// Fisher-Yatesアルゴリズムで問題順序をランダム化
+
+function shuffleQuestions() {
+
+  // Fisher-Yatesシャッフルアルゴリズム
+  for (let i = questions.length - 1; i > 0; i--) {
+
+    const j = Math.floor(Math.random() * (i + 1));
+
+    // 要素を入れ替え
+    [questions[i], questions[j]] = [questions[j], questions[i]];
+
+  }
+
+}
+
+// ======================================
+// 🎯 問題を画面に表示
+// ======================================
+// 指定されたインデックスの問題と選択肢を表示
 
 function displayQuestion(index) {
 
@@ -291,8 +258,6 @@ function displayQuestion(index) {
     `${((index + 1) / questions.length) * 100}%`;
 
   // カテゴリを表示
-  console.log('displayQuestion: index=', index, 'questionId=', question.id, 'question=', question.question, 'choices=', question.choices?.length);
-
   document.getElementById("question-category").textContent =
     question.category;
 
@@ -358,8 +323,9 @@ function displayQuestion(index) {
 }
 
 // ======================================
-// 回答ボタン
+// ✅ 回答ボタン処理
 // ======================================
+// ユーザーの回答を判定して結果を表示
 
 document.getElementById("answer-btn").addEventListener("click", () => {
 
@@ -394,8 +360,6 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
   });
 
-  console.log('answer-btn: selectedChoices=', selectedChoices);
-
   // 正解の選択肢を取得
   const correctChoices = [];
 
@@ -428,8 +392,6 @@ document.getElementById("answer-btn").addEventListener("click", () => {
     selectedIndices.every((val, idx) => val === correctIndices[idx]) &&
     selectedChoices.length === correctIndices.length;
 
-  console.log('answer-btn: correctIndices=', correctIndices, 'selectedIndices=', selectedIndices, 'isCorrect=', isCorrect);
-
   // 結果を表示
   displayResult(isCorrect, correctChoices, selectedChoices);
 
@@ -448,8 +410,9 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 });
 
 // ======================================
-// 結果を表示
+// 📊 回答結果を表示
 // ======================================
+// 正解・不正解の判定結果を画面に表示
 
 function displayResult(isCorrect, correctChoices, selectedChoices) {
 
@@ -512,7 +475,7 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 }
 
 // ======================================
-// 次の問題ボタン
+// ➡️ 次の問題へ移動
 // ======================================
 
 document.getElementById("next-btn").addEventListener("click", () => {
@@ -535,8 +498,9 @@ document.getElementById("next-btn").addEventListener("click", () => {
 });
 
 // ======================================
-// 完了画面
+// 🎉 全問題完了画面
 // ======================================
+// すべての問題が終わったら完了画面を表示
 
 function showCompletionScreen() {
 
