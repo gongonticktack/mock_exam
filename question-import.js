@@ -718,9 +718,26 @@ confirmCancelBtn.addEventListener("click", () => {
 window.onerror = function(message, source, lineno, colno, error) {
   const errorLog = document.getElementById('error-log');
   if (errorLog) {
-    const errorMsg = `${new Date().toLocaleString()}: ${message} at ${source}:${lineno}:${colno}`;
+    const errorMsg = `${new Date().toLocaleString()}: ERROR: ${message} at ${source}:${lineno}:${colno}`;
     const p = document.createElement('p');
     p.textContent = errorMsg;
+    errorLog.appendChild(p);
+    errorLog.style.display = 'block';
+  }
+};
+
+// ======================================
+// console.logをオーバーライドしてHTMLにも表示
+// ======================================
+
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+  originalConsoleLog.apply(console, args);
+  const errorLog = document.getElementById('error-log');
+  if (errorLog) {
+    const msg = args.join(' ');
+    const p = document.createElement('p');
+    p.textContent = `${new Date().toLocaleString()}: LOG: ${msg}`;
     errorLog.appendChild(p);
     errorLog.style.display = 'block';
   }
