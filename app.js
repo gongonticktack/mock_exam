@@ -256,6 +256,10 @@ examCards.forEach((card, index) => {
     // 更新
     updateExam(index);
 
+    // 選択中の資格を保存しておく
+    localStorage.setItem("selectedExamId", exams[index].id);
+    localStorage.setItem("selectedExam", exams[index].shortName);
+
   });
 
 });
@@ -276,9 +280,15 @@ importButton.addEventListener("click", () => {
     document.querySelector(".exam-card.active");
 
   // 資格ID / 資格名取得
-  const selectedExamId = Number(activeCard.dataset.examId);
-  const selectedExam =
-    activeCard.dataset.examShortName;
+  let selectedExamId = activeCard ? Number(activeCard.dataset.examId) : NaN;
+  let selectedExam = activeCard ? activeCard.dataset.examShortName : null;
+
+  if (!selectedExamId || Number.isNaN(selectedExamId)) {
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+  }
+  if (!selectedExam) {
+    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+  }
 
   console.log('Import button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam);
 
@@ -314,11 +324,18 @@ startButton.addEventListener("click", () => {
     document.querySelector(".exam-card.active");
 
   // 資格ID / 資格名取得
-  const selectedExamId = Number(activeCard.dataset.examId);
-  const selectedExam =
-    activeCard.dataset.examShortName;
+  let selectedExamId = activeCard ? Number(activeCard.dataset.examId) : NaN;
+  let selectedExam = activeCard ? activeCard.dataset.examShortName : null;
 
-  console.log('Start button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam, 'activeCard.dataset:', activeCard.dataset);
+  // fallback: localStorage に保存されているものを使う
+  if (!selectedExamId || Number.isNaN(selectedExamId)) {
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+  }
+  if (!selectedExam) {
+    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+  }
+
+  console.log('Start button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam, 'activeCard.dataset:', activeCard?.dataset);
 
   // LocalStorage保存
   localStorage.setItem(
