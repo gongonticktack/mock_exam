@@ -1,6 +1,15 @@
-/* ========================= */
-/* 初期化 */
-/* ========================= */
+﻿:root {
+  --bg: #070912;
+  --surface: rgba(16, 20, 45, 0.92);
+  --surface-soft: rgba(18, 24, 60, 0.7);
+  --border: rgba(255, 255, 255, 0.11);
+  --accent: #8b7dff;
+  --accent-soft: rgba(139, 125, 255, 0.16);
+  --text: #eef2ff;
+  --text-muted: #aab3d1;
+  --danger: #fb7185;
+  --success: #4ade80;
+}
 
 * {
   margin: 0;
@@ -8,425 +17,250 @@
   box-sizing: border-box;
 }
 
-/* body */
 body {
-
   font-family: "Noto Sans JP", sans-serif;
-
-  background:
-    radial-gradient(circle at top left,
-      #1e1b4b,
-      #0b1120);
-
-  color: white;
-
+  background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.14), transparent 24%), radial-gradient(circle at bottom right, rgba(102, 125, 255, 0.12), transparent 20%), linear-gradient(135deg, #04050c 0%, #0b1023 45%, #070912 100%);
+  color: var(--text);
   min-height: 100vh;
-
   display: flex;
 }
 
-/* ========================= */
-/* サイドバー */
-/* ========================= */
-
 .sidebar {
-
   width: 280px;
-
   padding: 28px;
-
-  background:
-    rgba(10, 15, 30, 0.85);
-
-  border-right:
-    1px solid rgba(255, 255, 255, 0.08);
-
-  backdrop-filter: blur(12px);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.01), 0 30px 90px rgba(0, 0, 0, 0.22);
 }
 
-/* ロゴ */
 .logo {
-
   display: flex;
   align-items: center;
   gap: 12px;
-
   font-size: 28px;
   font-weight: bold;
-
-  color: #b4a7ff;
-
+  color: var(--accent);
   margin-bottom: 60px;
 }
 
-/* 選択資格 */
 .selected-exam {
-
-  background:
-    rgba(255, 255, 255, 0.04);
-
-  border-radius: 20px;
-
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 24px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
 }
 
-/* ラベル */
 .label {
-
-  color: #bbbbbb;
-
+  color: var(--text-muted);
   margin-bottom: 12px;
+  letter-spacing: 0.04em;
+  font-size: 0.92rem;
 }
-
-/* ========================= */
-/* メイン */
-/* ========================= */
 
 .main-content {
-
   flex: 1;
-
-  padding: 40px;
+  padding: 36px;
 }
 
-/* ヘッダー */
 .page-header {
-
-  margin-bottom: 30px;
+  margin-bottom: 36px;
 }
 
-/* タイトル */
 .page-header h1 {
-
-  font-size: 42px;
-
-  margin-bottom: 12px;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  margin-bottom: 14px;
+  color: var(--text);
 }
 
-/* 説明 */
 .page-header p {
-
-  color: #cfcfcf;
+  color: var(--text-muted);
+  max-width: 720px;
+  line-height: 1.75;
 }
-
-/* ========================= */
-/* カード */
-/* ========================= */
 
 .import-card {
-
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
   gap: 24px;
-
   margin-bottom: 24px;
 }
 
-/* 共通カード */
 .format-box,
 .upload-area,
-.log-card {
-
-  background:
-    rgba(255, 255, 255, 0.04);
-
-  border:
-    1px solid rgba(255, 255, 255, 0.06);
-
+.log-card,
+.confirm-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 28px;
-
   padding: 30px;
-
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.22);
 }
 
-/* タイトル */
 .format-box h2,
 .upload-area h2,
-.log-card h2 {
-
+.log-card h2,
+.confirm-card h2 {
   margin-bottom: 20px;
+  color: var(--text);
 }
 
-/* pre */
 pre {
-
-  background:
-    rgba(0, 0, 0, 0.3);
-
-  padding: 20px;
-
-  border-radius: 16px;
-
+  background: rgba(255, 255, 255, 0.05);
+  padding: 22px;
+  border-radius: 20px;
   overflow-x: auto;
-
-  line-height: 1.8;
+  line-height: 1.9;
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-
-/* ========================= */
-/* Upload */
-/* ========================= */
 
 .upload-area {
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
-/* Excelアイコン */
 .excel-icon {
-
-  font-size: 90px;
-
-  color: #8b7dff;
-
+  font-size: 88px;
+  color: var(--accent);
   margin-bottom: 20px;
 }
 
-/* 説明 */
 .upload-area p {
-
-  color: #cfcfcf;
-
-  margin-bottom: 24px;
+  color: var(--text-muted);
+  margin-bottom: 26px;
+  text-align: center;
 }
 
-/* input */
 input[type="file"] {
-
   margin-bottom: 24px;
-
-  color: white;
+  color: var(--text);
 }
 
-/* ボタン */
 #import-btn {
-
-  background:
-    linear-gradient(135deg,
-      #6d5dfc,
-      #8b7dff);
-
+  background: linear-gradient(135deg, #8b7dff, #6f5efc);
   border: none;
-
   color: white;
-
-  padding: 16px 28px;
-
-  border-radius: 18px;
-
+  padding: 16px 30px;
+  border-radius: 20px;
   font-size: 16px;
-  font-weight: bold;
-
+  font-weight: 700;
   cursor: pointer;
-
-  transition: 0.25s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 18px 40px rgba(107, 93, 255, 0.26);
 }
 
-/* hover */
 #import-btn:hover {
-
   transform: translateY(-2px);
-
-  box-shadow:
-    0 0 28px rgba(124, 92, 255, 0.5);
+  box-shadow: 0 26px 58px rgba(107, 93, 255, 0.34);
 }
-
-/* ========================= */
-/* ログ */
-/* ========================= */
 
 #log-area {
-
   display: flex;
   flex-direction: column;
-
   gap: 12px;
 }
 
-/* ========================= */
-/* 確認画面 */
-/* ========================= */
-
-.confirm-card {
-
-  background:
-    rgba(255, 255, 255, 0.04);
-
-  border:
-    1px solid rgba(255, 255, 255, 0.06);
-
-  border-radius: 28px;
-
-  padding: 30px;
-
-  backdrop-filter: blur(12px);
-}
-
-.confirm-card h2 {
-
-  margin-bottom: 20px;
-}
-
-.confirm-card p {
-
-  color: #cfcfcf;
-
-  margin-bottom: 24px;
-}
-
-#confirm-list {
-
-  margin-bottom: 24px;
+.confirm-card p,
+.confirm-item p,
+.upload-area p,
+.page-header p {
+  color: var(--text-muted);
 }
 
 .confirm-item {
-
-  background:
-    rgba(0, 0, 0, 0.2);
-
-  border-radius: 16px;
-
-  padding: 20px;
-
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 22px;
   margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .confirm-item h3 {
-
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  color: var(--text);
 }
 
 .confirm-item p {
-
-  color: #cfcfcf;
-
-  margin-bottom: 8px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
 }
 
 .confirm-item ul {
-
   list-style: none;
-
-  padding-left: 20px;
+  padding-left: 0;
 }
 
 .confirm-item li {
-
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .confirm-item li.correct {
-
-  color: #4ade80;
+  color: var(--success);
 }
 
 .confirm-buttons {
-
   display: flex;
-
   gap: 16px;
-
   justify-content: center;
 }
 
-#confirm-ok-btn {
-
-  background:
-    linear-gradient(135deg,
-      #6d5dfc,
-      #8b7dff);
-
-  border: none;
-
-  color: white;
-
+#confirm-ok-btn,
+#confirm-cancel-btn {
   padding: 16px 28px;
-
   border-radius: 18px;
-
   font-size: 16px;
-  font-weight: bold;
-
+  font-weight: 700;
   cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-  transition: 0.25s;
+#confirm-ok-btn {
+  background: linear-gradient(135deg, #8b7dff, #6f5efc);
+  border: none;
+  color: white;
+  box-shadow: 0 18px 40px rgba(107, 93, 255, 0.26);
 }
 
 #confirm-ok-btn:hover {
-
   transform: translateY(-2px);
-
-  box-shadow:
-    0 0 28px rgba(124, 92, 255, 0.5);
+  box-shadow: 0 24px 55px rgba(107, 93, 255, 0.33);
 }
 
 #confirm-cancel-btn {
-
-  background:
-    rgba(255, 255, 255, 0.05);
-
-  border:
-    1px solid rgba(255, 255, 255, 0.1);
-
-  color: #d8d8d8;
-
-  padding: 14px 18px;
-
-  border-radius: 14px;
-
-  font-size: 14px;
-
-  cursor: pointer;
-
-  transition: 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
 }
 
 #confirm-cancel-btn:hover {
-
-  border-color: #8b7dff;
-
-  color: white;
-
-  background:
-    rgba(139, 125, 255, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(139, 125, 255, 0.4);
+  background: rgba(139, 125, 255, 0.12);
 }
 
-/* 成功 */
 .log-success {
-
-  color: #4ade80;
+  color: var(--success);
 }
 
-/* エラー */
 .log-error {
-
-  color: #f87171;
+  color: var(--danger);
 }
 
-/* ========================= */
-/* スマホ */
-/* ========================= */
-
-@media(max-width: 1100px) {
-
+@media (max-width: 1100px) {
   body {
-
     flex-direction: column;
   }
 
   .sidebar {
-
     width: 100%;
   }
 
   .import-card {
-
     grid-template-columns: 1fr;
   }
-
 }

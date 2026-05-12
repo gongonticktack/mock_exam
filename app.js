@@ -93,6 +93,12 @@ const exams = [
 const examCards =
   document.querySelectorAll(".exam-card");
 
+// exam card に exam id を紐づけ
+examCards.forEach((card, index) => {
+  card.dataset.examId = exams[index].id;
+  card.dataset.examShortName = exams[index].shortName;
+});
+
 const examTitle =
   document.getElementById("exam-title");
 
@@ -183,12 +189,16 @@ importButton.addEventListener("click", () => {
   const activeCard =
     document.querySelector(".exam-card.active");
 
-  // 資格名取得
+  // 資格ID / 資格名取得
+  const selectedExamId = Number(activeCard.dataset.examId);
   const selectedExam =
-    activeCard.querySelector("h3")
-      .textContent;
+    activeCard.dataset.examShortName;
 
   // LocalStorage保存
+  localStorage.setItem(
+    "selectedExamId",
+    selectedExamId
+  );
   localStorage.setItem(
     "selectedExam",
     selectedExam
@@ -215,12 +225,16 @@ startButton.addEventListener("click", () => {
   const activeCard =
     document.querySelector(".exam-card.active");
 
-  // 資格名取得
+  // 資格ID / 資格名取得
+  const selectedExamId = Number(activeCard.dataset.examId);
   const selectedExam =
-    activeCard.querySelector("h3")
-      .textContent;
+    activeCard.dataset.examShortName;
 
   // LocalStorage保存
+  localStorage.setItem(
+    "selectedExamId",
+    selectedExamId
+  );
   localStorage.setItem(
     "selectedExam",
     selectedExam
@@ -228,7 +242,7 @@ startButton.addEventListener("click", () => {
 
   // 学習ページへ移動
   window.location.href =
-    "study.html";
+    `study.html?examId=${selectedExamId}`;
 
 });
 

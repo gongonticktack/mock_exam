@@ -1,6 +1,15 @@
-/* ======================================
-   リセット・基本
-   ====================================== */
+﻿:root {
+  --bg: #070912;
+  --surface: rgba(16, 20, 45, 0.88);
+  --surface-soft: rgba(18, 24, 60, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #8b7dff;
+  --accent-soft: rgba(139, 125, 255, 0.18);
+  --text: #eef2ff;
+  --text-muted: #aab3d1;
+  --success: #4ade80;
+  --danger: #f97373;
+}
 
 * {
   margin: 0;
@@ -10,23 +19,21 @@
 
 body {
   font-family: 'Noto Sans JP', sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at top right, rgba(139, 125, 255, 0.12), transparent 30%), radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.04), transparent 18%), linear-gradient(135deg, #05070f 0%, #0d1121 60%, #090b16 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  color: var(--text);
 }
 
-/* ======================================
-   ヘッダー
-   ====================================== */
-
 .study-header {
-  background: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: rgba(14, 18, 40, 0.94);
+  padding: 1.2rem 2rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .header-left {
@@ -36,76 +43,68 @@ body {
 }
 
 .back-btn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   font-size: 1rem;
-  color: #333;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  transition: background 0.2s;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  transition: transform 0.3s ease, background 0.3s ease;
 }
 
 .back-btn:hover {
-  background: #f0f0f0;
+  transform: translateY(-2px);
+  background: rgba(139, 125, 255, 0.14);
 }
 
 .header-left h1 {
-  font-size: 1.5rem;
-  color: #333;
+  font-size: 1.8rem;
+  color: var(--text);
 }
 
 .progress-info {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 0.95rem;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
-/* ======================================
-   プログレスバー
-   ====================================== */
-
 .progress-bar-container {
-  height: 4px;
-  background: #e0e0e0;
+  height: 6px;
   width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.5rem;
 }
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #8b7dff 0%, #6b63fc 100%);
   width: 0%;
   transition: width 0.3s ease;
 }
 
-/* ======================================
-   メインコンテナ
-   ====================================== */
-
 .study-main {
   flex: 1;
   padding: 2rem;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
-/* ======================================
-   問題カード
-   ====================================== */
-
 .question-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  flex: 1;
+  background: rgba(15, 19, 43, 0.95);
+  border-radius: 28px;
+  padding: 2.2rem;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .question-header {
@@ -114,24 +113,20 @@ body {
 
 .category-badge {
   display: inline-block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: rgba(139, 125, 255, 0.18);
+  color: var(--accent);
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .question-card h2 {
-  font-size: 1.5rem;
-  color: #333;
+  font-size: clamp(1.7rem, 2vw, 2.5rem);
+  color: var(--text);
   margin-bottom: 2rem;
-  line-height: 1.6;
+  line-height: 1.4;
 }
-
-/* ======================================
-   選択肢コンテナ
-   ====================================== */
 
 .choices-container {
   display: flex;
@@ -148,48 +143,44 @@ body {
 .choice-label {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
   cursor: pointer;
-  padding: 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #f9f9f9;
-  flex: 1;
-  transition: all 0.2s;
+  padding: 1.2rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.25s ease;
+  width: 100%;
 }
 
 .choice-label:hover {
-  border-color: #667eea;
-  background: #f0f4ff;
+  border-color: rgba(139, 125, 255, 0.45);
+  background: rgba(139, 125, 255, 0.08);
 }
 
 .choice-checkbox {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #667eea;
+  accent-color: var(--accent);
 }
 
 .choice-checkbox:checked + span {
-  font-weight: 600;
-  color: #667eea;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .choice-label span {
   font-size: 1rem;
-  color: #333;
+  color: var(--text);
 }
 
-/* ======================================
-   結果表示
-   ====================================== */
-
 .result-box {
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 22px;
+  padding: 1.6rem;
   margin-top: 1rem;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--accent);
 }
 
 .result-content {
@@ -197,121 +188,98 @@ body {
 }
 
 .result-correct {
-  color: #22c55e;
+  color: var(--success);
 }
 
-.result-correct i {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-}
-
-.result-correct p {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.result-incorrect {
-  color: #ef4444;
-}
-
+.result-correct i,
 .result-incorrect i {
   font-size: 3rem;
   margin-bottom: 0.5rem;
 }
 
+.result-correct p,
 .result-incorrect p {
   font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.result-incorrect {
+  color: var(--danger);
 }
 
 .correct-answer {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: 16px;
   text-align: left;
   margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .correct-answer p {
-  color: #333;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  color: var(--text-muted);
+  font-size: 0.96rem;
+  line-height: 1.7;
 }
 
-/* ======================================
-   解説ボックス
-   ====================================== */
-
 .explanation-box {
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: rgba(80, 70, 180, 0.1);
+  border: 1px solid rgba(139, 125, 255, 0.24);
+  border-radius: 20px;
+  padding: 1.6rem;
   margin-top: 1rem;
 }
 
 .explanation-box h3 {
-  color: #92400e;
+  color: var(--accent);
   font-size: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 #explanation-text {
-  color: #78350f;
-  line-height: 1.6;
+  color: var(--text-muted);
+  line-height: 1.8;
   font-size: 0.95rem;
 }
-
-/* ======================================
-   操作ボタン
-   ====================================== */
 
 .action-buttons {
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .answer-btn,
 .next-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8b7dff, #6159d6);
   color: white;
   border: none;
   padding: 1rem 2rem;
-  border-radius: 8px;
+  border-radius: 18px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s;
+  gap: 0.75rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   flex: 1;
   justify-content: center;
+  box-shadow: 0 18px 40px rgba(107, 93, 255, 0.24);
 }
 
 .answer-btn:hover,
 .next-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 24px 48px rgba(107, 93, 255, 0.34);
 }
-
-.answer-btn:active,
-.next-btn:active {
-  transform: translateY(0);
-}
-
-/* ======================================
-   完了画面
-   ====================================== */
 
 .completion-card {
-  background: white;
-  border-radius: 12px;
-  padding: 3rem 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: rgba(15, 19, 43, 0.96);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.28);
   text-align: center;
   flex: 1;
   display: flex;
@@ -322,70 +290,61 @@ body {
 
 .completion-icon {
   font-size: 4rem;
-  color: #667eea;
+  color: var(--accent);
   margin-bottom: 1rem;
 }
 
 .completion-card h2 {
-  font-size: 1.8rem;
-  color: #333;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  color: var(--text);
+  margin-bottom: 0.75rem;
 }
 
 .completion-card p {
   font-size: 1rem;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 
 .return-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8b7dff, #6159d6);
   color: white;
   border: none;
   padding: 1rem 2rem;
-  border-radius: 8px;
+  border-radius: 18px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.3s;
+  gap: 0.75rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .return-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 20px 44px rgba(107, 93, 255, 0.28);
 }
-
-/* ======================================
-   レスポンシブ
-   ====================================== */
 
 @media (max-width: 768px) {
   .study-header {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .header-left {
-    width: 100%;
+    gap: 0.75rem;
   }
 
   .study-main {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 
   .question-card {
-    padding: 1.5rem;
+    padding: 1.6rem;
   }
 
   .question-card h2 {
-    font-size: 1.2rem;
-    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
   }
 
   .action-buttons {

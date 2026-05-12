@@ -12,7 +12,9 @@ function initSupabase() {
 
   const config = window.SUPABASE_CONFIG;
 
-  if (!config.url || !config.key) {
+  console.log('Loaded Supabase config:', config);
+
+  if (!config || !config.url || !config.key) {
 
     console.error('Supabaseの設定が不足しています。study.htmlのSUPABASE_CONFIGを設定してください。');
 
@@ -55,8 +57,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function initPage() {
 
+  // URLクエリからexamIdを取得
+  const params = new URLSearchParams(window.location.search);
+  const examIdFromQuery = Number(params.get("examId"));
+
   // localStorageから選択中の資格を取得
-  const selectedExamName = localStorage.getItem("selectedExam") || "AWS CCP";
+  const storedExamId = Number(localStorage.getItem("selectedExamId"));
+  const storedExamName = localStorage.getItem("selectedExam");
 
   // 資格データ
   const exams = [
@@ -68,10 +75,17 @@ async function initPage() {
 
   ];
 
-  // 資格IDを取得
-  const exam = exams.find(e => e.shortName === selectedExamName);
+  // examIdを優先的に使用
+  if (examIdFromQuery && !Number.isNaN(examIdFromQuery)) {
+    currentExamId = examIdFromQuery;
+  } else if (storedExamId && !Number.isNaN(storedExamId)) {
+    currentExamId = storedExamId;
+  } else {
+    currentExamId = 1;
+  }
 
-  currentExamId = exam?.id || 1;
+  const currentExam = exams.find(e => e.id === currentExamId);
+  const selectedExamName = storedExamName || currentExam?.shortName || "AWS CCP";
 
   // ヘッダーに資格名を表示
   document.getElementById("exam-name-header").textContent = selectedExamName;
@@ -112,6 +126,16 @@ async function loadQuestions() {
       console.error('Questions fetch error:', questionsError);
 
       alert('問題の取得に失敗しました');
+
+      return;
+
+    }
+
+    if (!questionsData || questionsData.length === 0) {
+
+      console.warn('questionsData is empty or missing for exam_id', currentExamId);
+
+      alert('該当する問題が見つかりませんでした');
 
       return;
 
