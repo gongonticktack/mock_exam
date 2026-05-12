@@ -701,13 +701,6 @@ confirmCancelBtn.addEventListener("click", () => {
   confirmCard.style.display = "none";
 
 });
-    const errorMsg = `${new Date().toLocaleString()}: ERROR: ${message} at ${source}:${lineno}:${colno}`;
-    const p = document.createElement('p');
-    p.textContent = errorMsg;
-    errorLog.appendChild(p);
-    errorLog.style.display = 'block';
-  }
-};
 
 // ======================================
 // console.logをオーバーライドしてHTMLにも表示
