@@ -167,6 +167,8 @@ examCards.forEach((card, index) => {
     // active追加
     card.classList.add("active");
 
+    console.log('Exam card clicked - index:', index, 'examId:', exams[index].id, 'examName:', exams[index].shortName);
+
     // 更新
     updateExam(index);
 
@@ -193,6 +195,8 @@ importButton.addEventListener("click", () => {
   const selectedExamId = Number(activeCard.dataset.examId);
   const selectedExam =
     activeCard.dataset.examShortName;
+
+  console.log('Import button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam);
 
   // LocalStorage保存
   localStorage.setItem(
@@ -230,6 +234,8 @@ startButton.addEventListener("click", () => {
   const selectedExam =
     activeCard.dataset.examShortName;
 
+  console.log('Start button clicked - selectedExamId:', selectedExamId, 'selectedExam:', selectedExam, 'activeCard.dataset:', activeCard.dataset);
+
   // LocalStorage保存
   localStorage.setItem(
     "selectedExamId",
@@ -240,9 +246,14 @@ startButton.addEventListener("click", () => {
     selectedExam
   );
 
+  // 前回学習していた問題インデックスを取得（ない場合は0）
+  const lastExamId = Number(localStorage.getItem("lastStudyExamId")) || 0;
+  const lastQuestionIndex = Number(localStorage.getItem("lastQuestionIndex")) || 0;
+  const startIndex = lastExamId === selectedExamId ? lastQuestionIndex : 0;
+
   // 学習ページへ移動
   window.location.href =
-    `study.html?examId=${selectedExamId}`;
+    `study.html?examId=${selectedExamId}&questionIndex=${startIndex}`;
 
 });
 

@@ -83,15 +83,16 @@ async function initPage() {
     }
   };
 
-  // URLクエリからexamIdを取得
+  // URLクエリからexamIdと問題インデックスを取得
   const params = new URLSearchParams(window.location.search);
   const examIdFromQuery = Number(params.get("examId"));
+  const questionIndexFromQuery = Number(params.get("questionIndex")) || 0;
 
   // localStorageから選択中の資格を取得
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
 
-  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
+  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'questionIndexFromQuery=', questionIndexFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
 
   // 資格データ
   const exams = [
@@ -123,10 +124,14 @@ async function initPage() {
   console.log('initPage: start loading questions for examId=', currentExamId);
   await loadQuestions();
 
-  // 最初の問題を表示
+  // URLパラメータで指定された問題インデックスを使用
+  const startIndex = Math.min(questionIndexFromQuery, Math.max(0, questions.length - 1));
+  console.log('initPage: starting from question index=', startIndex);
+
+  // 問題を表示
   if (questions.length > 0) {
 
-    displayQuestion(0);
+    displayQuestion(startIndex);
 
   } else {
 
@@ -533,6 +538,10 @@ function showCompletionScreen() {
 // ======================================
 
 document.getElementById("back-btn").addEventListener("click", () => {
+
+  // 現在の学習状態を保存（次回のセッションで復帰するため）
+  localStorage.setItem("lastStudyExamId", currentExamId);
+  localStorage.setItem("lastQuestionIndex", currentQuestionIndex);
 
   window.location.href = "index.html";
 
