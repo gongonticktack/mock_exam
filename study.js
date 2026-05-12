@@ -65,6 +65,8 @@ async function initPage() {
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
 
+  console.log('initPage: examIdFromQuery=', examIdFromQuery, 'storedExamId=', storedExamId, 'storedExamName=', storedExamName);
+
   // 資格データ
   const exams = [
 
@@ -84,6 +86,7 @@ async function initPage() {
     currentExamId = 1;
   }
 
+  console.log('initPage: using currentExamId=', currentExamId);
   const currentExam = exams.find(e => e.id === currentExamId);
   const selectedExamName = storedExamName || currentExam?.shortName || "AWS CCP";
 
@@ -91,6 +94,7 @@ async function initPage() {
   document.getElementById("exam-name-header").textContent = selectedExamName;
 
   // DBから問題を取得
+  console.log('initPage: start loading questions for examId=', currentExamId);
   await loadQuestions();
 
   // 最初の問題を表示
@@ -100,6 +104,7 @@ async function initPage() {
 
   } else {
 
+    console.warn('initPage: no questions loaded for examId=', currentExamId);
     alert('問題がありません');
 
   }
@@ -172,7 +177,7 @@ async function loadQuestions() {
 
     questions = questionsWithChoices;
 
-    console.log('Questions loaded:', questions);
+    console.log('loadQuestions: questions loaded count=', questions.length, 'for examId=', currentExamId, questions);
 
   } catch (error) {
 
@@ -216,6 +221,8 @@ function displayQuestion(index) {
     `${((index + 1) / questions.length) * 100}%`;
 
   // カテゴリを表示
+  console.log('displayQuestion: index=', index, 'questionId=', question.id, 'question=', question.question, 'choices=', question.choices?.length);
+
   document.getElementById("question-category").textContent =
     question.category;
 
@@ -317,6 +324,8 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
   });
 
+  console.log('answer-btn: selectedChoices=', selectedChoices);
+
   // 正解の選択肢を取得
   const correctChoices = [];
 
@@ -348,6 +357,8 @@ document.getElementById("answer-btn").addEventListener("click", () => {
     selectedIndices.length === correctIndices.length &&
     selectedIndices.every((val, idx) => val === correctIndices[idx]) &&
     selectedChoices.length === correctIndices.length;
+
+  console.log('answer-btn: correctIndices=', correctIndices, 'selectedIndices=', selectedIndices, 'isCorrect=', isCorrect);
 
   // 結果を表示
   displayResult(isCorrect, correctChoices, selectedChoices);
