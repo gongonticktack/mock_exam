@@ -10,9 +10,5 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ],
-  "vars": {
-    "SUPABASE_URL": "",
-    "SUPABASE_ANON_KEY": ""
-  }
+  ]
 }

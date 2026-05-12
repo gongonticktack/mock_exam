@@ -180,6 +180,20 @@ IAM | IAMの機能は？ | 認証,認可,CDN,監視 | 1,2
 
   <!-- SheetJS (最初に読み込む) -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Supabase 設定 -->
+  <script>
+    // wrangler.jsonc から取得した設定情報
+    // または環境に合わせて直接設定してください
+    window.SUPABASE_CONFIG = {
+      url: "https://zitegvqzczynprrrrlcz.supabase.co", // https://your-project.supabase.co のような形式
+      key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppdGVndnF6Y3p5bnBycnJybGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MTQ3NDcsImV4cCI6MjA5NDA5MDc0N30.zqACnMJnbo7KN5EF1lC6E8Di2Y9jM906z0u_nn0UyEM"  // Anon Key を入力してください
+    };
+  </script>
+
   <!-- JS -->
   <script src="question-import.js"></script>
 </body>

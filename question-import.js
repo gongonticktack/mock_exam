@@ -1,4 +1,31 @@
 // ======================================
+// Supabase 初期化
+// ======================================
+
+let supabaseClient = null;
+
+function initSupabase() {
+
+  const config = window.SUPABASE_CONFIG;
+
+  if (!config.url || !config.key) {
+
+    console.error('Supabaseの設定が不足しています。question-import.htmlのSUPABASE_CONFIGを設定してください。');
+
+    return false;
+
+  }
+
+  supabaseClient = window.supabase.createClient(
+    config.url,
+    config.key
+  );
+
+  return true;
+
+}
+
+// ======================================
 // ログ表示
 // ======================================
 
@@ -543,66 +570,121 @@ confirmOkBtn.addEventListener("click", async () => {
   // ログ初期化
   logArea.innerHTML = "";
 
+  // Supabase 初期化確認
+  if (!initSupabase()) {
+
+    addLog(
+      "Supabaseの設定に失敗しました",
+      "error"
+    );
+
+    return;
+
+  }
+
   // 現在の validQuestions を取得（グローバル変数として保存）
   const questionsToImport = window.validQuestions;
 
-  // API送信
+  // DB登録
   let successCount = 0;
 
   for (const questionData of questionsToImport) {
 
-    // Cloudflare Pages / Workers 側で公開された API エンドポイントへ送信
-    const response =
-      await fetch(
-        "/api/questions/import",
-        {
-          method: "POST",
+    try {
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+      // ======================================
+      // 問題を登録
+      // ======================================
 
-          body: JSON.stringify({
-
-            exam_id:
-              selectedExam,
-
-            category:
-              questionData.category,
-
-            question:
-              questionData.question,
-
-            choices:
-              questionData.choices
-
+      const { data: questionResult, error: questionError } =
+        await supabaseClient
+          .from('questions')
+          .insert({
+            exam_id: selectedExam,
+            category: questionData.category,
+            question: questionData.question,
+            explanation: ''
           })
+          .select();
 
-        }
-      );
+      if (questionError) {
 
-    // レスポンスが成功でなければ、JSON 変換前にエラー内容を取得してログに表示
-    if (!response.ok) {
-      const errorText = await response.text();
-      addLog(
-        `APIエラー ${response.status}: ${errorText}`,
-        "error"
-      );
-      continue;
-    }
+        console.error('Question insert error:', questionError);
 
-    const result =
-      await response.json();
+        addLog(
+          `問題の登録に失敗: ${questionData.question}`,
+          "error"
+        );
 
-    if (result.success) {
+        continue;
+
+      }
+
+      const questionId = questionResult[0]?.id;
+
+      if (!questionId) {
+
+        addLog(
+          `問題IDの取得に失敗: ${questionData.question}`,
+          "error"
+        );
+
+        continue;
+
+      }
+
+      console.log('Question inserted, ID:', questionId);
+
+      // ======================================
+      // 選択肢を登録
+      // ======================================
+
+      const choicesToInsert =
+        questionData.choices.map((choice) => ({
+
+          question_id: questionId,
+
+          choice_index: choice.choice_index,
+
+          content: choice.content,
+
+          is_correct: choice.is_correct
+
+        }));
+
+      const { error: choiceError } =
+        await supabaseClient
+          .from('choices')
+          .insert(choicesToInsert);
+
+      if (choiceError) {
+
+        console.error('Choices insert error:', choiceError);
+
+        addLog(
+          `選択肢の登録に失敗: ${questionData.question}`,
+          "error"
+        );
+
+        continue;
+
+      }
+
+      console.log('Choices inserted');
 
       successCount++;
 
-    } else {
+      addLog(
+        `登録完了: ${questionData.question}`,
+        "success"
+      );
+
+    } catch (error) {
+
+      console.error('Error during registration:', error);
 
       addLog(
-        `登録失敗: ${questionData.question}`,
+        `エラーが発生しました: ${error.message}`,
         "error"
       );
 
