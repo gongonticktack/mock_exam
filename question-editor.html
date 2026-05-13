@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+  <!-- 文字コード -->
+  <meta charset="UTF-8">
+
+  <!-- レスポンシブ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- タイトル -->
+  <title>問題編集 | QualiStudy</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="question-editor.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- XLSX (Excel) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+</head>
+
+<body>
+
+  <!-- ========================= -->
+  <!-- ローディング画面 -->
+  <!-- ========================= -->
+
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner">
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+      </div>
+      <h3>問題を読み込み中...</h3>
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- サイドバー -->
+  <!-- ========================= -->
+
+  <aside class="sidebar">
+
+    <a href="index.html" class="logo-link">
+
+      <div class="logo">
+
+        <i class="fa-solid fa-graduation-cap"></i>
+
+        <span>QualiStudy</span>
+
+      </div>
+
+    </a>
+
+    <div class="selected-exam">
+
+      <p class="label">
+        編集対象資格
+      </p>
+
+      <h2 id="exam-name">
+        AWS CCP
+      </h2>
+
+    </div>
+
+  </aside>
+
+  <!-- ========================= -->
+  <!-- メイン -->
+  <!-- ========================= -->
+
+  <main class="main-content">
+
+    <!-- タイトル -->
+    <section class="page-header">
+
+      <h1>
+        問題編集
+      </h1>
+
+      <p>
+        DBに登録している問題を編集または削除します
+      </p>
+
+    </section>
+
+    <!-- ツールバー -->
+    <section class="toolbar">
+
+      <div class="toolbar-left">
+
+        <input 
+          type="text" 
+          id="search-input" 
+          class="search-input" 
+          placeholder="問題を検索..."
+        >
+
+      </div>
+
+      <div class="toolbar-right">
+
+        <button type="button" id="export-json-btn" class="export-btn">
+
+          <i class="fa-solid fa-download"></i>
+
+          JSON形式でエクスポート
+
+        </button>
+
+        <button type="button" id="export-excel-btn" class="export-btn">
+
+          <i class="fa-solid fa-download"></i>
+
+          Excel形式でエクスポート
+
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- エディタエリア -->
+    <section class="editor-area">
+
+      <!-- 左：問題一覧 -->
+      <div class="questions-panel">
+
+        <h2>問題一覧</h2>
+
+        <div id="questions-list" class="questions-list">
+
+          <!-- 問題リストがここに表示される -->
+
+        </div>
+
+      </div>
+
+      <!-- 右：編集フォーム -->
+      <div class="editor-panel">
+
+        <div id="no-selection" class="no-selection">
+
+          <i class="fa-solid fa-arrow-left"></i>
+
+          <p>左から問題を選択してください</p>
+
+        </div>
+
+        <form id="editor-form" class="editor-form" style="display: none;">
+
+          <!-- 問題ID（非表示） -->
+          <input type="hidden" id="question-id">
+
+          <!-- カテゴリ -->
+          <div class="form-group">
+
+            <label for="category">カテゴリ</label>
+
+            <input 
+              type="text" 
+              id="category" 
+              class="form-input"
+              placeholder="例：EC2"
+            >
+
+          </div>
+
+          <!-- 問題 -->
+          <div class="form-group">
+
+            <label for="question">問題</label>
+
+            <textarea 
+              id="question" 
+              class="form-textarea"
+              rows="4"
+              placeholder="問題文を入力"
+            ></textarea>
+
+          </div>
+
+          <!-- 選択肢 -->
+          <div class="form-group">
+
+            <label>選択肢</label>
+
+            <div id="choices-container" class="choices-container">
+
+              <!-- 選択肢がここに表示される -->
+
+            </div>
+
+            <button type="button" id="add-choice-btn" class="add-choice-btn">
+
+              <i class="fa-solid fa-plus"></i>
+
+              選択肢を追加
+
+            </button>
+
+          </div>
+
+          <!-- 解説 -->
+          <div class="form-group">
+
+            <label for="explanation">解説</label>
+
+            <textarea 
+              id="explanation" 
+              class="form-textarea"
+              rows="4"
+              placeholder="解説を入力"
+            ></textarea>
+
+          </div>
+
+          <!-- ボタン -->
+          <div class="form-buttons">
+
+            <button type="submit" class="save-btn">
+
+              <i class="fa-solid fa-floppy-disk"></i>
+
+              保存
+
+            </button>
+
+            <button type="button" id="delete-btn" class="delete-btn">
+
+              <i class="fa-solid fa-trash-can"></i>
+
+              削除
+
+            </button>
+
+            <button type="button" id="cancel-btn" class="cancel-btn">
+
+              <i class="fa-solid fa-ban"></i>
+
+              キャンセル
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 設定を読み込んでからJSを実行 -->
+  <script>
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.jsonが見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        // 設定完了後に question-editor.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'question-editor.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+        // 例外の場合でも question-editor.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'question-editor.js';
+        document.body.appendChild(script);
+      });
+  </script>
+
+</body>
+
+</html>

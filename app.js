@@ -409,6 +409,49 @@ startButton.addEventListener("click", () => {
 });
 
 // ======================================
+// 問題編集ボタン
+// ======================================
+
+// ボタン取得
+const editButton =
+  document.querySelector(".edit-btn");
+
+// クリックイベント
+editButton.addEventListener("click", () => {
+
+  // 現在activeの資格取得
+  const activeCard =
+    document.querySelector(".exam-card.active");
+
+  // 資格ID / 資格名取得
+  let selectedExamId = activeCard ? Number(activeCard.dataset.examId) : NaN;
+  let selectedExam = activeCard ? activeCard.dataset.examShortName : null;
+
+  // fallback: localStorage に保存されているものを使う
+  if (!selectedExamId || Number.isNaN(selectedExamId)) {
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+  }
+  if (!selectedExam) {
+    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+  }
+
+  // LocalStorage保存
+  localStorage.setItem(
+    "selectedExamId",
+    selectedExamId
+  );
+  localStorage.setItem(
+    "selectedExam",
+    selectedExam
+  );
+
+  // 編集ページへ移動
+  window.location.href =
+    `question-editor.html?examId=${selectedExamId}&selectedExam=${encodeURIComponent(selectedExam)}`;
+
+});
+
+// ======================================
 // 🎯 ページロード時の初期処理
 // ======================================
 

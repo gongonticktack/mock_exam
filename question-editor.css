@@ -1,0 +1,658 @@
+:root {
+  --bg: #070912;
+  --surface: rgba(16, 20, 45, 0.92);
+  --surface-soft: rgba(18, 24, 60, 0.7);
+  --border: rgba(255, 255, 255, 0.11);
+  --accent: #8b7dff;
+  --accent-soft: rgba(139, 125, 255, 0.16);
+  --text: #eef2ff;
+  --text-muted: #aab3d1;
+  --danger: #fb7185;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Noto Sans JP", sans-serif;
+  background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.14), transparent 24%), radial-gradient(circle at bottom right, rgba(102, 125, 255, 0.12), transparent 20%), linear-gradient(135deg, #04050c 0%, #0b1023 45%, #070912 100%);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ========================= */
+/* サイドバー */
+/* ========================= */
+
+.sidebar {
+  width: 280px;
+  padding: 28px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.01), 0 30px 90px rgba(0, 0, 0, 0.22);
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.logo-link {
+  text-decoration: none;
+  display: block;
+  margin-bottom: 60px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.selected-exam {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 24px;
+  padding: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+  font-size: 0.92rem;
+}
+
+.selected-exam h2 {
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+/* ========================= */
+/* メインコンテンツ */
+/* ========================= */
+
+.main-content {
+  flex: 1;
+  padding: 36px;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.page-header p {
+  color: var(--text-muted);
+  max-width: 720px;
+  line-height: 1.75;
+}
+
+/* ========================= */
+/* ツールバー */
+/* ========================= */
+
+.toolbar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar-left {
+  flex: 1;
+  min-width: 250px;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ========================= */
+/* エクスポートボタン */
+/* ========================= */
+
+.export-btn {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #8b7dff, #6f5efc);
+  border: none;
+  color: white;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 12px 28px rgba(107, 93, 255, 0.2);
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(107, 93, 255, 0.3);
+}
+
+/* ========================= */
+/* エディタエリア */
+/* ========================= */
+
+.editor-area {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  height: calc(100vh - 400px);
+}
+
+.questions-panel,
+.editor-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.22);
+  overflow-y: auto;
+}
+
+.questions-panel h2,
+.editor-panel h2 {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+/* ========================= */
+/* 問題一覧 */
+/* ========================= */
+
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.question-item {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.question-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-soft);
+}
+
+.question-item.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.question-item-number {
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.question-item.active .question-item-number {
+  background: var(--accent);
+  color: white;
+}
+
+.question-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.question-item-category {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.question-item-text {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.no-questions {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ========================= */
+/* エディタパネル */
+/* ========================= */
+
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  min-height: 300px;
+  font-size: 0.95rem;
+}
+
+.no-selection i {
+  font-size: 2rem;
+}
+
+/* ========================= */
+/* フォーム */
+/* ========================= */
+
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-input,
+.form-textarea {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: "Noto Sans JP", sans-serif;
+  transition: border-color 0.3s ease;
+  resize: vertical;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(139, 125, 255, 0.08);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ========================= */
+/* 選択肢管理 */
+/* ========================= */
+
+.choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.choice-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.choice-header label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.choice-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.choice-actions label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.choice-actions input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.delete-choice-btn {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+}
+
+.delete-choice-btn:hover {
+  color: #ff6b7a;
+}
+
+.choice-input {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: "Noto Sans JP", sans-serif;
+}
+
+.choice-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(139, 125, 255, 0.08);
+}
+
+.add-choice-btn {
+  padding: 10px 14px;
+  background: rgba(139, 125, 255, 0.2);
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.add-choice-btn:hover {
+  background: rgba(139, 125, 255, 0.3);
+}
+
+/* ========================= */
+/* フォームボタン */
+/* ========================= */
+
+.form-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.save-btn,
+.delete-btn,
+.cancel-btn {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: white;
+  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.2);
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(74, 222, 128, 0.3);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #fb7185, #f43f5e);
+  color: white;
+  box-shadow: 0 8px 20px rgba(251, 113, 133, 0.2);
+}
+
+.delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(251, 113, 133, 0.3);
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================= */
+/* ローディング画面 */
+/* ========================= */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loading-spinner {
+  font-size: 3rem;
+  color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-content h3 {
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+/* ========================= */
+/* レスポンシブ */
+/* ========================= */
+
+@media (max-width: 1024px) {
+  .editor-area {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .questions-panel,
+  .editor-panel {
+    max-height: 600px;
+  }
+
+  .form-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .delete-btn {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+  }
+
+  .main-content {
+    padding: 20px;
+    height: auto;
+  }
+
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    width: 100%;
+  }
+
+  .toolbar-right {
+    flex-direction: column;
+  }
+
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .editor-area {
+    grid-template-columns: 1fr;
+  }
+
+  .form-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================= */
+/* スクロールバーカスタマイズ */
+/* ========================= */
+
+.sidebar::-webkit-scrollbar,
+.main-content::-webkit-scrollbar,
+.questions-panel::-webkit-scrollbar,
+.editor-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track,
+.questions-panel::-webkit-scrollbar-track,
+.editor-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb,
+.questions-panel::-webkit-scrollbar-thumb,
+.editor-panel::-webkit-scrollbar-thumb {
+  background: rgba(139, 125, 255, 0.3);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.main-content::-webkit-scrollbar-thumb:hover,
+.questions-panel::-webkit-scrollbar-thumb:hover,
+.editor-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 125, 255, 0.5);
+}
