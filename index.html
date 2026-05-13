@@ -291,8 +291,33 @@
 
   </main>
 
-  <!-- JS -->
-  <script src="app.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 設定を読み込んでからJSを実行 -->
+  <script>
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.jsonが見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        // 設定完了後に app.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'app.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+        // 例外誰場合でも app.js を読み込む
+        const script = document.createElement('script');
+        script.src = 'app.js';
+        document.body.appendChild(script);
+      });
+  </script>
 
 </body>
 

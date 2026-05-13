@@ -1,4 +1,48 @@
 // ======================================
+// ☁️ Supabase（クラウドDB）初期化
+// ======================================
+
+let supabaseClient = null;
+
+function initSupabase() {
+  const config = window.SUPABASE_CONFIG;
+  if (!config || !config.url || !config.key) {
+    console.warn('Supabase設定が不正です。DB機能が使用できません');
+    return false;
+  }
+  supabaseClient = window.supabase.createClient(config.url, config.key);
+  return true;
+}
+
+// Supabase初期化
+initSupabase();
+
+// ======================================
+// 問題数をDBから取得
+// ======================================
+
+async function fetchQuestionCount(examId) {
+  if (!supabaseClient) {
+    return null;
+  }
+  try {
+    const { count, error } = await supabaseClient
+      .from('questions')
+      .select('*', { count: 'exact', head: true })
+      .eq('exam_id', examId);
+    
+    if (error) {
+      console.error('問題数取得エラー:', error);
+      return null;
+    }
+    return count;
+  } catch (error) {
+    console.error('問題数取得中にエラー発生:', error);
+    return null;
+  }
+}
+
+// ======================================
 // 📚 資格（試験）データ
 // ======================================
 // 各試験の情報を定義しています
@@ -187,7 +231,7 @@ const weaknessItems =
 // 画面更新
 // ======================================
 
-function updateExam(index) {
+async function updateExam(index) {
 
   // 対象資格
   const exam = exams[index];
@@ -203,9 +247,13 @@ function updateExam(index) {
   // アイコン
   heroIcon.className = `fa-solid ${exam.icon} hero-icon`;
 
+  // 問題数をDBから取得して更新
+  const dbQuestionCount = await fetchQuestionCount(exam.id);
+  const displayQuestionCount = dbQuestionCount !== null ? dbQuestionCount : exam.stats.questions;
+
   // ステータス
   statQuestions.textContent =
-    `${exam.stats.questions}問`;
+    `${displayQuestionCount}問`;
 
   statAccuracy.textContent =
     exam.stats.accuracy;
@@ -244,7 +292,7 @@ function updateExam(index) {
 
 examCards.forEach((card, index) => {
 
-  card.addEventListener("click", () => {
+  card.addEventListener("click", async () => {
 
     // active削除
     examCards.forEach((c) => {
@@ -258,7 +306,7 @@ examCards.forEach((card, index) => {
 
     // 👆 クリックされた試験の情報をメイン表示に反映
     // 更新
-    updateExam(index);
+    await updateExam(index);
 
     // 選択中の資格を保存しておく
     localStorage.setItem("selectedExamId", exams[index].id);
@@ -365,4 +413,6 @@ startButton.addEventListener("click", () => {
 // ======================================
 
 // 最初に表示する試験（AWS CCP：id=0）
-updateExam(0);
+(async () => {
+  await updateExam(0);
+})();
