@@ -284,3 +284,63 @@ input[type="file"] {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  body {
+    min-width: 0;
+  }
+
+  .main-content {
+    padding: 24px 18px;
+  }
+
+  .sidebar {
+    padding: 22px 18px;
+    border-radius: 0 0 26px 26px;
+  }
+
+  .format-box,
+  .upload-area,
+  .log-card,
+  .confirm-card {
+    padding: 24px;
+  }
+
+  .format-box {
+    gap: 18px;
+  }
+
+  pre {
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .upload-area {
+    align-items: stretch;
+  }
+
+  .upload-area h2,
+  .upload-area p {
+    text-align: center;
+  }
+
+  input[type="file"] {
+    width: 100%;
+  }
+
+  #import-btn,
+  #confirm-ok-btn,
+  #confirm-cancel-btn {
+    width: 100%;
+  }
+
+  .confirm-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .confirm-item {
+    padding: 18px;
+  }
+}
