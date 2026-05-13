@@ -101,7 +101,7 @@ body {
   color: var(--text-muted);
 }
 
-.add-btn {
+.edit-exams-btn {
   width: 100%;
   margin-top: 20px;
   background: rgba(255, 255, 255, 0.04);
@@ -115,7 +115,7 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-.add-btn:hover {
+.edit-exams-btn:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
 }
