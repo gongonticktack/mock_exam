@@ -452,6 +452,22 @@ editButton.addEventListener("click", () => {
 });
 
 // ======================================
+// 資格編集ボタン
+// ======================================
+
+// ボタン取得
+const editExamsButton =
+  document.querySelector(".edit-exams-btn");
+
+// クリックイベント
+editExamsButton.addEventListener("click", () => {
+
+  // 資格管理ページへ移動
+  window.location.href = "exam-manager.html";
+
+});
+
+// ======================================
 // 🎯 ページロード時の初期処理
 // ======================================
 
