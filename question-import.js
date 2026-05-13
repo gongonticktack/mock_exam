@@ -169,7 +169,7 @@ const importButton =
   document.getElementById("import-btn");
 
 const fileInput =
-  document.getElementById("excel-file");
+  document.getElementById("import-file");
 
 const logArea =
   document.getElementById("log-area");
@@ -203,7 +203,7 @@ importButton.addEventListener("click", async () => {
   if (!file) {
 
     addLog(
-      "Excelファイルを選択してください",
+      "ファイルを選択してください",
       "error"
     );
 
@@ -211,34 +211,130 @@ importButton.addEventListener("click", async () => {
 
   }
 
+  const extension =
+    file.name
+      .split('.')
+      .pop()
+      .toLowerCase();
+
+  const supportedExtensions =
+    ["xlsx", "xls", "json"];
+
+  if (!supportedExtensions.includes(extension)) {
+
+    addLog(
+      "対応していないファイル形式です。.xlsx / .xls / .json を選択してください",
+      "error"
+    );
+
+    return;
+
+  }
+
+  let rows = [];
+  let isJsonFile = extension === "json";
+
   try {
 
-    // ArrayBuffer化
-    const buffer =
-      await file.arrayBuffer();
+    if (isJsonFile) {
 
-    // workbook生成
-    const workbook =
-      XLSX.read(buffer);
+      const text = await file.text();
+      const data = JSON.parse(text);
 
-    // 先頭シート取得
-    const sheetName =
-      workbook.SheetNames[0];
+      if (!data || !Array.isArray(data.questions)) {
 
-    const sheet =
-      workbook.Sheets[sheetName];
+        addLog(
+          "JSON形式が不正です。questions 配列を用意してください。",
+          "error"
+        );
 
-    // JSON変換
-    const rows =
-      XLSX.utils.sheet_to_json(sheet, {
-        defval: ""
+        return;
+
+      }
+
+      rows = data.questions.map((item, index) => {
+
+        const choices = Array.isArray(item.choices)
+          ? item.choices
+              .map((v) => String(v).trim())
+              .filter((v) => v)
+          : [];
+
+        const answerField = item.answer ?? item.answers;
+
+        if (!choices.length) {
+
+          throw new Error(`JSON ${index + 1}件目: choices が配列で2個以上必要です`);
+
+        }
+
+        const answerValues = Array.isArray(answerField)
+          ? answerField
+          : [answerField];
+
+        const parsedAnswers = answerValues
+          .map((v) => {
+            if (v === null || v === undefined || v === "") {
+              return null;
+            }
+            const parsed = Number(v);
+            return Number.isInteger(parsed) ? parsed : null;
+          })
+          .filter((v) => v !== null);
+
+        if (!parsedAnswers.length) {
+
+          throw new Error(`JSON ${index + 1}件目: answer が指定されていません。数値のインデックスを指定してください。`);
+
+        }
+
+        const invalidIndex = parsedAnswers.find(
+          (value) => value < 1 || value > choices.length
+        );
+
+        if (invalidIndex !== undefined) {
+          throw new Error(`JSON ${index + 1}件目: answer '${invalidIndex}' は choices の範囲外です`);
+        }
+
+        return {
+          category: item.category ?? "",
+          question: item.question ?? "",
+          choices: choices.join(","),
+          answers: [...new Set(parsedAnswers)].join(",")
+        };
+
       });
+
+    } else {
+
+      // ArrayBuffer化
+      const buffer =
+        await file.arrayBuffer();
+
+      // workbook生成
+      const workbook =
+        XLSX.read(buffer);
+
+      // 先頭シート取得
+      const sheetName =
+        workbook.SheetNames[0];
+
+      const sheet =
+        workbook.Sheets[sheetName];
+
+      // JSON変換
+      rows =
+        XLSX.utils.sheet_to_json(sheet, {
+          defval: ""
+        });
+
+    }
 
     // 空チェック
     if (rows.length === 0) {
 
       addLog(
-        "Excelにデータがありません",
+        isJsonFile ? "JSONにデータがありません" : "Excelにデータがありません",
         "error"
       );
 
@@ -282,10 +378,8 @@ importButton.addEventListener("click", async () => {
 
     rows.forEach((row, index) => {
 
-      // Excel行番号
-      // headerが1行あるため+2
       const rowNumber =
-        index + 2;
+        index + (isJsonFile ? 1 : 2);
 
       // trim
       const category =
@@ -485,9 +579,11 @@ importButton.addEventListener("click", async () => {
   } catch (error) {
 
     addLog(
-      "Excel読み込み中にエラーが発生しました",
+      error.message || "ファイル読み込み中にエラーが発生しました",
       "error"
     );
+
+    return;
 
   }
 
