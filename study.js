@@ -8,6 +8,7 @@ let questions = [];
 let currentQuestionIndex = 0;
 let currentExamId = 1;
 let answered = false;
+let loadingProgress = 0;
 
 function initSupabase() {
 
@@ -31,7 +32,35 @@ function initSupabase() {
 }
 
 // ======================================
-// 🚀 アプリケーション開始
+// � ローディング画面制御
+// ======================================
+
+function startLoading() {
+
+  document.getElementById('loading-overlay').style.display = 'flex';
+
+  loadingProgress = 0;
+
+  updateLoadingProgress();
+
+}
+
+function updateLoadingProgress() {
+
+  document.getElementById('loading-progress-bar').style.width = `${loadingProgress}%`;
+
+  document.getElementById('loading-text').textContent = `${loadingProgress}%`;
+
+}
+
+function stopLoading() {
+
+  document.getElementById('loading-overlay').style.display = 'none';
+
+}
+
+// ======================================
+// �🚀 アプリケーション開始
 // ======================================
 
 async function startStudyApp() {
@@ -146,6 +175,8 @@ async function loadQuestions() {
 
   try {
 
+    startLoading();
+
     // 問題を取得
     const { data: questionsData, error: questionsError } =
       await supabaseClient
@@ -157,6 +188,8 @@ async function loadQuestions() {
 
       alert('問題の取得に失敗しました');
 
+      stopLoading();
+
       return;
 
     }
@@ -165,14 +198,19 @@ async function loadQuestions() {
 
       alert('該当する問題が見つかりませんでした');
 
+      stopLoading();
+
       return;
 
     }
 
     // 各問題に対して選択肢を取得
     const questionsWithChoices = [];
+    const total = questionsData.length;
 
-    for (const question of questionsData) {
+    for (let i = 0; i < total; i++) {
+
+      const question = questionsData[i];
 
       const { data: choicesData, error: choicesError } =
         await supabaseClient
@@ -194,13 +232,22 @@ async function loadQuestions() {
 
       });
 
+      // プログレス更新
+      loadingProgress = Math.floor(((i + 1) / total) * 100);
+
+      updateLoadingProgress();
+
     }
 
     questions = questionsWithChoices;
 
+    stopLoading();
+
   } catch (error) {
 
     alert('問題の読み込み中にエラーが発生しました');
+
+    stopLoading();
 
   }
 

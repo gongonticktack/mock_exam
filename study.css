@@ -26,6 +26,58 @@ body {
   color: var(--text);
 }
 
+/* ローディング画面 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(7, 9, 18, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-content {
+  text-align: center;
+  color: var(--text);
+}
+
+.loading-spinner {
+  font-size: 3rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.loading-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.loading-progress-container {
+  width: 300px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.loading-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #8b7dff 0%, #6b63fc 100%);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.loading-content p {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
 .study-header {
   background: rgba(14, 18, 40, 0.94);
   padding: 1.2rem 2rem;
