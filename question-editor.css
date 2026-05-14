@@ -18,11 +18,16 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   font-family: "Noto Sans JP", sans-serif;
   background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.14), transparent 24%), radial-gradient(circle at bottom right, rgba(102, 125, 255, 0.12), transparent 20%), linear-gradient(135deg, #04050c 0%, #0b1023 45%, #070912 100%);
   color: var(--text);
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
 }
 
@@ -86,9 +91,9 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
   padding: 36px;
   overflow: hidden;
-  max-height: 100vh;
 }
 
 .page-header {
