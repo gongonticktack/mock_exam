@@ -589,9 +589,15 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
 
     if (error) {
       console.error('学習履歴の保存に失敗しました', error);
+      if (error.code === '42501') {
+        alert('学習履歴の保存に失敗しました。SupabaseのRLSポリシーが exam_histories への挿入を拒否しています。table policy を確認してください。');
+      }
     }
   } catch (error) {
     console.error('学習履歴の保存に失敗しました', error);
+    if (error && error.code === '42501') {
+      alert('学習履歴の保存に失敗しました。SupabaseのRLSポリシーが exam_histories への挿入を拒否しています。table policy を確認してください。');
+    }
   }
 }
 

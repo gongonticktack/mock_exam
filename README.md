@@ -40,11 +40,15 @@ CREATE INDEX idx_choices_question_id ON choices(question_id);
 -- RLSポリシー（すべてのユーザーで読み取り・書き込み許可）
 ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE choices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exam_histories ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all operations on questions" ON questions
   FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow all operations on choices" ON choices
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all operations on exam_histories" ON exam_histories
   FOR ALL USING (true) WITH CHECK (true);
 ```
 
