@@ -20,15 +20,16 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   font-family: "Noto Sans JP", sans-serif;
   background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.14), transparent 24%), radial-gradient(circle at bottom right, rgba(102, 125, 255, 0.12), transparent 20%), linear-gradient(135deg, #04050c 0%, #0b1023 45%, #070912 100%);
   color: var(--text);
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
+  overflow-y: auto;
 }
 
 /* ========================= */
@@ -91,9 +92,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
   padding: 36px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .page-header {
@@ -190,7 +190,7 @@ body {
   gap: 24px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .questions-panel,
