@@ -31,9 +31,28 @@ body {
   display: flex;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 0;
+  padding-right: 0;
   touch-action: pan-y;
+}
+
+@media (min-width: 1025px) {
+  body {
+    overflow-y: hidden;
+  }
+
+  .main-content {
+    overflow: hidden;
+  }
+
+  .editor-area {
+    min-height: calc(100vh - 220px);
+  }
+
+  .questions-panel,
+  .editor-panel {
+    max-height: calc(100vh - 260px);
+  }
 }
 
 /* ========================= */
@@ -639,6 +658,8 @@ body {
 @media (max-width: 768px) {
   body {
     flex-direction: column;
+    padding-left: 10px;
+    padding-right: 0;
   }
 
   .sidebar {
