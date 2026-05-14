@@ -42,90 +42,111 @@ async function fetchQuestionCount(examId) {
   }
 }
 
-// ======================================
-// 📚 資格（試験）データをDBから取得
-// ======================================
-
-let exams = [];
-
-async function loadExamsFromDB() {
+async function fetchExamHistory(examId, limit = 3) {
   if (!supabaseClient) {
-    console.warn('Supabaseが初期化されていないため、ハードコードされたデータを使用します');
-    // フォールバック: ハードコードされたデータ
-    exams = [
-      {
-        id: 1,
-        shortName: "AWS CCP",
-        title: "AWS Cloud Practitioner",
-        description: "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
-        icon: "fa-cloud",
-        stats: { questions: 320, accuracy: "78%", studyTime: "18時間", studyDays: "12日" },
-        history: ["EC2 インスタンスの基本", "IAM ユーザーとグループ", "S3 ストレージの仕組み"],
-        weakness: [{ name: "IAM", rate: "45%" }, { name: "VPC", rate: "55%" }, { name: "セキュリティ", rate: "60%" }]
-      },
-      {
-        id: 2,
-        shortName: "UML L2",
-        title: "UMLモデリング技能認定 L2",
-        description: "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
-        icon: "fa-diagram-project",
-        stats: { questions: 180, accuracy: "61%", studyTime: "9時間", studyDays: "5日" },
-        history: ["クラス図の記法", "シーケンス図の作成", "ユースケース図"],
-        weakness: [{ name: "シーケンス図", rate: "40%" }, { name: "ステートマシン", rate: "50%" }, { name: "コンポーネント図", rate: "65%" }]
-      },
-      {
-        id: 3,
-        shortName: "HTML5 L1",
-        title: "HTML5 Professional Level1",
-        description: "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
-        icon: "fa-code",
-        stats: { questions: 250, accuracy: "83%", studyTime: "14時間", studyDays: "10日" },
-        history: ["HTML5の新要素", "CSS Flexbox", "JavaScript DOM操作"],
-        weakness: [{ name: "Canvas API", rate: "35%" }, { name: "Web Storage", rate: "45%" }, { name: "Geolocation", rate: "55%" }]
-      },
-      {
-        id: 4,
-        shortName: "アジャイル",
-        title: "アジャイル開発技術者試験",
-        description: "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
-        icon: "fa-rotate",
-        stats: { questions: 90, accuracy: "92%", studyTime: "5時間", studyDays: "3日" },
-        history: ["スクラムの役割", "XPのプラクティス", "アジャイルマニフェスト"],
-        weakness: [{ name: "テスト駆動開発", rate: "30%" }, { name: "継続的インテグレーション", rate: "40%" }, { name: "ペアプログラミング", rate: "50%" }]
-      }
-    ];
-    return;
+    return [];
   }
 
   try {
     const { data, error } = await supabaseClient
-      .from('exams')
+      .from('exam_histories')
       .select('*')
-      .order('id');
+      .eq('exam_id', examId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
-      console.error('試験データの取得に失敗:', error);
-      // フォールバック
-      loadExamsFromDB();
-      return;
+      console.error('学習履歴取得エラー:', error);
+      return [];
     }
 
-    exams = data.map(exam => ({
-      id: exam.id,
-      shortName: exam.name.split(' ').pop() || exam.name, // 簡易的なshortName生成
-      title: exam.name,
-      description: exam.description,
-      icon: exam.icon,
-      stats: { questions: 0, accuracy: "0%", studyTime: "0時間", studyDays: "0日" }, // デフォルト値
-      history: [],
-      weakness: []
-    }));
+    return data || [];
   } catch (error) {
-    console.error('試験データ読み込みエラー:', error);
-    // フォールバック
-    loadExamsFromDB();
+    console.error('学習履歴取得中にエラー発生:', error);
+    return [];
   }
 }
+
+async function fetchExamAccuracy(examId) {
+  if (!supabaseClient) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('exam_histories')
+      .select('correct_count,total_count')
+      .eq('exam_id', examId);
+
+    if (error) {
+      console.error('正答率取得エラー:', error);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const totalCorrect = data.reduce((sum, item) => sum + (item.correct_count || 0), 0);
+    const totalCount = data.reduce((sum, item) => sum + (item.total_count || 0), 0);
+
+    if (totalCount === 0) {
+      return null;
+    }
+
+    return Math.round((totalCorrect / totalCount) * 100);
+  } catch (error) {
+    console.error('正答率計算中にエラー発生:', error);
+    return null;
+  }
+}
+
+// ======================================
+// 📚 資格（試験）データ
+// ======================================
+
+const exams = [
+  {
+    id: 1,
+    shortName: "AWS CCP",
+    title: "AWS Cloud Practitioner",
+    description: "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
+    icon: "fa-cloud",
+    stats: { questions: 320, accuracy: "78%", studyTime: "18時間", studyDays: "12日" },
+    history: ["EC2 インスタンスの基本", "IAM ユーザーとグループ", "S3 ストレージの仕組み"],
+    weakness: [{ name: "IAM", rate: "45%" }, { name: "VPC", rate: "55%" }, { name: "セキュリティ", rate: "60%" }]
+  },
+  {
+    id: 2,
+    shortName: "UML L2",
+    title: "UMLモデリング技能認定 L2",
+    description: "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
+    icon: "fa-diagram-project",
+    stats: { questions: 180, accuracy: "61%", studyTime: "9時間", studyDays: "5日" },
+    history: ["クラス図の記法", "シーケンス図の作成", "ユースケース図"],
+    weakness: [{ name: "シーケンス図", rate: "40%" }, { name: "ステートマシン", rate: "50%" }, { name: "コンポーネント図", rate: "65%" }]
+  },
+  {
+    id: 3,
+    shortName: "HTML5 L1",
+    title: "HTML5 Professional Level1",
+    description: "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
+    icon: "fa-code",
+    stats: { questions: 250, accuracy: "83%", studyTime: "14時間", studyDays: "10日" },
+    history: ["HTML5の新要素", "CSS Flexbox", "JavaScript DOM操作"],
+    weakness: [{ name: "Canvas API", rate: "35%" }, { name: "Web Storage", rate: "45%" }, { name: "Geolocation", rate: "55%" }]
+  },
+  {
+    id: 4,
+    shortName: "アジャイル",
+    title: "アジャイル開発技術者試験",
+    description: "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
+    icon: "fa-rotate",
+    stats: { questions: 90, accuracy: "92%", studyTime: "5時間", studyDays: "3日" },
+    history: ["スクラムの役割", "XPのプラクティス", "アジャイルマニフェスト"],
+    weakness: [{ name: "テスト駆動開発", rate: "30%" }, { name: "継続的インテグレーション", rate: "40%" }, { name: "ペアプログラミング", rate: "50%" }]
+  }
+];
 
 // ======================================
 // HTML取得
@@ -133,12 +154,6 @@ async function loadExamsFromDB() {
 
 const examCards =
   document.querySelectorAll(".exam-card");
-
-// exam card に exam id を紐づけ
-examCards.forEach((card, index) => {
-  card.dataset.examId = exams[index].id;
-  card.dataset.examShortName = exams[index].shortName;
-});
 
 const examTitle =
   document.getElementById("exam-title");
@@ -195,8 +210,9 @@ async function updateExam(index) {
   statQuestions.textContent =
     `${displayQuestionCount}問`;
 
+  const dbAccuracy = await fetchExamAccuracy(exam.id);
   statAccuracy.textContent =
-    exam.stats.accuracy;
+    dbAccuracy !== null ? `${dbAccuracy}%` : exam.stats.accuracy;
 
   statStudyTime.textContent =
     exam.stats.studyTime;
@@ -206,11 +222,29 @@ async function updateExam(index) {
 
   // 学習履歴
   historyList.innerHTML = "";
-  exam.history.forEach(item => {
+  const historyItems = await fetchExamHistory(exam.id);
+
+  if (historyItems.length > 0) {
+    historyItems.forEach(item => {
+      const li = document.createElement("li");
+      const date = new Date(item.created_at).toLocaleDateString('ja-JP', {
+        month: '2-digit',
+        day: '2-digit'
+      });
+      li.textContent = `${date}：${item.activity}${item.result_rate !== null && item.result_rate !== undefined ? `（${item.result_rate}%）` : ''}`;
+      historyList.appendChild(li);
+    });
+  } else if (exam.history && exam.history.length > 0) {
+    exam.history.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      historyList.appendChild(li);
+    });
+  } else {
     const li = document.createElement("li");
-    li.textContent = item;
+    li.textContent = '学習履歴はまだありません';
     historyList.appendChild(li);
-  });
+  }
 
   // 苦手分野
   weaknessItems.forEach((item, i) => {
@@ -391,28 +425,11 @@ editButton.addEventListener("click", () => {
 
 });
 
-// ======================================
-// 資格編集ボタン
-// ======================================
 
-// ボタン取得
-const editExamsButton =
-  document.querySelector(".edit-exams-btn");
-
-// クリックイベント
-editExamsButton.addEventListener("click", () => {
-
-  // 資格管理ページへ移動
-  window.location.href = "exam-manager.html";
-
-});
-
-// ======================================
 // 🎯 ページロード時の初期処理
 // ======================================
 
 // 最初に表示する試験（AWS CCP：id=0）
 (async () => {
-  await loadExamsFromDB();
   await updateExam(0);
 })();

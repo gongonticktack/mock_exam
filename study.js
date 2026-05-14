@@ -102,21 +102,18 @@ async function initPage() {
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
 
-  // DBから試験データを取得
-  const { data: examsData, error } = await supabaseClient
-    .from('exams')
-    .select('*');
-
-  if (error) {
-    alert('試験データの取得に失敗しました');
-    return;
-  }
+  const exams = [
+    { id: 1, shortName: "AWS CCP", name: "AWS Cloud Practitioner" },
+    { id: 2, shortName: "UML L2", name: "UMLモデリング技能認定 L2" },
+    { id: 3, shortName: "HTML5 L1", name: "HTML5 Professional Level1" },
+    { id: 4, shortName: "アジャイル", name: "アジャイル開発技術者試験" }
+  ];
 
   let selectedExamName = selectedExamFromQuery || storedExamName;
   let selectedExamId = null;
 
   if (selectedExamName) {
-    const examFromName = examsData.find(e => e.name === selectedExamName);
+    const examFromName = exams.find(e => e.shortName === selectedExamName || e.name === selectedExamName);
     if (examFromName) {
       selectedExamId = examFromName.id;
     }
@@ -134,7 +131,7 @@ async function initPage() {
     selectedExamId = 1;
   }
 
-  const currentExam = examsData.find(e => e.id === selectedExamId);
+  const currentExam = exams.find(e => e.id === selectedExamId);
   if (!selectedExamName) {
     selectedExamName = currentExam?.name || "AWS Cloud Practitioner";
   }
@@ -442,6 +439,9 @@ document.getElementById("answer-btn").addEventListener("click", () => {
   // 結果を表示
   displayResult(isCorrect, correctChoices, selectedChoices);
 
+  // 学習履歴をDBに保存
+  saveExamHistory(isCorrect, currentQuestionIndex, selectedChoices);
+
   // 選択肢を無効化
   checkboxes.forEach((checkbox) => {
 
@@ -519,6 +519,36 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 
   }
 
+}
+
+async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
+  if (!supabaseClient || !currentExamId) {
+    return;
+  }
+
+  const question = questions[questionIndex];
+  const activity = question ? question.question : `問題 ${questionIndex + 1}`;
+  const correctCount = isCorrect ? 1 : 0;
+  const totalCount = 1;
+  const resultRate = isCorrect ? 100 : 0;
+  const details = `選択: ${selectedChoices.map(c => c.choice_index).join(', ')}`;
+
+  try {
+    await supabaseClient
+      .from('exam_histories')
+      .insert([
+        {
+          exam_id: currentExamId,
+          activity,
+          correct_count: correctCount,
+          total_count: totalCount,
+          result_rate: resultRate,
+          details
+        }
+      ]);
+  } catch (error) {
+    console.error('学習履歴の保存に失敗しました', error);
+  }
 }
 
 // ======================================
