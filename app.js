@@ -43,149 +43,89 @@ async function fetchQuestionCount(examId) {
 }
 
 // ======================================
-// 📚 資格（試験）データ
+// 📚 資格（試験）データをDBから取得
 // ======================================
-// 各試験の情報を定義しています
 
-const exams = [
+let exams = [];
 
-  {
-    id: 1,
-    shortName: "AWS CCP",
-
-    title: "AWS Cloud Practitioner",
-
-    description:
-      "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
-
-    icon: "fa-cloud",
-
-    stats: {
-
-      questions: 320,
-      accuracy: "78%",
-      studyTime: "18時間",
-      studyDays: "12日"
-
-    },
-
-    history: [
-      "EC2 インスタンスの基本",
-      "IAM ユーザーとグループ",
-      "S3 ストレージの仕組み"
-    ],
-
-    weakness: [
-      { name: "IAM", rate: "45%" },
-      { name: "VPC", rate: "55%" },
-      { name: "セキュリティ", rate: "60%" }
-    ]
-
-  },
-
-  {
-    id: 2,
-    shortName: "UML L2",
-
-    title: "UMLモデリング技能認定 L2",
-
-    description:
-      "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
-
-    icon: "fa-diagram-project",
-
-    stats: {
-
-      questions: 180,
-      accuracy: "61%",
-      studyTime: "9時間",
-      studyDays: "5日"
-
-    },
-
-    history: [
-      "クラス図の記法",
-      "シーケンス図の作成",
-      "ユースケース図"
-    ],
-
-    weakness: [
-      { name: "シーケンス図", rate: "40%" },
-      { name: "ステートマシン", rate: "50%" },
-      { name: "コンポーネント図", rate: "65%" }
-    ]
-
-  },
-
-  {
-    id: 3,
-    shortName: "HTML5 L1",
-
-    title: "HTML5 Professional Level1",
-
-    description:
-      "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
-
-    icon: "fa-code",
-
-    stats: {
-
-      questions: 250,
-      accuracy: "83%",
-      studyTime: "14時間",
-      studyDays: "10日"
-
-    },
-
-    history: [
-      "HTML5の新要素",
-      "CSS Flexbox",
-      "JavaScript DOM操作"
-    ],
-
-    weakness: [
-      { name: "Canvas API", rate: "35%" },
-      { name: "Web Storage", rate: "45%" },
-      { name: "Geolocation", rate: "55%" }
-    ]
-
-  },
-
-  {
-    id: 4,
-    shortName: "アジャイル",
-
-    title: "アジャイル開発技術者試験",
-
-    description:
-      "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
-
-    icon: "fa-rotate",
-
-    stats: {
-
-      questions: 90,
-      accuracy: "92%",
-      studyTime: "5時間",
-      studyDays: "3日"
-
-    },
-
-    history: [
-      "スクラムの役割",
-      "XPのプラクティス",
-      "アジャイルマニフェスト"
-    ],
-
-    weakness: [
-      { name: "テスト駆動開発", rate: "30%" },
-      { name: "継続的インテグレーション", rate: "40%" },
-      { name: "ペアプログラミング", rate: "50%" }
-    ]
-
+async function loadExamsFromDB() {
+  if (!supabaseClient) {
+    console.warn('Supabaseが初期化されていないため、ハードコードされたデータを使用します');
+    // フォールバック: ハードコードされたデータ
+    exams = [
+      {
+        id: 1,
+        shortName: "AWS CCP",
+        title: "AWS Cloud Practitioner",
+        description: "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
+        icon: "fa-cloud",
+        stats: { questions: 320, accuracy: "78%", studyTime: "18時間", studyDays: "12日" },
+        history: ["EC2 インスタンスの基本", "IAM ユーザーとグループ", "S3 ストレージの仕組み"],
+        weakness: [{ name: "IAM", rate: "45%" }, { name: "VPC", rate: "55%" }, { name: "セキュリティ", rate: "60%" }]
+      },
+      {
+        id: 2,
+        shortName: "UML L2",
+        title: "UMLモデリング技能認定 L2",
+        description: "クラス図、シーケンス図、オブジェクト指向設計などを学ぶ資格。",
+        icon: "fa-diagram-project",
+        stats: { questions: 180, accuracy: "61%", studyTime: "9時間", studyDays: "5日" },
+        history: ["クラス図の記法", "シーケンス図の作成", "ユースケース図"],
+        weakness: [{ name: "シーケンス図", rate: "40%" }, { name: "ステートマシン", rate: "50%" }, { name: "コンポーネント図", rate: "65%" }]
+      },
+      {
+        id: 3,
+        shortName: "HTML5 L1",
+        title: "HTML5 Professional Level1",
+        description: "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
+        icon: "fa-code",
+        stats: { questions: 250, accuracy: "83%", studyTime: "14時間", studyDays: "10日" },
+        history: ["HTML5の新要素", "CSS Flexbox", "JavaScript DOM操作"],
+        weakness: [{ name: "Canvas API", rate: "35%" }, { name: "Web Storage", rate: "45%" }, { name: "Geolocation", rate: "55%" }]
+      },
+      {
+        id: 4,
+        shortName: "アジャイル",
+        title: "アジャイル開発技術者試験",
+        description: "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
+        icon: "fa-rotate",
+        stats: { questions: 90, accuracy: "92%", studyTime: "5時間", studyDays: "3日" },
+        history: ["スクラムの役割", "XPのプラクティス", "アジャイルマニフェスト"],
+        weakness: [{ name: "テスト駆動開発", rate: "30%" }, { name: "継続的インテグレーション", rate: "40%" }, { name: "ペアプログラミング", rate: "50%" }]
+      }
+    ];
+    return;
   }
 
-];
+  try {
+    const { data, error } = await supabaseClient
+      .from('exams')
+      .select('*')
+      .order('id');
+
+    if (error) {
+      console.error('試験データの取得に失敗:', error);
+      // フォールバック
+      loadExamsFromDB();
+      return;
+    }
+
+    exams = data.map(exam => ({
+      id: exam.id,
+      shortName: exam.name.split(' ').pop() || exam.name, // 簡易的なshortName生成
+      title: exam.name,
+      description: exam.description,
+      icon: exam.icon,
+      stats: { questions: 0, accuracy: "0%", studyTime: "0時間", studyDays: "0日" }, // デフォルト値
+      history: [],
+      weakness: []
+    }));
+  } catch (error) {
+    console.error('試験データ読み込みエラー:', error);
+    // フォールバック
+    loadExamsFromDB();
+  }
+}
 
 // ======================================
 // HTML取得
@@ -473,5 +413,6 @@ editExamsButton.addEventListener("click", () => {
 
 // 最初に表示する試験（AWS CCP：id=0）
 (async () => {
+  await loadExamsFromDB();
   await updateExam(0);
 })();

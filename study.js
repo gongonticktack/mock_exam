@@ -102,21 +102,21 @@ async function initPage() {
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
   const storedExamName = localStorage.getItem("selectedExam");
 
-  // 資格データ
-  const exams = [
+  // DBから試験データを取得
+  const { data: examsData, error } = await supabaseClient
+    .from('exams')
+    .select('*');
 
-    { id: 1, shortName: "AWS CCP" },
-    { id: 2, shortName: "UML L2" },
-    { id: 3, shortName: "HTML5 L1" },
-    { id: 4, shortName: "アジャイル" }
-
-  ];
+  if (error) {
+    alert('試験データの取得に失敗しました');
+    return;
+  }
 
   let selectedExamName = selectedExamFromQuery || storedExamName;
   let selectedExamId = null;
 
   if (selectedExamName) {
-    const examFromName = exams.find(e => e.shortName === selectedExamName);
+    const examFromName = examsData.find(e => e.name === selectedExamName);
     if (examFromName) {
       selectedExamId = examFromName.id;
     }
@@ -134,9 +134,9 @@ async function initPage() {
     selectedExamId = 1;
   }
 
-  const currentExam = exams.find(e => e.id === selectedExamId);
+  const currentExam = examsData.find(e => e.id === selectedExamId);
   if (!selectedExamName) {
-    selectedExamName = currentExam?.shortName || "AWS CCP";
+    selectedExamName = currentExam?.name || "AWS Cloud Practitioner";
   }
 
   currentExamId = selectedExamId;

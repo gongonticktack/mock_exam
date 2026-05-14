@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>試験管理 | QualiStudy</title>
+  <link rel="stylesheet" href="exam-manager.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <a href="index.html" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        戻る
+      </a>
+    </div>
+    <div class="header-center">
+      <h1>試験管理</h1>
+    </div>
+    <div class="header-right">
+      <button id="add-exam-btn" class="add-btn">
+        <i class="fa-solid fa-plus"></i>
+        新規追加
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="exam-list" id="exam-list">
+      <!-- 試験一覧がここに表示される -->
+    </div>
+
+    <div class="exam-editor" id="exam-editor" style="display: none;">
+      <h2 id="editor-title">試験編集</h2>
+      <form id="exam-form">
+        <div class="form-group">
+          <label for="exam-name">試験名</label>
+          <input type="text" id="exam-name" required>
+        </div>
+        <div class="form-group">
+          <label for="exam-description">試験概要</label>
+          <textarea id="exam-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="exam-icon">アイコン (FontAwesomeクラス)</label>
+          <input type="text" id="exam-icon" placeholder="例: fa-cloud">
+        </div>
+        <div class="form-actions">
+          <button type="button" id="save-btn" class="save-btn">保存</button>
+          <button type="button" id="cancel-btn" class="cancel-btn">キャンセル</button>
+          <button type="button" id="delete-btn" class="delete-btn" style="display: none;">削除</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    fetch('supabase-config.json')
+      .then(response => response.json())
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        const script = document.createElement('script');
+        script.src = 'exam-manager.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+      });
+  </script>
+</body>
+
+</html>

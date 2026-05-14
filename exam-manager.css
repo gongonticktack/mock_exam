@@ -1,0 +1,218 @@
+:root {
+  --bg: #070912;
+  --surface: rgba(16, 20, 45, 0.88);
+  --surface-soft: rgba(18, 24, 60, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #8b7dff;
+  --accent-soft: rgba(139, 125, 255, 0.18);
+  --text: #eef2ff;
+  --text-muted: #aab3d1;
+  --success: #4ade80;
+  --danger: #f97373;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: radial-gradient(circle at top right, rgba(139, 125, 255, 0.12), transparent 30%),
+              radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.04), transparent 18%),
+              linear-gradient(135deg, #05070f 0%, #0d1121 60%, #090b16 100%);
+  min-height: 100vh;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: rgba(14, 18, 40, 0.94);
+  padding: 1.2rem 2rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.header-left .back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  transition: transform 0.3s ease, background 0.3s ease;
+  text-decoration: none;
+}
+
+.header-left .back-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(139, 125, 255, 0.14);
+}
+
+.header-center h1 {
+  font-size: 1.8rem;
+  color: var(--text);
+}
+
+.add-btn {
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.add-btn:hover {
+  transform: translateY(-2px);
+  background: #6b63fc;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  gap: 2rem;
+}
+
+.exam-list {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.exam-card {
+  background: rgba(15, 19, 43, 0.95);
+  border-radius: 28px;
+  padding: 2rem;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.exam-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.35);
+}
+
+.exam-card .icon {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.exam-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.exam-card p {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.exam-editor {
+  flex: 1;
+  background: rgba(15, 19, 43, 0.95);
+  border-radius: 28px;
+  padding: 2rem;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.exam-editor h2 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.save-btn,
+.cancel-btn,
+.delete-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.save-btn {
+  background: var(--success);
+  color: var(--text);
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.cancel-btn:hover {
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: var(--danger);
+  color: var(--text);
+}
+
+.delete-btn:hover {
+  transform: translateY(-2px);
+}
