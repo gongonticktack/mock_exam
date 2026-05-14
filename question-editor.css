@@ -43,15 +43,16 @@ body {
 
   .main-content {
     overflow: hidden;
+    max-height: 100vh;
   }
 
   .editor-area {
-    min-height: calc(100vh - 220px);
+    min-height: calc(100vh - 200px);
   }
 
   .questions-panel,
   .editor-panel {
-    max-height: calc(100vh - 260px);
+    max-height: calc(100vh - 280px);
   }
 }
 
