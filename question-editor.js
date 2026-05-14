@@ -164,13 +164,27 @@ function displayQuestionsList() {
   questions.forEach((question, index) => {
     const item = document.createElement('div');
     item.className = 'question-item';
-    item.innerHTML = `
-      <div class="question-item-number">${index + 1}</div>
-      <div class="question-item-content">
-        <div class="question-item-category">${question.category}</div>
-        <div class="question-item-text">${question.question.substring(0, 50)}${question.question.length > 50 ? '...' : ''}</div>
-      </div>
-    `;
+
+    const numberDiv = document.createElement('div');
+    numberDiv.className = 'question-item-number';
+    numberDiv.textContent = index + 1;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'question-item-content';
+
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'question-item-category';
+    categoryDiv.textContent = question.category;
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'question-item-text';
+    const questionText = question.question || '';
+    textDiv.textContent = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText;
+
+    contentDiv.appendChild(categoryDiv);
+    contentDiv.appendChild(textDiv);
+    item.appendChild(numberDiv);
+    item.appendChild(contentDiv);
 
     item.addEventListener('click', () => {
       // 全ての問題アイテムからactiveクラスを削除
@@ -234,29 +248,45 @@ function createChoiceElement(choice, index) {
   choiceDiv.className = 'choice-item';
   choiceDiv.dataset.choiceId = choice.id;
 
-  choiceDiv.innerHTML = `
-    <div class="choice-header">
-      <label>選択肢 ${choice.choice_index}</label>
-      <div class="choice-actions">
-        <label>
-          <input type="checkbox" class="correct-checkbox" ${choice.is_correct ? 'checked' : ''}>
-          正解
-        </label>
-        <button type="button" class="delete-choice-btn" title="削除">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      </div>
-    </div>
-    <input 
-      type="text" 
-      class="choice-input" 
-      value="${choice.content}"
-      placeholder="選択肢を入力"
-    >
-  `;
+  const choiceHeader = document.createElement('div');
+  choiceHeader.className = 'choice-header';
+
+  const choiceLabel = document.createElement('label');
+  choiceLabel.textContent = `選択肢 ${choice.choice_index}`;
+
+  const choiceActions = document.createElement('div');
+  choiceActions.className = 'choice-actions';
+
+  const correctLabel = document.createElement('label');
+  const correctCheckbox = document.createElement('input');
+  correctCheckbox.type = 'checkbox';
+  correctCheckbox.className = 'correct-checkbox';
+  correctCheckbox.checked = !!choice.is_correct;
+  correctLabel.appendChild(correctCheckbox);
+  correctLabel.append(' 正解');
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'delete-choice-btn';
+  deleteBtn.title = '削除';
+  deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+
+  choiceActions.appendChild(correctLabel);
+  choiceActions.appendChild(deleteBtn);
+  choiceHeader.appendChild(choiceLabel);
+  choiceHeader.appendChild(choiceActions);
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'choice-input';
+  input.value = choice.content || '';
+  input.placeholder = '選択肢を入力';
+
+  choiceDiv.appendChild(choiceHeader);
+  choiceDiv.appendChild(input);
 
   // 削除ボタンのイベント
-  choiceDiv.querySelector('.delete-choice-btn').addEventListener('click', (e) => {
+  deleteBtn.addEventListener('click', (e) => {
     e.preventDefault();
     choiceDiv.remove();
   });
