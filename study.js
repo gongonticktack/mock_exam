@@ -9,6 +9,7 @@ let currentQuestionIndex = 0;
 let currentExamId = 1;
 let answered = false;
 let loadingProgress = 0;
+let currentStudySessionStartedAt = null;
 
 function initSupabase() {
 
@@ -137,6 +138,7 @@ async function initPage() {
   }
 
   currentExamId = selectedExamId;
+  currentStudySessionStartedAt = new Date().toISOString();
 
   // ヘッダーに資格名を表示
   document.getElementById("exam-name-header").textContent = selectedExamName;
@@ -527,6 +529,7 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
   }
 
   const question = questions[questionIndex];
+  const questionId = question ? question.id : null;
   const activity = question ? question.question : `問題 ${questionIndex + 1}`;
   const correctCount = isCorrect ? 1 : 0;
   const totalCount = 1;
@@ -539,9 +542,13 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
       .insert([
         {
           exam_id: currentExamId,
+          question_id: questionId,
+          exam_started_at: currentStudySessionStartedAt,
+          answered_at: new Date().toISOString(),
           activity,
           correct_count: correctCount,
           total_count: totalCount,
+          is_correct: isCorrect,
           result_rate: resultRate,
           details
         }

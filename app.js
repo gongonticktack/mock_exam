@@ -52,7 +52,7 @@ async function fetchExamHistory(examId, limit = 3) {
       .from('exam_histories')
       .select('*')
       .eq('exam_id', examId)
-      .order('created_at', { ascending: false })
+      .order('answered_at', { ascending: false })
       .limit(limit);
 
     if (error) {
@@ -98,6 +98,131 @@ async function fetchExamAccuracy(examId) {
   } catch (error) {
     console.error('正答率計算中にエラー発生:', error);
     return null;
+  }
+}
+
+async function fetchExamSummary(examId) {
+  if (!supabaseClient) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('exam_histories')
+      .select('is_correct,answered_at,exam_started_at')
+      .eq('exam_id', examId);
+
+    if (error) {
+      console.error('学習サマリー取得エラー:', error);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const totalCorrect = data.reduce((sum, item) => sum + (item.is_correct ? 1 : 0), 0);
+    const totalCount = data.length;
+    const studyDays = new Set(
+      data
+        .map(item => item.answered_at)
+        .filter(Boolean)
+        .map(ts => new Date(ts).toISOString().slice(0, 10))
+    ).size;
+
+    const sessions = data.reduce((acc, item) => {
+      if (!item.exam_started_at || !item.answered_at) {
+        return acc;
+      }
+      const startTime = new Date(item.exam_started_at).getTime();
+      const answeredTime = new Date(item.answered_at).getTime();
+      const sessionKey = item.exam_started_at;
+      if (!acc[sessionKey] || acc[sessionKey].lastAnswered < answeredTime) {
+        acc[sessionKey] = { startTime, lastAnswered: answeredTime };
+      }
+      return acc;
+    }, {});
+
+    const totalSeconds = Object.values(sessions).reduce(
+      (sum, session) => sum + Math.max(0, (session.lastAnswered - session.startTime) / 1000),
+      0
+    );
+
+    return {
+      accuracy: totalCount === 0 ? null : Math.round((totalCorrect / totalCount) * 100),
+      study_time: totalSeconds > 0 ? `${Math.ceil(totalSeconds / 3600)}時間` : null,
+      study_days: studyDays > 0 ? `${studyDays}日` : null
+    };
+  } catch (error) {
+    console.error('学習サマリー計算中にエラー発生:', error);
+    return null;
+  }
+}
+
+async function fetchExamWeaknesses(examId) {
+  if (!supabaseClient) {
+    return [];
+  }
+
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const { data, error } = await supabaseClient
+      .from('exam_histories')
+      .select('question_id,activity')
+      .eq('exam_id', examId)
+      .gte('answered_at', oneWeekAgo.toISOString());
+
+    if (error) {
+      console.error('苦手分野取得エラー:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    const questionIds = [...new Set(data.map(item => item.question_id).filter(Boolean))];
+    const categoryMap = {};
+
+    if (questionIds.length > 0) {
+      const { data: questionsData, error: questionsError } = await supabaseClient
+        .from('questions')
+        .select('id,category')
+        .in('id', questionIds);
+
+      if (!questionsError && questionsData) {
+        questionsData.forEach(q => {
+          if (q && q.id != null) {
+            categoryMap[q.id] = q.category || '未分類';
+          }
+        });
+      }
+    }
+
+    const grouped = data.reduce((acc, item) => {
+      const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : item.activity || '未分類';
+      if (!acc[key]) {
+        acc[key] = { count: 0 };
+      }
+      acc[key].count += 1;
+      return acc;
+    }, {});
+
+    const weaknesses = Object.entries(grouped)
+      .map(([name, stats]) => ({
+        name,
+        rate: `${stats.count}問`,
+        count: stats.count
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
+    return weaknesses;
+  } catch (error) {
+    console.error('苦手分野計算中にエラー発生:', error);
+    return [];
   }
 }
 
@@ -210,15 +335,13 @@ async function updateExam(index) {
   statQuestions.textContent =
     `${displayQuestionCount}問`;
 
-  const dbAccuracy = await fetchExamAccuracy(exam.id);
+  const examSummary = await fetchExamSummary(exam.id);
   statAccuracy.textContent =
-    dbAccuracy !== null ? `${dbAccuracy}%` : exam.stats.accuracy;
-
+    examSummary && examSummary.accuracy !== null ? `${examSummary.accuracy}%` : exam.stats.accuracy;
   statStudyTime.textContent =
-    exam.stats.studyTime;
-
+    examSummary && examSummary.study_time ? examSummary.study_time : exam.stats.studyTime;
   statStudyDays.textContent =
-    exam.stats.studyDays;
+    examSummary && examSummary.study_days ? examSummary.study_days : exam.stats.studyDays;
 
   // 学習履歴
   historyList.innerHTML = "";
@@ -227,11 +350,12 @@ async function updateExam(index) {
   if (historyItems.length > 0) {
     historyItems.forEach(item => {
       const li = document.createElement("li");
-      const date = new Date(item.created_at).toLocaleDateString('ja-JP', {
+      const date = new Date(item.answered_at || item.created_at).toLocaleDateString('ja-JP', {
         month: '2-digit',
         day: '2-digit'
       });
-      li.textContent = `${date}：${item.activity}${item.result_rate !== null && item.result_rate !== undefined ? `（${item.result_rate}%）` : ''}`;
+      const resultLabel = item.is_correct ? '正解' : '不正解';
+      li.textContent = `${date}：${item.activity}（${resultLabel}${item.result_rate !== null && item.result_rate !== undefined ? `・${item.result_rate}%` : ''}）`;
       historyList.appendChild(li);
     });
   } else if (exam.history && exam.history.length > 0) {
@@ -247,10 +371,12 @@ async function updateExam(index) {
   }
 
   // 苦手分野
+  const weaknessData = await fetchExamWeaknesses(exam.id);
   weaknessItems.forEach((item, i) => {
-    if (exam.weakness[i]) {
-      item.querySelector("span:first-child").textContent = exam.weakness[i].name;
-      item.querySelector("span:last-child").textContent = exam.weakness[i].rate;
+    const weakness = weaknessData[i] || exam.weakness[i];
+    if (weakness) {
+      item.querySelector("span:first-child").textContent = weakness.name;
+      item.querySelector("span:last-child").textContent = weakness.rate;
     }
   });
 

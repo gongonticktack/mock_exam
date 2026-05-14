@@ -212,20 +212,27 @@ body {
 }
 
 .question-item {
-  padding: 12px;
+  padding: 18px 16px;
+  min-height: 80px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
 }
 
 .question-item:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--accent-soft);
+}
+
+.question-item-text {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.7;
 }
 
 .question-item.active {
