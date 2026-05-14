@@ -73,28 +73,55 @@ async function fetchExamAccuracy(examId) {
   }
 
   try {
-    const { data, error } = await supabaseClient
+    let data;
+    let error;
+    let result = null;
+
+    ({ data, error } = await supabaseClient
       .from('exam_histories')
       .select('is_correct')
-      .eq('exam_id', examId);
+      .eq('exam_id', examId));
 
     if (error) {
-      console.error('正答率取得エラー:', error);
-      return null;
+      console.warn('is_correct取得エラー、legacy schemaを試行します:', error.message || error);
+      ({ data, error } = await supabaseClient
+        .from('exam_histories')
+        .select('correct_count,total_count')
+        .eq('exam_id', examId));
+
+      if (error) {
+        console.error('正答率取得エラー:', error);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const totalCorrect = data.reduce((sum, item) => sum + (item.correct_count || 0), 0);
+      const totalCount = data.reduce((sum, item) => sum + (item.total_count || 0), 0);
+
+      if (totalCount === 0) {
+        return null;
+      }
+
+      result = Math.round((totalCorrect / totalCount) * 100);
+    } else {
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const totalCorrect = data.reduce((sum, item) => sum + (item.is_correct ? 1 : 0), 0);
+      const totalCount = data.length;
+
+      if (totalCount === 0) {
+        return null;
+      }
+
+      result = Math.round((totalCorrect / totalCount) * 100);
     }
 
-    if (!data || data.length === 0) {
-      return null;
-    }
-
-    const totalCorrect = data.reduce((sum, item) => sum + (item.is_correct ? 1 : 0), 0);
-    const totalCount = data.length;
-
-    if (totalCount === 0) {
-      return null;
-    }
-
-    return Math.round((totalCorrect / totalCount) * 100);
+    return result;
   } catch (error) {
     console.error('正答率計算中にエラー発生:', error);
     return null;
@@ -107,10 +134,23 @@ async function fetchExamSummary(examId) {
   }
 
   try {
-    const { data, error } = await supabaseClient
+    let data;
+    let error;
+    let useLegacy = false;
+
+    ({ data, error } = await supabaseClient
       .from('exam_histories')
       .select('is_correct,answered_at,exam_started_at')
-      .eq('exam_id', examId);
+      .eq('exam_id', examId));
+
+    if (error) {
+      console.warn('学習サマリー取得でis_correct列が見つかりません。legacy schemaを試行します:', error.message || error);
+      useLegacy = true;
+      ({ data, error } = await supabaseClient
+        .from('exam_histories')
+        .select('correct_count,total_count,answered_at,exam_started_at')
+        .eq('exam_id', examId));
+    }
 
     if (error) {
       console.error('学習サマリー取得エラー:', error);
@@ -121,8 +161,8 @@ async function fetchExamSummary(examId) {
       return null;
     }
 
-    const totalCorrect = data.reduce((sum, item) => sum + (item.is_correct ? 1 : 0), 0);
-    const totalCount = data.length;
+    const totalCorrect = data.reduce((sum, item) => sum + (useLegacy ? (item.correct_count || 0) : (item.is_correct ? 1 : 0)), 0);
+    const totalCount = useLegacy ? data.reduce((sum, item) => sum + (item.total_count || 0), 0) : data.length;
     const studyDays = new Set(
       data
         .map(item => item.answered_at)
@@ -168,11 +208,23 @@ async function fetchExamWeaknesses(examId) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const { data, error } = await supabaseClient
+    let data;
+    let error;
+
+    ({ data, error } = await supabaseClient
       .from('exam_histories')
       .select('question_id,activity')
       .eq('exam_id', examId)
-      .gte('answered_at', oneWeekAgo.toISOString());
+      .gte('answered_at', oneWeekAgo.toISOString()));
+
+    if (error) {
+      console.warn('苦手分野取得でquestion_id列が見つかりません。legacy schemaを試行します:', error.message || error);
+      ({ data, error } = await supabaseClient
+        .from('exam_histories')
+        .select('activity')
+        .eq('exam_id', examId)
+        .gte('answered_at', oneWeekAgo.toISOString()));
+    }
 
     if (error) {
       console.error('苦手分野取得エラー:', error);

@@ -10,6 +10,7 @@ let currentExamId = 1;
 let answered = false;
 let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
+let examHistoryColumnSupport = {};
 
 function initSupabase() {
 
@@ -74,6 +75,8 @@ async function startStudyApp() {
     return;
 
   }
+
+  examHistoryColumnSupport = {};
 
   // ページを読み込む
   await initPage();
@@ -163,6 +166,31 @@ async function initPage() {
 
   }
 
+}
+
+async function hasExamHistoryColumn(columnName) {
+  if (examHistoryColumnSupport[columnName] !== undefined) {
+    return examHistoryColumnSupport[columnName];
+  }
+
+  if (!supabaseClient) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from('exam_histories')
+      .select(columnName)
+      .limit(1);
+
+    const supported = !error;
+    examHistoryColumnSupport[columnName] = supported;
+    return supported;
+  } catch (error) {
+    console.error(`exam_histories column check failed: ${columnName}`, error);
+    examHistoryColumnSupport[columnName] = false;
+    return false;
+  }
 }
 
 // ======================================
@@ -332,7 +360,7 @@ function displayQuestion(index) {
 
     checkbox.value = choice.id;
 
-    checkbox.dataset.is_correct = choice.is_correct;
+    checkbox.dataset.is_correct = choice.is_correct ? '1' : '0';
 
     checkbox.dataset.choice_index = choice.choice_index;
 
@@ -398,7 +426,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
         choice_index: parseInt(checkbox.dataset.choice_index),
 
-        is_correct: parseInt(checkbox.dataset.is_correct)
+        is_correct: checkbox.dataset.is_correct === '1'
 
       });
 
@@ -411,7 +439,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
   checkboxes.forEach((checkbox) => {
 
-    if (parseInt(checkbox.dataset.is_correct) === 1) {
+    if (checkbox.dataset.is_correct === '1') {
 
       correctChoices.push({
 
@@ -425,7 +453,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
   // 選択数と正解数が一致するか確認
   const selectedIndices = selectedChoices
-    .filter(c => c.is_correct === 1)
+    .filter(c => c.is_correct)
     .map(c => c.choice_index)
     .sort((a, b) => a - b);
 
@@ -531,20 +559,37 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
   const question = questions[questionIndex];
   const questionId = question ? question.id : null;
   const activity = question ? question.question : `問題 ${questionIndex + 1}`;
+  const answeredAt = new Date().toISOString();
+  const row = {
+    exam_id: currentExamId,
+    activity,
+    answered_at: answeredAt
+  };
+
+  if (questionId && await hasExamHistoryColumn('question_id')) {
+    row.question_id = questionId;
+  }
+
+  if (currentStudySessionStartedAt && await hasExamHistoryColumn('exam_started_at')) {
+    row.exam_started_at = currentStudySessionStartedAt;
+  }
+
+  if (await hasExamHistoryColumn('is_correct')) {
+    row.is_correct = isCorrect;
+  } else {
+    row.correct_count = isCorrect ? 1 : 0;
+    row.total_count = 1;
+    row.result_rate = isCorrect ? 100 : 0;
+  }
 
   try {
-    await supabaseClient
+    const { error } = await supabaseClient
       .from('exam_histories')
-      .insert([
-        {
-          exam_id: currentExamId,
-          question_id: questionId,
-          exam_started_at: currentStudySessionStartedAt,
-          answered_at: new Date().toISOString(),
-          activity,
-          is_correct: isCorrect
-        }
-      ]);
+      .insert([row]);
+
+    if (error) {
+      console.error('学習履歴の保存に失敗しました', error);
+    }
   } catch (error) {
     console.error('学習履歴の保存に失敗しました', error);
   }
