@@ -531,10 +531,6 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
   const question = questions[questionIndex];
   const questionId = question ? question.id : null;
   const activity = question ? question.question : `問題 ${questionIndex + 1}`;
-  const correctCount = isCorrect ? 1 : 0;
-  const totalCount = 1;
-  const resultRate = isCorrect ? 100 : 0;
-  const details = `選択: ${selectedChoices.map(c => c.choice_index).join(', ')}`;
 
   try {
     await supabaseClient
@@ -546,11 +542,7 @@ async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
           exam_started_at: currentStudySessionStartedAt,
           answered_at: new Date().toISOString(),
           activity,
-          correct_count: correctCount,
-          total_count: totalCount,
-          is_correct: isCorrect,
-          result_rate: resultRate,
-          details
+          is_correct: isCorrect
         }
       ]);
   } catch (error) {

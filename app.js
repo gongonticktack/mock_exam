@@ -75,7 +75,7 @@ async function fetchExamAccuracy(examId) {
   try {
     const { data, error } = await supabaseClient
       .from('exam_histories')
-      .select('correct_count,total_count')
+      .select('is_correct')
       .eq('exam_id', examId);
 
     if (error) {
@@ -87,8 +87,8 @@ async function fetchExamAccuracy(examId) {
       return null;
     }
 
-    const totalCorrect = data.reduce((sum, item) => sum + (item.correct_count || 0), 0);
-    const totalCount = data.reduce((sum, item) => sum + (item.total_count || 0), 0);
+    const totalCorrect = data.reduce((sum, item) => sum + (item.is_correct ? 1 : 0), 0);
+    const totalCount = data.length;
 
     if (totalCount === 0) {
       return null;
@@ -355,7 +355,7 @@ async function updateExam(index) {
         day: '2-digit'
       });
       const resultLabel = item.is_correct ? '正解' : '不正解';
-      li.textContent = `${date}：${item.activity}（${resultLabel}${item.result_rate !== null && item.result_rate !== undefined ? `・${item.result_rate}%` : ''}）`;
+      li.textContent = `${date}：${item.activity}（${resultLabel}）`;
       historyList.appendChild(li);
     });
   } else if (exam.history && exam.history.length > 0) {
