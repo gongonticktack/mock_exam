@@ -212,10 +212,6 @@ body {
   flex-direction: column;
 }
 
-.questions-panel {
-  max-height: 50vh;
-}
-
 .questions-panel h2,
 .editor-panel h2 {
   margin-bottom: 20px;
@@ -274,9 +270,8 @@ body {
     min-height: auto;
   }
 
-  .questions-panel,
-  .editor-panel {
-    min-height: 380px;
+  .questions-panel {
+    max-height: 40vh;
   }
 }
 
