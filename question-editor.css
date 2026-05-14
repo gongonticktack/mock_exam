@@ -30,6 +30,10 @@ body {
   min-height: 100vh;
   display: flex;
   overflow-y: auto;
+  overflow-x: hidden;
+  padding-left: 16px;
+  padding-right: 16px;
+  touch-action: pan-y;
 }
 
 /* ========================= */
@@ -101,6 +105,8 @@ body {
 
 .page-header {
   margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .page-header h1 {
@@ -113,6 +119,11 @@ body {
   color: var(--text-muted);
   max-width: 720px;
   line-height: 1.75;
+}
+
+.toolbar {
+  position: relative;
+  z-index: 1;
 }
 
 /* ========================= */
@@ -633,6 +644,8 @@ body {
   .sidebar {
     width: 100%;
     height: auto;
+    position: static;
+    top: auto;
     border-right: none;
     border-bottom: 1px solid var(--border);
     padding: 16px;
