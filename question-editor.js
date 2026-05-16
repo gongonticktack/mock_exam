@@ -6,6 +6,7 @@ let supabaseClient = null;
 let questions = [];
 let currentExamId = 1;
 let currentSelectedQuestion = null;
+const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
@@ -27,6 +28,80 @@ function showLoading() {
 
 function hideLoading() {
   document.getElementById('loading-overlay').style.display = 'none';
+}
+
+function stripMediaMarkup(text) {
+  return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[\u753b\u50cf]');
+}
+
+function insertAtCursor(textarea, text) {
+  const start = textarea.selectionStart || 0;
+  const end = textarea.selectionEnd || 0;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
+  const prefix = before && !before.endsWith('\n') ? '\n' : '';
+  const suffix = after && !after.startsWith('\n') ? '\n' : '';
+  textarea.value = `${before}${prefix}${text}${suffix}${after}`;
+  const cursor = before.length + prefix.length + text.length;
+  textarea.focus();
+  textarea.setSelectionRange(cursor, cursor);
+}
+
+function setupImageInsertControls() {
+  [
+    { textareaId: 'question', label: '\u554f\u984c\u306b\u753b\u50cf\u3092\u8ffd\u52a0' },
+    { textareaId: 'explanation', label: '\u89e3\u8aac\u306b\u753b\u50cf\u3092\u8ffd\u52a0' }
+  ].forEach(({ textareaId, label }) => {
+    const textarea = document.getElementById(textareaId);
+    if (!textarea || textarea.dataset.imageControlReady) return;
+
+    const controls = document.createElement('div');
+    controls.className = 'media-tools';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'media-insert-btn';
+    button.innerHTML = '<i class="fa-solid fa-image"></i><span>' + label + '</span>';
+
+    const hint = document.createElement('span');
+    hint.className = 'media-hint';
+    hint.textContent = 'PNG/JPEG/GIF/WebP, max 1MB';
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    input.className = 'media-file-input';
+
+    button.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('\u753b\u50cf\u30d5\u30a1\u30a4\u30eb\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044');
+        input.value = '';
+        return;
+      }
+      if (file.size > MAX_INLINE_IMAGE_BYTES) {
+        alert('\u753b\u50cf\u306f1MB\u4ee5\u4e0b\u306b\u3057\u3066\u304f\u3060\u3055\u3044');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const alt = file.name.replace(/[()[\]]/g, ' ').trim() || 'image';
+        insertAtCursor(textarea, `![${alt}](${reader.result})`);
+        input.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    controls.appendChild(button);
+    controls.appendChild(hint);
+    controls.appendChild(input);
+    textarea.insertAdjacentElement('afterend', controls);
+    textarea.dataset.imageControlReady = 'true';
+  });
 }
 
 // ======================================
@@ -74,6 +149,7 @@ async function initPage() {
   document.getElementById("exam-name").textContent = selectedExamName;
 
   // 問題を読み込む
+  setupImageInsertControls();
   await loadQuestions();
 }
 
@@ -178,7 +254,7 @@ function displayQuestionsList() {
 
     const textDiv = document.createElement('div');
     textDiv.className = 'question-item-text';
-    const questionText = question.question || '';
+    const questionText = stripMediaMarkup(question.question || '');
     textDiv.textContent = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText;
 
     contentDiv.appendChild(categoryDiv);

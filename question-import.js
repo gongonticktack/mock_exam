@@ -186,6 +186,41 @@ const confirmOkBtn =
 const confirmCancelBtn =
   document.getElementById("confirm-cancel-btn");
 
+function renderRichText(container, text) {
+  container.innerHTML = "";
+
+  const value = String(text || "");
+  const imagePattern = /!\[([^\]]*)]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+
+  const appendText = (chunk) => {
+    chunk.split('\n').forEach((line, index) => {
+      if (index > 0) {
+        container.appendChild(document.createElement('br'));
+      }
+      if (line) {
+        container.appendChild(document.createTextNode(line));
+      }
+    });
+  };
+
+  while ((match = imagePattern.exec(value)) !== null) {
+    appendText(value.slice(lastIndex, match.index));
+
+    const img = document.createElement('img');
+    img.className = 'rich-text-image';
+    img.alt = match[1] || 'image';
+    img.src = match[2];
+    img.loading = 'lazy';
+    container.appendChild(img);
+
+    lastIndex = imagePattern.lastIndex;
+  }
+
+  appendText(value.slice(lastIndex));
+}
+
 // ======================================
 // インポート処理
 // ======================================
@@ -299,6 +334,7 @@ importButton.addEventListener("click", async () => {
         return {
           category: item.category ?? "",
           question: item.question ?? "",
+          explanation: item.explanation ?? "",
           choices: choices.join(","),
           answers: [...new Set(parsedAnswers)].join(",")
         };
@@ -387,6 +423,9 @@ importButton.addEventListener("click", async () => {
 
       const question =
         String(row.question).trim();
+
+      const explanation =
+        String(row.explanation || "").trim();
 
       const choicesRaw =
         String(row.choices).trim();
@@ -543,6 +582,8 @@ importButton.addEventListener("click", async () => {
 
         question,
 
+        explanation,
+
         choices: formattedChoices
 
       });
@@ -622,8 +663,18 @@ function showConfirmScreen(questions) {
     const questionStrong = document.createElement("strong");
     questionStrong.textContent = "質問: ";
     questionP.appendChild(questionStrong);
-    questionP.appendChild(document.createTextNode(questionData.question));
+    renderRichText(questionP, questionData.question);
+    questionP.prepend(questionStrong);
     itemDiv.appendChild(questionP);
+
+    if (questionData.explanation) {
+      const explanationP = document.createElement("p");
+      const explanationStrong = document.createElement("strong");
+      explanationStrong.textContent = "\u89e3\u8aac: ";
+      renderRichText(explanationP, questionData.explanation);
+      explanationP.prepend(explanationStrong);
+      itemDiv.appendChild(explanationP);
+    }
 
     // 選択肢ラベル
     const choicesLabel = document.createElement("p");
@@ -698,7 +749,7 @@ confirmOkBtn.addEventListener("click", async () => {
             exam_id: selectedExam,
             category: questionData.category,
             question: questionData.question,
-            explanation: ''
+            explanation: questionData.explanation || ''
           })
           .select();
 

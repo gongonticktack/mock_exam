@@ -61,6 +61,41 @@ function stopLoading() {
 
 }
 
+function renderRichText(container, text) {
+  container.innerHTML = "";
+
+  const value = String(text || "");
+  const imagePattern = /!\[([^\]]*)]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+
+  const appendText = (chunk) => {
+    chunk.split('\n').forEach((line, index) => {
+      if (index > 0) {
+        container.appendChild(document.createElement('br'));
+      }
+      if (line) {
+        container.appendChild(document.createTextNode(line));
+      }
+    });
+  };
+
+  while ((match = imagePattern.exec(value)) !== null) {
+    appendText(value.slice(lastIndex, match.index));
+
+    const img = document.createElement('img');
+    img.className = 'rich-text-image';
+    img.alt = match[1] || 'image';
+    img.src = match[2];
+    img.loading = 'lazy';
+    container.appendChild(img);
+
+    lastIndex = imagePattern.lastIndex;
+  }
+
+  appendText(value.slice(lastIndex));
+}
+
 // ======================================
 // �🚀 アプリケーション開始
 // ======================================
@@ -336,8 +371,10 @@ function displayQuestion(index) {
     question.category;
 
   // 質問を表示
-  document.getElementById("question-text").textContent =
-    question.question;
+  renderRichText(
+    document.getElementById("question-text"),
+    question.question
+  );
 
   // 選択肢を表示
   const choicesContainer =
@@ -543,7 +580,10 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 
   if (explanation && explanation.trim()) {
 
-    document.getElementById("explanation-text").textContent = explanation;
+    renderRichText(
+      document.getElementById("explanation-text"),
+      explanation
+    );
 
     document.getElementById("explanation-box").style.display = "block";
 
