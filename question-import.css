@@ -110,6 +110,11 @@ body {
   margin-bottom: 24px;
 }
 
+/* ========================= */
+/* Direct add form */
+/* 1問ずつ手入力で登録するフォーム */
+/* ========================= */
+
 .direct-add-header {
   display: flex;
   justify-content: space-between;
@@ -323,6 +328,11 @@ body {
   opacity: 0.72;
 }
 
+/* ========================= */
+/* Mobile camera OCR */
+/* スマホだけで表示するカメラOCRモーダル */
+/* ========================= */
+
 .direct-ocr-modal {
   position: fixed;
   inset: 0;
@@ -374,8 +384,7 @@ body {
   flex-shrink: 0;
 }
 
-.direct-ocr-video,
-.direct-ocr-preview {
+.direct-ocr-video {
   width: 100%;
   max-height: 52vh;
   object-fit: contain;

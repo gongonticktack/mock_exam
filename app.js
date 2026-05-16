@@ -1,4 +1,20 @@
 // ======================================
+// app.js
+// ======================================
+// トップページ（index.html）を動かすためのファイルです。
+//
+// 主な役割:
+// 1. Supabase（クラウドDB）へ接続する
+// 2. 資格ごとの問題数・正答率・学習履歴を取得する
+// 3. ユーザーが選んだ資格を localStorage に保存する
+// 4. 「学習開始」「問題追加」「問題編集」ページへ遷移する
+//
+// 初心者向けメモ:
+// - async function は、DB通信など時間がかかる処理を待てる関数です。
+// - localStorage は、ブラウザ内に小さな設定値を保存する場所です。
+// - Supabase の .from('table') は、どのテーブルを見るかを指定しています。
+
+// ======================================
 // ☁️ Supabase（クラウドDB）初期化
 // ======================================
 
@@ -22,6 +38,8 @@ initSupabase();
 // ======================================
 
 async function fetchQuestionCount(examId) {
+  // 指定された資格ID（examId）に紐づく問題数だけをDBから数えます。
+  // head: true を使うと、行データ本体を取らずに件数だけ取得できます。
   if (!supabaseClient) {
     return null;
   }
@@ -43,6 +61,8 @@ async function fetchQuestionCount(examId) {
 }
 
 async function fetchExamHistory(examId, limit = 3) {
+  // トップ画面の「最近の学習履歴」に表示するため、
+  // 新しい回答履歴から limit 件だけ取得します。
   if (!supabaseClient) {
     return [];
   }
@@ -68,6 +88,8 @@ async function fetchExamHistory(examId, limit = 3) {
 }
 
 async function fetchExamAccuracy(examId) {
+  // 正答率を計算します。
+  // 古いDB形式（correct_count / total_count）と新しいDB形式（is_correct）の両方に対応しています。
   if (!supabaseClient) {
     return null;
   }
@@ -129,6 +151,8 @@ async function fetchExamAccuracy(examId) {
 }
 
 async function fetchExamSummary(examId) {
+  // 問題数・正答率・学習時間・学習日数をまとめて計算します。
+  // トップページの統計カードに表示する値を作る関数です。
   if (!supabaseClient) {
     return null;
   }
@@ -200,6 +224,8 @@ async function fetchExamSummary(examId) {
 }
 
 async function fetchExamWeaknesses(examId) {
+  // 直近1週間の不正解データを見て、苦手カテゴリを推測します。
+  // exam_histories に question_id があれば questions テーブルからカテゴリを引きます。
   if (!supabaseClient) {
     return [];
   }
@@ -364,6 +390,8 @@ const weaknessItems =
 // ======================================
 
 async function updateExam(index) {
+  // 資格カードをクリックしたときに呼ばれます。
+  // 画面右側のタイトル・説明・統計・履歴・苦手分野をまとめて更新します。
 
   // 対象資格
   const exam = exams[index];
@@ -478,6 +506,8 @@ const importButton =
 
 // クリックイベント
 importButton.addEventListener("click", () => {
+  // 「問題を追加」ボタン。
+  // どの資格へ問題を追加するか分かるように、選択中の資格IDを保存してから遷移します。
 
   // 現在activeの資格取得
   const activeCard =
@@ -521,6 +551,8 @@ const startButton =
 
 // クリックイベント
 startButton.addEventListener("click", () => {
+  // 「学習開始」ボタン。
+  // 前回途中だった資格なら、最後に解いた位置から再開できるようにしています。
 
   // 現在activeの資格取得
   const activeCard =
@@ -570,6 +602,8 @@ const editButton =
 
 // クリックイベント
 editButton.addEventListener("click", () => {
+  // 「問題編集」ボタン。
+  // 選択中の資格IDをURLクエリにも付けて編集画面へ渡します。
 
   // 現在activeの資格取得
   const activeCard =

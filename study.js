@@ -1,4 +1,20 @@
 // ======================================
+// study.js
+// ======================================
+// 学習画面（study.html）を動かすためのファイルです。
+//
+// 主な役割:
+// 1. 選択された資格の問題と選択肢をSupabaseから読み込む
+// 2. 問題をシャッフルして1問ずつ画面に表示する
+// 3. ユーザーの回答を判定し、正解/不正解と解説を表示する
+// 4. 回答履歴を exam_histories テーブルへ保存する
+//
+// 初心者向けメモ:
+// - questions は、現在の学習で使う問題一覧を入れる配列です。
+// - currentQuestionIndex は、今表示している問題が何番目かを表します。
+// - answered は、同じ問題で二重回答しないためのフラグです。
+
+// ======================================
 // ☁️ Supabase（クラウドDB）初期化
 // ======================================
 // 問題取得用のデータベース接続
@@ -62,6 +78,9 @@ function stopLoading() {
 }
 
 function renderRichText(container, text) {
+  // 問題文や解説には、通常の文字だけでなく画像記法も入ることがあります。
+  // 例: ![diagram](data:image/png;base64,...)
+  // textContentだけだと画像にならないので、安全にDOM要素へ分解して表示します。
   container.innerHTML = "";
 
   const value = String(text || "");
@@ -101,6 +120,8 @@ function renderRichText(container, text) {
 // ======================================
 
 async function startStudyApp() {
+  // この画面の最初の入口です。
+  // Supabase接続に成功したら、ページ情報を読み込んで学習を開始します。
 
   // Supabase初期化
   if (!initSupabase()) {
@@ -130,6 +151,8 @@ if (document.readyState === 'loading') {
 // 試験選択情報を取得して、問題を読み込みます
 
 async function initPage() {
+  // URLクエリやlocalStorageから「どの資格を学習するか」を決めます。
+  // その後、DBから問題を読み込んで最初の問題を表示します。
 
   // URLクエリからexamIdと問題インデックスを取得
   const params = new URLSearchParams(window.location.search);
@@ -204,6 +227,8 @@ async function initPage() {
 }
 
 async function hasExamHistoryColumn(columnName) {
+  // exam_histories テーブルは、環境によって列構成が少し違う可能性があります。
+  // そこで「この列が存在するか」を一度確認し、結果をキャッシュしています。
   if (examHistoryColumnSupport[columnName] !== undefined) {
     return examHistoryColumnSupport[columnName];
   }
@@ -234,6 +259,8 @@ async function hasExamHistoryColumn(columnName) {
 // Supab aseから問題と選択肢を取得します
 
 async function loadQuestions() {
+  // questions テーブルから問題を取り、
+  // それぞれの問題IDを使って choices テーブルから選択肢を取得します。
 
   try {
 
@@ -321,6 +348,7 @@ async function loadQuestions() {
 // Fisher-Yatesアルゴリズムで問題順序をランダム化
 
 function shuffleQuestions() {
+  // Fisher-Yatesという定番アルゴリズムで、問題の順番をランダムに並べ替えます。
 
   // Fisher-Yatesシャッフルアルゴリズム
   for (let i = questions.length - 1; i > 0; i--) {
@@ -340,6 +368,8 @@ function shuffleQuestions() {
 // 指定されたインデックスの問題と選択肢を表示
 
 function displayQuestion(index) {
+  // 指定された番号の問題を画面へ表示します。
+  // 問題文、カテゴリ、選択肢、ボタン表示をここでまとめてリセットします。
 
   // インデックス確認
   if (index < 0 || index >= questions.length) {
@@ -529,6 +559,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 // 正解・不正解の判定結果を画面に表示
 
 function displayResult(isCorrect, correctChoices, selectedChoices) {
+  // 回答後に、正解/不正解と正しい選択肢、解説を表示します。
 
   const resultBox = document.getElementById("result-box");
 
@@ -592,6 +623,8 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 }
 
 async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
+  // 1問回答するたびに、学習履歴をDBへ保存します。
+  // トップ画面の正答率・学習履歴・苦手分野はこのデータから作られます。
   if (!supabaseClient || !currentExamId) {
     return;
   }
@@ -670,6 +703,7 @@ document.getElementById("next-btn").addEventListener("click", () => {
 // すべての問題が終わったら完了画面を表示
 
 function showCompletionScreen() {
+  // 最後の問題まで解いたあとに表示する完了画面です。
 
   const main = document.querySelector(".study-main");
 

@@ -1,4 +1,20 @@
 // ======================================
+// question-import.js
+// ======================================
+// 問題追加画面（question-import.html）を動かすためのファイルです。
+//
+// 主な役割:
+// 1. UIから1問ずつ問題を直接登録する
+// 2. スマホのカメラで撮影した画像をCloudflare Workers AIへ送り、OCR候補を作る
+// 3. Excel / JSON ファイルを読み込んで一括登録する
+// 4. 問題文・解説に画像Data URIを埋め込めるようにする
+//
+// 初心者向けメモ:
+// - 直接追加も一括インポートも、最終的には questions と choices テーブルへ保存します。
+// - OCRで撮影した画像は端末に保存せず、メモリ上のBlobとしてAPIへ送ります。
+// - OCR結果はそのまま保存せず、フォームに入れてから人が確認・調整する前提です。
+
+// ======================================
 // ☁️ Supabase（クラウドDB）初期化
 // ======================================
 // 問題登録用のデータベース接続を初期化
@@ -193,9 +209,9 @@ const directFormState = {
   ocrCandidates: []
 };
 
-const TESSERACT_CDN = "https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js";
-
 function renderRichText(container, text) {
+  // 確認画面で、本文中の画像記法を実際の<img>として表示します。
+  // innerHTMLへ直接入れず、createTextNode/createElementで作ることで安全性を高めています。
   container.innerHTML = "";
 
   const value = String(text || "");
@@ -231,6 +247,7 @@ function renderRichText(container, text) {
 }
 
 function insertAtCursor(textarea, text) {
+  // 問題文・解説のカーソル位置へ、画像記法などの文字列を差し込みます。
   const start = textarea.selectionStart || 0;
   const end = textarea.selectionEnd || 0;
   const before = textarea.value.slice(0, start);
@@ -244,6 +261,8 @@ function insertAtCursor(textarea, text) {
 }
 
 function insertDirectImage(textareaId) {
+  // 直接追加フォームの「画像を追加」ボタン用です。
+  // ファイルはData URIに変換して、問題文または解説の中に保存します。
   const textarea = document.getElementById(textareaId);
   if (!textarea) return;
 
@@ -276,29 +295,9 @@ function insertDirectImage(textareaId) {
   input.click();
 }
 
-function loadTesseract() {
-  if (window.Tesseract) {
-    return Promise.resolve(window.Tesseract);
-  }
-
-  return new Promise((resolve, reject) => {
-    const existingScript = document.querySelector(`script[src="${TESSERACT_CDN}"]`);
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(window.Tesseract));
-      existingScript.addEventListener("error", reject);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = TESSERACT_CDN;
-    script.async = true;
-    script.onload = () => resolve(window.Tesseract);
-    script.onerror = () => reject(new Error("Failed to load OCR library."));
-    document.head.appendChild(script);
-  });
-}
-
 function setupMobileOcrControls() {
+  // OCRモーダル内のボタンにイベントを登録します。
+  // カメラ開始、閉じる、OCR実行、結果クリアをここでつなぎます。
   const scanBtn = document.getElementById("direct-ocr-open-btn");
   const closeBtn = document.getElementById("direct-ocr-close-btn");
   const captureBtn = document.getElementById("direct-ocr-capture-btn");
@@ -310,12 +309,17 @@ function setupMobileOcrControls() {
   closeBtn.addEventListener("click", closeOcrScanner);
   captureBtn.addEventListener("click", captureOcrFrame);
   retakeBtn.addEventListener("click", () => {
+    const results = document.getElementById("direct-ocr-results");
     setOcrStatus("");
-    document.getElementById("direct-ocr-preview").style.display = "none";
+    if (results) {
+      results.innerHTML = "";
+    }
   });
 }
 
 async function openOcrScanner() {
+  // スマホの背面カメラを優先して起動します。
+  // getUserMedia はHTTPS環境でないと使えないため、Cloudflare Pages本番URLでの利用を想定しています。
   const modal = document.getElementById("direct-ocr-modal");
   const video = document.getElementById("direct-ocr-video");
   if (!modal || !video) return;
@@ -345,8 +349,12 @@ async function openOcrScanner() {
 }
 
 function closeOcrScanner() {
+  // カメラを止め、canvasやOCR結果を消します。
+  // スマホ上に撮影画像を残さないための後片付けです。
   const modal = document.getElementById("direct-ocr-modal");
   const video = document.getElementById("direct-ocr-video");
+  const canvas = document.getElementById("direct-ocr-canvas");
+  const results = document.getElementById("direct-ocr-results");
 
   if (directFormState.ocrStream) {
     directFormState.ocrStream.getTracks().forEach((track) => track.stop());
@@ -356,6 +364,17 @@ function closeOcrScanner() {
   if (video) {
     video.srcObject = null;
   }
+
+  if (canvas) {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+
+  if (results) {
+    results.innerHTML = "";
+  }
+
+  setOcrStatus("");
 
   if (modal) {
     modal.style.display = "none";
@@ -370,11 +389,13 @@ function setOcrStatus(message) {
 }
 
 async function captureOcrFrame() {
+  // 現在カメラに映っている1フレームだけをcanvasへ描画し、
+  // Blobに変換してCloudflare OCR APIへ送信します。
+  // toDataURLは使わず、端末側にBase64文字列を残しにくい形にしています。
   const video = document.getElementById("direct-ocr-video");
   const canvas = document.getElementById("direct-ocr-canvas");
-  const preview = document.getElementById("direct-ocr-preview");
   const captureBtn = document.getElementById("direct-ocr-capture-btn");
-  if (!video || !canvas || !preview || !captureBtn) return;
+  if (!video || !canvas || !captureBtn) return;
 
   const width = video.videoWidth || 1280;
   const height = video.videoHeight || 720;
@@ -384,27 +405,15 @@ async function captureOcrFrame() {
   const context = canvas.getContext("2d");
   context.drawImage(video, 0, 0, width, height);
 
-  preview.src = canvas.toDataURL("image/jpeg", 0.88);
-  preview.style.display = "block";
-
   try {
     captureBtn.disabled = true;
-    setOcrStatus("OCR loading...");
-    const Tesseract = await loadTesseract();
+    setOcrStatus("Sending image to Cloudflare Workers AI...");
+    const blob = await canvasToBlob(canvas);
+    const result = await extractQuestionsWithCloudflareOcr(blob);
+    const candidates = normalizeCloudflareOcrCandidates(result.questions);
+    const rawText = result.rawText || "";
 
-    setOcrStatus("OCR running... 0%");
-    const result = await Tesseract.recognize(canvas, "jpn+eng", {
-      logger: (message) => {
-        if (message.status === "recognizing text") {
-          const progress = Math.round((message.progress || 0) * 100);
-          setOcrStatus(`OCR running... ${progress}%`);
-        }
-      }
-    });
-
-    const text = result?.data?.text || "";
-    const candidates = parseOcrQuestions(text);
-    showOcrCandidates(candidates, text);
+    showOcrCandidates(candidates, rawText);
     setOcrStatus(candidates.length ? "OCR complete. Select a candidate below." : "OCR complete, but no question-like text was found.");
   } catch (error) {
     console.error("OCR error:", error);
@@ -412,80 +421,72 @@ async function captureOcrFrame() {
     alert("OCR failed. Please try a clearer photo.");
   } finally {
     captureBtn.disabled = false;
+    canvas.width = 0;
+    canvas.height = 0;
   }
 }
 
-function parseOcrQuestions(text) {
-  const lines = String(text || "")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+function canvasToBlob(canvas) {
+  // canvasの画像をBlobへ変換します。
+  // Blobはメモリ上の一時データで、ファイルとして端末に保存されません。
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Failed to capture image."));
+        return;
+      }
+      resolve(blob);
+    }, "image/jpeg", 0.86);
+  });
+}
 
-  if (!lines.length) {
+async function extractQuestionsWithCloudflareOcr(blob) {
+  // Cloudflare Pages Functionへ画像Blobを送り、Workers AIのOCR結果を受け取ります。
+  // cache: "no-store" を付け、ブラウザキャッシュに残しにくくしています。
+  const formData = new FormData();
+  formData.append("image", blob, "ocr-capture.jpg");
+
+  const response = await fetch("/api/ocr/extract", {
+    method: "POST",
+    body: formData,
+    cache: "no-store"
+  });
+
+  let result = null;
+  try {
+    result = await response.json();
+  } catch (error) {
+    result = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.error || "Cloudflare OCR failed.");
+  }
+
+  return result || { questions: [], rawText: "" };
+}
+
+function normalizeCloudflareOcrCandidates(questions) {
+  // APIから返った値を、画面側で扱いやすい形に整えます。
+  // 文字列でない値や空の選択肢をここで取り除きます。
+  if (!Array.isArray(questions)) {
     return [];
   }
 
-  const blocks = [];
-  let currentBlock = [];
-
-  lines.forEach((line) => {
-    const startsQuestionPattern = new RegExp("^(Q|\\u554f|\\u554f\\u984c)?\\s*\\d{1,3}[\\).\\u3001\\uff0e:\\uff1a\\s]", "i");
-    const startsQuestion = startsQuestionPattern.test(line);
-    if (startsQuestion && currentBlock.length) {
-      blocks.push(currentBlock);
-      currentBlock = [];
-    }
-    currentBlock.push(line);
-  });
-
-  if (currentBlock.length) {
-    blocks.push(currentBlock);
-  }
-
-  return blocks
-    .map(parseOcrBlock)
-    .filter((candidate) => candidate.question || candidate.choices.length);
-}
-
-function parseOcrBlock(lines) {
-  const choicePattern = new RegExp("^([A-D\\uff21-\\uff24]|[1-9]|[\\u30a2-\\u30aa]|[\\uff71-\\uff75])[\\.\\)\\u3001\\uff09\\uff0e:\\uff1a\\s]+(.+)$");
-  const questionLines = [];
-  const choices = [];
-  let choiceStarted = false;
-
-  lines.forEach((line) => {
-    const match = line.match(choicePattern);
-    if (match) {
-      choiceStarted = true;
-      choices.push(match[2].trim());
-      return;
-    }
-
-    if (choiceStarted && choices.length) {
-      choices[choices.length - 1] = `${choices[choices.length - 1]} ${line}`.trim();
-      return;
-    }
-
-    questionLines.push(line);
-  });
-
-  if (!choices.length && lines.length > 2) {
-    const guessedQuestion = lines.slice(0, Math.max(1, lines.length - 4));
-    const guessedChoices = lines.slice(guessedQuestion.length);
-    return {
-      question: guessedQuestion.join("\n"),
-      choices: guessedChoices.slice(0, 8)
-    };
-  }
-
-  return {
-    question: questionLines.join("\n"),
-    choices: choices.slice(0, 8)
-  };
+  return questions
+    .map((item) => ({
+      question: String(item.question || "").trim(),
+      choices: Array.isArray(item.choices)
+        ? item.choices.map((choice) => String(choice || "").trim()).filter(Boolean)
+        : [],
+      explanation: String(item.explanation || "").trim()
+    }))
+    .filter((item) => item.question || item.choices.length);
 }
 
 function showOcrCandidates(candidates, rawText) {
+  // OCR結果の候補一覧をモーダル内に表示します。
+  // 候補をクリックすると、直接追加フォームへ反映されます。
   directFormState.ocrCandidates = candidates;
 
   const panel = document.getElementById("direct-ocr-results");
@@ -539,11 +540,18 @@ function showOcrCandidates(candidates, rawText) {
 }
 
 function applyOcrCandidate(candidate) {
+  // 選ばれたOCR候補を、問題文・解説・選択肢の入力欄へコピーします。
+  // 正解は画像だけでは確定できないので、先頭の選択肢だけ仮チェックにしています。
   const questionInput = document.getElementById("direct-question");
+  const explanationInput = document.getElementById("direct-explanation");
   const choicesContainer = document.getElementById("direct-choices-container");
 
   if (questionInput) {
     questionInput.value = candidate.question || "";
+  }
+
+  if (explanationInput && candidate.explanation) {
+    explanationInput.value = candidate.explanation;
   }
 
   if (choicesContainer) {
@@ -557,6 +565,8 @@ function applyOcrCandidate(candidate) {
 }
 
 function createDirectAddForm() {
+  // HTMLへ直接フォームを書き足さず、JavaScriptで直接追加フォームを生成します。
+  // 既存のExcel/JSONインポート部分を壊さないためです。
   const mainContent = document.querySelector(".main-content");
   const importCard = document.querySelector(".import-card");
   if (!mainContent || !importCard || document.getElementById("direct-add-card")) {
@@ -635,7 +645,7 @@ function createDirectAddForm() {
         <div class="direct-ocr-toolbar">
           <div>
             <h3>\u30ab\u30e1\u30e9OCR</h3>
-            <p>\u554f\u984c\u6587\u3068\u9078\u629e\u80a2\u304c\u5199\u308b\u3088\u3046\u306b\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p>
+            <p>\u554f\u984c\u6587\u3068\u9078\u629e\u80a2\u304c\u5199\u308b\u3088\u3046\u306b\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u753b\u50cf\u306f\u7aef\u672b\u306b\u4fdd\u5b58\u305b\u305a\u3001OCR\u5f8c\u306b\u30e1\u30e2\u30ea\u304b\u3089\u7834\u68c4\u3057\u307e\u3059\u3002</p>
           </div>
           <button type="button" id="direct-ocr-close-btn" class="direct-ocr-icon-btn" aria-label="Close OCR">
             <i class="fa-solid fa-xmark"></i>
@@ -644,8 +654,6 @@ function createDirectAddForm() {
 
         <video id="direct-ocr-video" class="direct-ocr-video" autoplay playsinline muted></video>
         <canvas id="direct-ocr-canvas" class="direct-ocr-canvas"></canvas>
-        <img id="direct-ocr-preview" class="direct-ocr-preview" alt="OCR preview" style="display: none;">
-
         <div class="direct-ocr-actions">
           <button type="button" id="direct-ocr-capture-btn" class="direct-save-btn">
             <i class="fa-solid fa-camera"></i>
@@ -680,6 +688,8 @@ function createDirectAddForm() {
 }
 
 function addDirectChoiceRow(value = "", checked = false) {
+  // 選択肢1行分の入力UIを作ります。
+  // OCR候補から選択肢を流し込むときにも、この関数を使います。
   const container = document.getElementById("direct-choices-container");
   if (!container) return;
 
@@ -732,6 +742,8 @@ function updateDirectChoicePlaceholders() {
 }
 
 function resetDirectForm() {
+  // 直接追加フォームを初期状態へ戻します。
+  // 最初から4択を入力しやすいよう、空の選択肢を4つ用意します。
   const category = document.getElementById("direct-category");
   const question = document.getElementById("direct-question");
   const explanation = document.getElementById("direct-explanation");
@@ -750,6 +762,8 @@ function resetDirectForm() {
 }
 
 function collectDirectQuestion() {
+  // 画面に入力された値を集め、DBへ保存しやすい形に整えます。
+  // 必須項目や正解チェックの不足もここで確認します。
   const category = document.getElementById("direct-category").value.trim();
   const question = document.getElementById("direct-question").value.trim();
   const explanation = document.getElementById("direct-explanation").value.trim();
@@ -792,6 +806,8 @@ function collectDirectQuestion() {
 }
 
 async function insertQuestionWithChoices(questionData) {
+  // 1問分の問題と選択肢をDBへ保存します。
+  // 先にquestionsへ登録し、返ってきたquestionIdをchoicesへ入れます。
   const { data: questionResult, error: questionError } =
     await supabaseClient
       .from('questions')
@@ -832,6 +848,8 @@ async function insertQuestionWithChoices(questionData) {
 }
 
 async function saveDirectQuestion(event) {
+  // 直接追加フォームの保存ボタンが押されたときの処理です。
+  // 入力チェック → Supabase接続 → DB保存 → フォーム初期化、の順に進みます。
   event.preventDefault();
 
   const saveBtn = document.getElementById("direct-save-btn");
@@ -869,6 +887,8 @@ createDirectAddForm();
 // ======================================
 
 importButton.addEventListener("click", async () => {
+  // Excel / JSON インポートの入口です。
+  // ファイルを読み込み、形式チェックとバリデーションを行ってから確認画面へ進みます。
 
   // ログ初期化
   logArea.innerHTML = "";
@@ -1278,6 +1298,8 @@ importButton.addEventListener("click", async () => {
 // ======================================
 
 function showConfirmScreen(questions) {
+  // 一括インポート前の確認画面を作ります。
+  // ここではまだDB保存せず、ユーザーが内容を確認してOKを押すのを待ちます。
 
   // 確認リストをクリア
   confirmList.innerHTML = "";
@@ -1352,6 +1374,8 @@ function showConfirmScreen(questions) {
 // ======================================
 
 confirmOkBtn.addEventListener("click", async () => {
+  // 確認画面の「登録」ボタンです。
+  // window.validQuestions に一時保存した問題を、1問ずつDBへ登録します。
 
   // 確認画面を隠す
   confirmCard.style.display = "none";

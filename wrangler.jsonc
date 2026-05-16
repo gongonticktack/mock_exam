@@ -1,4 +1,7 @@
 {
+  // Cloudflare Workers / Pages 用の設定ファイルです。
+  // このプロジェクトでは静的HTML/CSS/JSを配信しつつ、
+  // functions/ 配下のPages Functionsも一緒にデプロイします。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mockexam",
   "compatibility_date": "2026-05-11",
@@ -6,7 +9,12 @@
     "enabled": true
   },
   "assets": {
+    // カレントディレクトリ全体を静的ファイルとして配信します。
     "directory": "."
+  },
+  "ai": {
+    // functions/api/ocr/extract.js から env.AI.run() を使うためのWorkers AI bindingです。
+    "binding": "AI"
   },
   "compatibility_flags": [
     "nodejs_compat"

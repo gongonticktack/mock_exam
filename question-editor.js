@@ -1,4 +1,20 @@
 // ======================================
+// question-editor.js
+// ======================================
+// 問題編集画面（question-editor.html）を動かすためのファイルです。
+//
+// 主な役割:
+// 1. 選択中の資格に登録済みの問題一覧をDBから読み込む
+// 2. 左側の一覧から問題を選ぶと、右側の編集フォームへ表示する
+// 3. 問題文・解説・選択肢・正解チェックを保存する
+// 4. 問題削除、JSON/Excelエクスポート、画像Data URI挿入を行う
+//
+// 初心者向けメモ:
+// - currentSelectedQuestion は、今編集している問題を覚えておく変数です。
+// - choices テーブルは questions テーブルと question_id でつながっています。
+// - 画像はDBへ別ファイル保存せず、本文中に data:image/... として埋め込んでいます。
+
+// ======================================
 // ☁️ Supabase（クラウドDB）初期化
 // ======================================
 
@@ -31,10 +47,14 @@ function hideLoading() {
 }
 
 function stripMediaMarkup(text) {
+  // 問題一覧では画像そのものを表示せず、[画像] という短い表示に置き換えます。
+  // 一覧が長くなりすぎるのを防ぐためです。
   return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[\u753b\u50cf]');
 }
 
 function insertAtCursor(textarea, text) {
+  // textarea のカーソル位置に文字列を差し込みます。
+  // 画像を追加するとき、本文の末尾ではなくカーソル位置へ入れられるようにしています。
   const start = textarea.selectionStart || 0;
   const end = textarea.selectionEnd || 0;
   const before = textarea.value.slice(0, start);
@@ -48,6 +68,8 @@ function insertAtCursor(textarea, text) {
 }
 
 function setupImageInsertControls() {
+  // HTMLを直接大きく変えず、JavaScriptで「画像追加」ボタンを差し込みます。
+  // 選んだ画像はFileReaderでData URIに変換し、本文へMarkdown風に挿入します。
   [
     { textareaId: 'question', label: '\u554f\u984c\u306b\u753b\u50cf\u3092\u8ffd\u52a0' },
     { textareaId: 'explanation', label: '\u89e3\u8aac\u306b\u753b\u50cf\u3092\u8ffd\u52a0' }
@@ -109,6 +131,7 @@ function setupImageInsertControls() {
 // ======================================
 
 async function initPage() {
+  // URLやlocalStorageから編集対象の資格を決めて、問題一覧を読み込みます。
   // Supabase初期化
   if (!initSupabase()) {
     alert('Supabaseの初期化に失敗しました');
@@ -158,6 +181,8 @@ async function initPage() {
 // ======================================
 
 async function loadQuestions() {
+  // questions テーブルから問題を取得し、
+  // 各問題に紐づく choices テーブルの選択肢も一緒に読み込みます。
   try {
     showLoading();
 
@@ -234,6 +259,8 @@ function displayNoQuestions() {
 // ======================================
 
 function displayQuestionsList() {
+  // 左側の問題一覧を作ります。
+  // クリックされた問題だけが active 表示になり、右側の編集フォームへ内容が入ります。
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '';
 
@@ -282,6 +309,8 @@ function displayQuestionsList() {
 // ======================================
 
 function displayQuestionEditor(question) {
+  // 選択された問題データを、右側の編集フォームへ流し込みます。
+  // 既存の選択肢も createChoiceElement() で1行ずつ作ります。
   currentSelectedQuestion = question;
 
   // フォーム要素を取得
@@ -320,6 +349,8 @@ function displayQuestionEditor(question) {
 // ======================================
 
 function createChoiceElement(choice, index) {
+  // 選択肢1件分の入力欄を作る関数です。
+  // 既存の選択肢にも、新しく追加した空の選択肢にも使います。
   const choiceDiv = document.createElement('div');
   choiceDiv.className = 'choice-item';
   choiceDiv.dataset.choiceId = choice.id;
@@ -395,6 +426,8 @@ document.getElementById('add-choice-btn').addEventListener('click', (e) => {
 // ======================================
 
 document.getElementById('editor-form').addEventListener('submit', async (e) => {
+  // 保存ボタンが押されたときの処理です。
+  // まず入力チェックを行い、questions を更新し、choices は既存更新と新規追加に分けて保存します。
   e.preventDefault();
 
   if (!currentSelectedQuestion) return;
@@ -524,6 +557,8 @@ document.getElementById('editor-form').addEventListener('submit', async (e) => {
 // ======================================
 
 document.getElementById('delete-btn').addEventListener('click', async (e) => {
+  // 削除ボタンが押されたときの処理です。
+  // choices は questions に紐づくため、先に選択肢を消してから問題を消します。
   e.preventDefault();
 
   if (!currentSelectedQuestion) return;
@@ -594,6 +629,8 @@ document.getElementById('cancel-btn').addEventListener('click', (e) => {
 // ======================================
 
 document.getElementById('export-json-btn').addEventListener('click', () => {
+  // 現在読み込んでいる問題一覧をJSONファイルとして書き出します。
+  // バックアップや別環境への移行に使えます。
   if (questions.length === 0) {
     alert('エクスポートする問題がありません');
     return;
@@ -624,6 +661,8 @@ document.getElementById('export-json-btn').addEventListener('click', () => {
 // ======================================
 
 document.getElementById('export-excel-btn').addEventListener('click', () => {
+  // 現在読み込んでいる問題一覧をExcelファイルとして書き出します。
+  // SheetJS(XLSX)ライブラリを使ってブラウザ上で生成しています。
   if (questions.length === 0) {
     alert('エクスポートする問題がありません');
     return;
@@ -657,6 +696,7 @@ document.getElementById('export-excel-btn').addEventListener('click', () => {
 // ======================================
 
 function downloadFile(blob, filename) {
+  // Blob（ブラウザ上のファイルのようなデータ）を一時URLにしてダウンロードさせます。
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
