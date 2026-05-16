@@ -3,7 +3,7 @@
 // ======================================
 // Cloudflare Pages Function として動くOCR APIです。
 //
-// スマホ画面で撮影した画像を受け取り、Cloudflare Workers AIのVisionモデルへ渡します。
+// カメラで撮影した画像を受け取り、Cloudflare Workers AIのVisionモデルへ渡します。
 // 返ってきた文章をJSONとして解釈し、問題文・選択肢・解説候補に整えてブラウザへ返します。
 //
 // 重要:
@@ -91,10 +91,10 @@ function normalizeCandidate(candidate) {
   };
 }
 
-async function runVisionModel(env, model, imageUrl) {
+function buildOcrPrompt() {
   // Visionモデルへ投げるプロンプトです。
   // 「問題文」「選択肢」「解説候補」をJSONで返すように強く指示しています。
-  const prompt = [
+  return [
     "You are extracting certification exam questions from a camera image.",
     "Read all visible Japanese and English text.",
     "Return strict JSON only. Do not include markdown.",
@@ -107,20 +107,68 @@ async function runVisionModel(env, model, imageUrl) {
     "- Do not guess the correct answer.",
     "- If explanation is not visible, use an empty string."
   ].join("\n");
+}
 
-  return env.AI.run(model, {
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          { type: "image_url", image_url: { url: imageUrl } }
-        ]
+async function runVisionModel(env, model, imageBytes, imageBase64, imageUrl) {
+  const prompt = buildOcrPrompt();
+  const attempts = [
+    {
+      name: "image-bytes",
+      input: {
+        messages: [{ role: "user", content: prompt }],
+        image: imageBytes,
+        temperature: 0,
+        max_tokens: 2048
       }
-    ],
-    temperature: 0,
-    max_tokens: 2048
-  });
+    },
+    {
+      name: "image-base64",
+      input: {
+        messages: [{ role: "user", content: prompt }],
+        image: imageBase64,
+        temperature: 0,
+        max_tokens: 2048
+      }
+    },
+    {
+      name: "image-url",
+      input: {
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: imageUrl } }
+            ]
+          }
+        ],
+        temperature: 0,
+        max_tokens: 2048
+      }
+    }
+  ];
+
+  const errors = [];
+
+  for (const attempt of attempts) {
+    try {
+      const result = await env.AI.run(model, attempt.input);
+      const text = extractModelText(result);
+      if (text) {
+        return {
+          text,
+          attempt: attempt.name
+        };
+      }
+      errors.push(`${attempt.name}: empty response`);
+    } catch (error) {
+      errors.push(`${attempt.name}: ${error?.message || String(error)}`);
+    }
+  }
+
+  const error = new Error(`All OCR payload attempts failed for ${model}.`);
+  error.details = errors;
+  throw error;
 }
 
 export async function onRequestPost(context) {
@@ -148,31 +196,43 @@ export async function onRequestPost(context) {
   }
 
   const buffer = await image.arrayBuffer();
-  const imageUrl = `data:${image.type};base64,${arrayBufferToBase64(buffer)}`;
+  const imageBytes = [...new Uint8Array(buffer)];
+  const imageBase64 = arrayBufferToBase64(buffer);
+  const imageUrl = `data:${image.type};base64,${imageBase64}`;
   const models = [
     // まず高精度なGemma 4を試し、失敗した場合だけGemma 3へフォールバックします。
     "@cf/google/gemma-4-26b-a4b-it",
-    "@cf/google/gemma-3-12b-it"
+    "@cf/google/gemma-3-12b-it",
+    "@cf/meta/llama-3.2-11b-vision-instruct"
   ];
 
-  let lastError = null;
+  const failures = [];
   let modelText = "";
   let usedModel = "";
+  let usedAttempt = "";
 
   for (const model of models) {
     try {
-      const result = await runVisionModel(env, model, imageUrl);
-      modelText = extractModelText(result);
+      const result = await runVisionModel(env, model, imageBytes, imageBase64, imageUrl);
+      modelText = result.text;
       usedModel = model;
+      usedAttempt = result.attempt;
       if (modelText) break;
     } catch (error) {
-      lastError = error;
+      failures.push({
+        model,
+        message: error?.message || String(error),
+        details: error?.details || []
+      });
     }
   }
 
   if (!modelText) {
-    console.error("OCR model failed:", lastError);
-    return jsonResponse({ error: "OCR model failed." }, 502);
+    console.error("OCR model failed:", failures);
+    return jsonResponse({
+      error: "OCR model failed.",
+      details: failures
+    }, 502);
   }
 
   try {
@@ -184,13 +244,15 @@ export async function onRequestPost(context) {
     return jsonResponse({
       questions,
       rawText: String(parsed.rawText || ""),
-      model: usedModel
+      model: usedModel,
+      attempt: usedAttempt
     });
   } catch (error) {
     return jsonResponse({
       questions: [],
       rawText: modelText,
       model: usedModel,
+      attempt: usedAttempt,
       warning: "Model response was not valid JSON."
     });
   }

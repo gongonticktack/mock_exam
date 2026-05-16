@@ -5,7 +5,7 @@
 //
 // 主な役割:
 // 1. UIから1問ずつ問題を直接登録する
-// 2. スマホのカメラで撮影した画像をCloudflare Workers AIへ送り、OCR候補を作る
+// 2. カメラで撮影した画像をCloudflare Workers AIへ送り、OCR候補を作る
 // 3. Excel / JSON ファイルを読み込んで一括登録する
 // 4. 問題文・解説に画像Data URIを埋め込めるようにする
 //
@@ -21,6 +21,7 @@
 
 let supabaseClient = null;
 const MAX_DIRECT_IMAGE_BYTES = 1024 * 1024;
+const MAX_OCR_IMAGE_BYTES = 5 * 1024 * 1024;
 
 function initSupabase() {
 
@@ -206,7 +207,8 @@ const confirmCancelBtn =
 const directFormState = {
   choiceCount: 0,
   ocrStream: null,
-  ocrCandidates: []
+  ocrCandidates: [],
+  categoriesLoaded: false
 };
 
 function renderRichText(container, text) {
@@ -302,12 +304,18 @@ function setupMobileOcrControls() {
   const closeBtn = document.getElementById("direct-ocr-close-btn");
   const captureBtn = document.getElementById("direct-ocr-capture-btn");
   const retakeBtn = document.getElementById("direct-ocr-retake-btn");
+  const fileBtn = document.getElementById("direct-ocr-file-btn");
+  const fileInput = document.getElementById("direct-ocr-file-input");
 
   if (!scanBtn || !closeBtn || !captureBtn || !retakeBtn) return;
 
   scanBtn.addEventListener("click", openOcrScanner);
   closeBtn.addEventListener("click", closeOcrScanner);
   captureBtn.addEventListener("click", captureOcrFrame);
+  if (fileBtn && fileInput) {
+    fileBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", handleOcrFileSelect);
+  }
   retakeBtn.addEventListener("click", () => {
     const results = document.getElementById("direct-ocr-results");
     setOcrStatus("");
@@ -318,7 +326,7 @@ function setupMobileOcrControls() {
 }
 
 async function openOcrScanner() {
-  // スマホの背面カメラを優先して起動します。
+  // スマホでは背面カメラを優先し、PCでは利用できるカメラを起動します。
   // getUserMedia はHTTPS環境でないと使えないため、Cloudflare Pages本番URLでの利用を想定しています。
   const modal = document.getElementById("direct-ocr-modal");
   const video = document.getElementById("direct-ocr-video");
@@ -350,7 +358,7 @@ async function openOcrScanner() {
 
 function closeOcrScanner() {
   // カメラを止め、canvasやOCR結果を消します。
-  // スマホ上に撮影画像を残さないための後片付けです。
+  // 端末上に撮影画像を残さないための後片付けです。
   const modal = document.getElementById("direct-ocr-modal");
   const video = document.getElementById("direct-ocr-video");
   const canvas = document.getElementById("direct-ocr-canvas");
@@ -406,9 +414,40 @@ async function captureOcrFrame() {
   context.drawImage(video, 0, 0, width, height);
 
   try {
-    captureBtn.disabled = true;
-    setOcrStatus("Sending image to Cloudflare Workers AI...");
     const blob = await canvasToBlob(canvas);
+    await runCloudflareOcrBlob(blob, captureBtn);
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+}
+
+async function handleOcrFileSelect(event) {
+  // PCデバッグ用です。カメラがない環境でも、画像ファイルから同じOCR APIを試せます。
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    alert("JPEG / PNG / WebP の画像を選択してください。");
+    return;
+  }
+
+  if (file.size > MAX_OCR_IMAGE_BYTES) {
+    alert("OCR画像は5MB以下にしてください。");
+    return;
+  }
+
+  await runCloudflareOcrBlob(file, document.getElementById("direct-ocr-file-btn"));
+}
+
+async function runCloudflareOcrBlob(blob, busyButton) {
+  // カメラ撮影でもファイル選択でも、この関数でCloudflare OCR APIへ送ります。
+  try {
+    if (busyButton) {
+      busyButton.disabled = true;
+    }
+    setOcrStatus("Sending image to Cloudflare Workers AI...");
     const result = await extractQuestionsWithCloudflareOcr(blob);
     const candidates = normalizeCloudflareOcrCandidates(result.questions);
     const rawText = result.rawText || "";
@@ -417,12 +456,12 @@ async function captureOcrFrame() {
     setOcrStatus(candidates.length ? "OCR complete. Select a candidate below." : "OCR complete, but no question-like text was found.");
   } catch (error) {
     console.error("OCR error:", error);
-    setOcrStatus("OCR failed.");
-    alert("OCR failed. Please try a clearer photo.");
+    setOcrStatus(error.message || "OCR failed.");
+    alert(error.message || "OCR failed. Please try a clearer photo.");
   } finally {
-    captureBtn.disabled = false;
-    canvas.width = 0;
-    canvas.height = 0;
+    if (busyButton) {
+      busyButton.disabled = false;
+    }
   }
 }
 
@@ -460,7 +499,10 @@ async function extractQuestionsWithCloudflareOcr(blob) {
   }
 
   if (!response.ok) {
-    throw new Error(result?.error || "Cloudflare OCR failed.");
+    const details = result?.details
+      ? ` ${JSON.stringify(result.details).slice(0, 800)}`
+      : "";
+    throw new Error(`${result?.error || "Cloudflare OCR failed."}${details}`);
   }
 
   return result || { questions: [], rawText: "" };
@@ -575,24 +617,32 @@ function createDirectAddForm() {
 
   const card = document.createElement("section");
   card.id = "direct-add-card";
-  card.className = "direct-add-card";
+  card.className = "direct-add-card collapsible-card is-collapsed";
   card.innerHTML = `
     <div class="direct-add-header">
       <div>
         <h2>\u554f\u984c\u3092\u76f4\u63a5\u8ffd\u52a0</h2>
         <p>Excel / JSON\u3092\u4f7f\u308f\u305a\u30011\u554f\u305a\u3064\u767b\u9332\u3067\u304d\u307e\u3059\u3002</p>
       </div>
-      <button type="button" id="direct-ocr-open-btn" class="direct-ocr-open-btn">
-        <i class="fa-solid fa-camera"></i>
-        \u30ab\u30e1\u30e9OCR
+      <button type="button" id="direct-add-toggle-btn" class="collapse-toggle-btn" aria-expanded="false">
+        <i class="fa-solid fa-chevron-down"></i>
+        \u958b\u304f
       </button>
     </div>
 
     <form id="direct-question-form" class="direct-question-form">
+      <div class="direct-form-toolbar">
+        <button type="button" id="direct-ocr-open-btn" class="direct-ocr-open-btn">
+          <i class="fa-solid fa-camera"></i>
+          \u30ab\u30e1\u30e9OCR
+        </button>
+      </div>
+
       <div class="direct-grid">
         <label class="direct-field">
           <span>\u30ab\u30c6\u30b4\u30ea</span>
-          <input type="text" id="direct-category" placeholder="\u4f8b: EC2" autocomplete="off">
+          <input type="text" id="direct-category" list="direct-category-options" placeholder="\u65e2\u5b58\u30ab\u30c6\u30b4\u30ea\u3092\u9078\u629e\u307e\u305f\u306f\u65b0\u898f\u5165\u529b" autocomplete="off">
+          <datalist id="direct-category-options"></datalist>
         </label>
 
         <div class="direct-field direct-field-wide">
@@ -604,14 +654,6 @@ function createDirectAddForm() {
           </button>
         </div>
 
-        <div class="direct-field direct-field-wide">
-          <span>\u89e3\u8aac</span>
-          <textarea id="direct-explanation" rows="4" placeholder="\u89e3\u8aac\u3092\u5165\u529b\uff08\u4efb\u610f\uff09"></textarea>
-          <button type="button" class="direct-inline-tool" data-target="direct-explanation">
-            <i class="fa-solid fa-image"></i>
-            \u89e3\u8aac\u306b\u753b\u50cf\u3092\u8ffd\u52a0
-          </button>
-        </div>
       </div>
 
       <div class="direct-choices-block">
@@ -627,6 +669,15 @@ function createDirectAddForm() {
         </div>
 
         <div id="direct-choices-container" class="direct-choices-container"></div>
+      </div>
+
+      <div class="direct-field direct-field-wide">
+        <span>\u89e3\u8aac</span>
+        <textarea id="direct-explanation" rows="4" placeholder="\u89e3\u8aac\u3092\u5165\u529b\uff08\u4efb\u610f\uff09"></textarea>
+        <button type="button" class="direct-inline-tool" data-target="direct-explanation">
+          <i class="fa-solid fa-image"></i>
+          \u89e3\u8aac\u306b\u753b\u50cf\u3092\u8ffd\u52a0
+        </button>
       </div>
 
       <div class="direct-actions">
@@ -662,6 +713,11 @@ function createDirectAddForm() {
           <button type="button" id="direct-ocr-retake-btn" class="direct-secondary-btn">
             \u64ae\u308a\u76f4\u3057
           </button>
+          <button type="button" id="direct-ocr-file-btn" class="direct-secondary-btn">
+            <i class="fa-solid fa-image"></i>
+            \u753b\u50cf\u9078\u629eOCR
+          </button>
+          <input type="file" id="direct-ocr-file-input" accept="image/png,image/jpeg,image/webp" hidden>
         </div>
 
         <p id="direct-ocr-status" class="direct-ocr-status"></p>
@@ -673,9 +729,11 @@ function createDirectAddForm() {
   mainContent.insertBefore(card, importCard);
 
   const addChoiceBtn = document.getElementById("direct-add-choice-btn");
+  const toggleBtn = document.getElementById("direct-add-toggle-btn");
   const resetBtn = document.getElementById("direct-reset-btn");
   const form = document.getElementById("direct-question-form");
 
+  toggleBtn.addEventListener("click", () => toggleCollapsible(card, toggleBtn));
   addChoiceBtn.addEventListener("click", () => addDirectChoiceRow());
   resetBtn.addEventListener("click", resetDirectForm);
   form.addEventListener("submit", saveDirectQuestion);
@@ -683,8 +741,90 @@ function createDirectAddForm() {
     button.addEventListener("click", () => insertDirectImage(button.dataset.target));
   });
   setupMobileOcrControls();
+  loadCategoryOptions();
 
   resetDirectForm();
+}
+
+function toggleCollapsible(card, button) {
+  const isCollapsed = card.classList.toggle("is-collapsed");
+  button.setAttribute("aria-expanded", String(!isCollapsed));
+  button.innerHTML = isCollapsed
+    ? '<i class="fa-solid fa-chevron-down"></i> \u958b\u304f'
+    : '<i class="fa-solid fa-chevron-up"></i> \u9589\u3058\u308b';
+}
+
+function setupImportCardCollapse() {
+  // Excel / JSON import is useful, but it takes a lot of space.
+  // Keep it closed on initial load and let the user open it only when needed.
+  const importCard = document.querySelector(".import-card");
+  if (!importCard || document.getElementById("import-toggle-btn")) {
+    return;
+  }
+
+  importCard.classList.add("collapsible-card", "is-collapsed");
+
+  const header = document.createElement("div");
+  header.className = "import-collapse-header";
+  header.innerHTML = `
+    <div>
+      <h2>Excel / JSON\u304b\u3089\u8ffd\u52a0</h2>
+      <p>\u30d5\u30a1\u30a4\u30eb\u3092\u4f7f\u3063\u3066\u8907\u6570\u306e\u554f\u984c\u3092\u4e00\u62ec\u767b\u9332\u3057\u307e\u3059\u3002</p>
+    </div>
+    <button type="button" id="import-toggle-btn" class="collapse-toggle-btn" aria-expanded="false">
+      <i class="fa-solid fa-chevron-down"></i>
+      \u958b\u304f
+    </button>
+  `;
+
+  importCard.insertBefore(header, importCard.firstChild);
+  document.getElementById("import-toggle-btn")
+    .addEventListener("click", () => toggleCollapsible(importCard, document.getElementById("import-toggle-btn")));
+}
+
+async function loadCategoryOptions() {
+  // Load existing categories from DB and show them as datalist options.
+  // Users can still type a new category because datalist keeps the input editable.
+  if (directFormState.categoriesLoaded) {
+    return;
+  }
+
+  const datalist = document.getElementById("direct-category-options");
+  if (!datalist) {
+    return;
+  }
+
+  if (!initSupabase()) {
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('questions')
+      .select('category')
+      .eq('exam_id', selectedExam)
+      .order('category', { ascending: true });
+
+    if (error) {
+      console.error("Category load error:", error);
+      return;
+    }
+
+    const categories = [...new Set((data || [])
+      .map((item) => String(item.category || "").trim())
+      .filter(Boolean))];
+
+    datalist.innerHTML = "";
+    categories.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category;
+      datalist.appendChild(option);
+    });
+
+    directFormState.categoriesLoaded = true;
+  } catch (error) {
+    console.error("Category load error:", error);
+  }
 }
 
 function addDirectChoiceRow(value = "", checked = false) {
@@ -881,6 +1021,7 @@ async function saveDirectQuestion(event) {
 }
 
 createDirectAddForm();
+setupImportCardCollapse();
 
 // ======================================
 // インポート処理
