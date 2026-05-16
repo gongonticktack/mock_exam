@@ -4,6 +4,7 @@
 // 問題登録用のデータベース接続を初期化
 
 let supabaseClient = null;
+const MAX_DIRECT_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
 
@@ -186,6 +187,14 @@ const confirmOkBtn =
 const confirmCancelBtn =
   document.getElementById("confirm-cancel-btn");
 
+const directFormState = {
+  choiceCount: 0,
+  ocrStream: null,
+  ocrCandidates: []
+};
+
+const TESSERACT_CDN = "https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js";
+
 function renderRichText(container, text) {
   container.innerHTML = "";
 
@@ -220,6 +229,640 @@ function renderRichText(container, text) {
 
   appendText(value.slice(lastIndex));
 }
+
+function insertAtCursor(textarea, text) {
+  const start = textarea.selectionStart || 0;
+  const end = textarea.selectionEnd || 0;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
+  const prefix = before && !before.endsWith('\n') ? '\n' : '';
+  const suffix = after && !after.startsWith('\n') ? '\n' : '';
+  textarea.value = `${before}${prefix}${text}${suffix}${after}`;
+  const cursor = before.length + prefix.length + text.length;
+  textarea.focus();
+  textarea.setSelectionRange(cursor, cursor);
+}
+
+function insertDirectImage(textareaId) {
+  const textarea = document.getElementById(textareaId);
+  if (!textarea) return;
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/png,image/jpeg,image/gif,image/webp";
+
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("\u753b\u50cf\u30d5\u30a1\u30a4\u30eb\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044");
+      return;
+    }
+
+    if (file.size > MAX_DIRECT_IMAGE_BYTES) {
+      alert("\u753b\u50cf\u306f1MB\u4ee5\u4e0b\u306b\u3057\u3066\u304f\u3060\u3055\u3044");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const alt = file.name.replace(/[()[\]]/g, " ").trim() || "image";
+      insertAtCursor(textarea, `![${alt}](${reader.result})`);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  input.click();
+}
+
+function loadTesseract() {
+  if (window.Tesseract) {
+    return Promise.resolve(window.Tesseract);
+  }
+
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${TESSERACT_CDN}"]`);
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.Tesseract));
+      existingScript.addEventListener("error", reject);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = TESSERACT_CDN;
+    script.async = true;
+    script.onload = () => resolve(window.Tesseract);
+    script.onerror = () => reject(new Error("Failed to load OCR library."));
+    document.head.appendChild(script);
+  });
+}
+
+function setupMobileOcrControls() {
+  const scanBtn = document.getElementById("direct-ocr-open-btn");
+  const closeBtn = document.getElementById("direct-ocr-close-btn");
+  const captureBtn = document.getElementById("direct-ocr-capture-btn");
+  const retakeBtn = document.getElementById("direct-ocr-retake-btn");
+
+  if (!scanBtn || !closeBtn || !captureBtn || !retakeBtn) return;
+
+  scanBtn.addEventListener("click", openOcrScanner);
+  closeBtn.addEventListener("click", closeOcrScanner);
+  captureBtn.addEventListener("click", captureOcrFrame);
+  retakeBtn.addEventListener("click", () => {
+    setOcrStatus("");
+    document.getElementById("direct-ocr-preview").style.display = "none";
+  });
+}
+
+async function openOcrScanner() {
+  const modal = document.getElementById("direct-ocr-modal");
+  const video = document.getElementById("direct-ocr-video");
+  if (!modal || !video) return;
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    alert("This browser does not support camera capture.");
+    return;
+  }
+
+  try {
+    directFormState.ocrStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    video.srcObject = directFormState.ocrStream;
+    modal.style.display = "flex";
+    setOcrStatus("");
+  } catch (error) {
+    console.error("Camera start error:", error);
+    alert("Camera could not be started. Please allow camera access.");
+  }
+}
+
+function closeOcrScanner() {
+  const modal = document.getElementById("direct-ocr-modal");
+  const video = document.getElementById("direct-ocr-video");
+
+  if (directFormState.ocrStream) {
+    directFormState.ocrStream.getTracks().forEach((track) => track.stop());
+    directFormState.ocrStream = null;
+  }
+
+  if (video) {
+    video.srcObject = null;
+  }
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+function setOcrStatus(message) {
+  const status = document.getElementById("direct-ocr-status");
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+async function captureOcrFrame() {
+  const video = document.getElementById("direct-ocr-video");
+  const canvas = document.getElementById("direct-ocr-canvas");
+  const preview = document.getElementById("direct-ocr-preview");
+  const captureBtn = document.getElementById("direct-ocr-capture-btn");
+  if (!video || !canvas || !preview || !captureBtn) return;
+
+  const width = video.videoWidth || 1280;
+  const height = video.videoHeight || 720;
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  context.drawImage(video, 0, 0, width, height);
+
+  preview.src = canvas.toDataURL("image/jpeg", 0.88);
+  preview.style.display = "block";
+
+  try {
+    captureBtn.disabled = true;
+    setOcrStatus("OCR loading...");
+    const Tesseract = await loadTesseract();
+
+    setOcrStatus("OCR running... 0%");
+    const result = await Tesseract.recognize(canvas, "jpn+eng", {
+      logger: (message) => {
+        if (message.status === "recognizing text") {
+          const progress = Math.round((message.progress || 0) * 100);
+          setOcrStatus(`OCR running... ${progress}%`);
+        }
+      }
+    });
+
+    const text = result?.data?.text || "";
+    const candidates = parseOcrQuestions(text);
+    showOcrCandidates(candidates, text);
+    setOcrStatus(candidates.length ? "OCR complete. Select a candidate below." : "OCR complete, but no question-like text was found.");
+  } catch (error) {
+    console.error("OCR error:", error);
+    setOcrStatus("OCR failed.");
+    alert("OCR failed. Please try a clearer photo.");
+  } finally {
+    captureBtn.disabled = false;
+  }
+}
+
+function parseOcrQuestions(text) {
+  const lines = String(text || "")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  if (!lines.length) {
+    return [];
+  }
+
+  const blocks = [];
+  let currentBlock = [];
+
+  lines.forEach((line) => {
+    const startsQuestionPattern = new RegExp("^(Q|\\u554f|\\u554f\\u984c)?\\s*\\d{1,3}[\\).\\u3001\\uff0e:\\uff1a\\s]", "i");
+    const startsQuestion = startsQuestionPattern.test(line);
+    if (startsQuestion && currentBlock.length) {
+      blocks.push(currentBlock);
+      currentBlock = [];
+    }
+    currentBlock.push(line);
+  });
+
+  if (currentBlock.length) {
+    blocks.push(currentBlock);
+  }
+
+  return blocks
+    .map(parseOcrBlock)
+    .filter((candidate) => candidate.question || candidate.choices.length);
+}
+
+function parseOcrBlock(lines) {
+  const choicePattern = new RegExp("^([A-D\\uff21-\\uff24]|[1-9]|[\\u30a2-\\u30aa]|[\\uff71-\\uff75])[\\.\\)\\u3001\\uff09\\uff0e:\\uff1a\\s]+(.+)$");
+  const questionLines = [];
+  const choices = [];
+  let choiceStarted = false;
+
+  lines.forEach((line) => {
+    const match = line.match(choicePattern);
+    if (match) {
+      choiceStarted = true;
+      choices.push(match[2].trim());
+      return;
+    }
+
+    if (choiceStarted && choices.length) {
+      choices[choices.length - 1] = `${choices[choices.length - 1]} ${line}`.trim();
+      return;
+    }
+
+    questionLines.push(line);
+  });
+
+  if (!choices.length && lines.length > 2) {
+    const guessedQuestion = lines.slice(0, Math.max(1, lines.length - 4));
+    const guessedChoices = lines.slice(guessedQuestion.length);
+    return {
+      question: guessedQuestion.join("\n"),
+      choices: guessedChoices.slice(0, 8)
+    };
+  }
+
+  return {
+    question: questionLines.join("\n"),
+    choices: choices.slice(0, 8)
+  };
+}
+
+function showOcrCandidates(candidates, rawText) {
+  directFormState.ocrCandidates = candidates;
+
+  const panel = document.getElementById("direct-ocr-results");
+  if (!panel) return;
+
+  panel.innerHTML = "";
+
+  const rawBox = document.createElement("details");
+  rawBox.className = "direct-ocr-raw";
+  rawBox.innerHTML = `<summary>OCR raw text</summary><pre></pre>`;
+  rawBox.querySelector("pre").textContent = rawText || "";
+  panel.appendChild(rawBox);
+
+  if (!candidates.length) {
+    const empty = document.createElement("p");
+    empty.className = "direct-ocr-empty";
+    empty.textContent = "No candidates found. You can copy from raw text and adjust manually.";
+    panel.appendChild(empty);
+    return;
+  }
+
+  candidates.forEach((candidate, index) => {
+    const item = document.createElement("div");
+    item.className = "direct-ocr-candidate";
+
+    const title = document.createElement("h4");
+    title.textContent = `Candidate ${index + 1}`;
+
+    const body = document.createElement("p");
+    body.textContent = candidate.question || "(No question text)";
+
+    const choices = document.createElement("ul");
+    candidate.choices.forEach((choice) => {
+      const li = document.createElement("li");
+      li.textContent = choice;
+      choices.appendChild(li);
+    });
+
+    const applyBtn = document.createElement("button");
+    applyBtn.type = "button";
+    applyBtn.className = "direct-secondary-btn";
+    applyBtn.textContent = "Apply to form";
+    applyBtn.addEventListener("click", () => applyOcrCandidate(candidate));
+
+    item.appendChild(title);
+    item.appendChild(body);
+    item.appendChild(choices);
+    item.appendChild(applyBtn);
+    panel.appendChild(item);
+  });
+}
+
+function applyOcrCandidate(candidate) {
+  const questionInput = document.getElementById("direct-question");
+  const choicesContainer = document.getElementById("direct-choices-container");
+
+  if (questionInput) {
+    questionInput.value = candidate.question || "";
+  }
+
+  if (choicesContainer) {
+    choicesContainer.innerHTML = "";
+    directFormState.choiceCount = 0;
+    const choices = candidate.choices.length ? candidate.choices : ["", "", "", ""];
+    choices.forEach((choice, index) => addDirectChoiceRow(choice, index === 0));
+  }
+
+  closeOcrScanner();
+}
+
+function createDirectAddForm() {
+  const mainContent = document.querySelector(".main-content");
+  const importCard = document.querySelector(".import-card");
+  if (!mainContent || !importCard || document.getElementById("direct-add-card")) {
+    return;
+  }
+
+  const card = document.createElement("section");
+  card.id = "direct-add-card";
+  card.className = "direct-add-card";
+  card.innerHTML = `
+    <div class="direct-add-header">
+      <div>
+        <h2>\u554f\u984c\u3092\u76f4\u63a5\u8ffd\u52a0</h2>
+        <p>Excel / JSON\u3092\u4f7f\u308f\u305a\u30011\u554f\u305a\u3064\u767b\u9332\u3067\u304d\u307e\u3059\u3002</p>
+      </div>
+      <button type="button" id="direct-ocr-open-btn" class="direct-ocr-open-btn">
+        <i class="fa-solid fa-camera"></i>
+        \u30ab\u30e1\u30e9OCR
+      </button>
+    </div>
+
+    <form id="direct-question-form" class="direct-question-form">
+      <div class="direct-grid">
+        <label class="direct-field">
+          <span>\u30ab\u30c6\u30b4\u30ea</span>
+          <input type="text" id="direct-category" placeholder="\u4f8b: EC2" autocomplete="off">
+        </label>
+
+        <div class="direct-field direct-field-wide">
+          <span>\u554f\u984c\u6587</span>
+          <textarea id="direct-question" rows="5" placeholder="\u554f\u984c\u6587\u3092\u5165\u529b"></textarea>
+          <button type="button" class="direct-inline-tool" data-target="direct-question">
+            <i class="fa-solid fa-image"></i>
+            \u554f\u984c\u6587\u306b\u753b\u50cf\u3092\u8ffd\u52a0
+          </button>
+        </div>
+
+        <div class="direct-field direct-field-wide">
+          <span>\u89e3\u8aac</span>
+          <textarea id="direct-explanation" rows="4" placeholder="\u89e3\u8aac\u3092\u5165\u529b\uff08\u4efb\u610f\uff09"></textarea>
+          <button type="button" class="direct-inline-tool" data-target="direct-explanation">
+            <i class="fa-solid fa-image"></i>
+            \u89e3\u8aac\u306b\u753b\u50cf\u3092\u8ffd\u52a0
+          </button>
+        </div>
+      </div>
+
+      <div class="direct-choices-block">
+        <div class="direct-choices-header">
+          <div>
+            <h3>\u9078\u629e\u80a2\u3068\u6b63\u89e3</h3>
+            <p>\u6b63\u89e3\u306e\u9078\u629e\u80a2\u306b\u30c1\u30a7\u30c3\u30af\u3092\u5165\u308c\u3066\u304f\u3060\u3055\u3044\u3002\u8907\u6570\u6b63\u89e3\u306b\u3082\u5bfe\u5fdc\u3057\u3066\u3044\u307e\u3059\u3002</p>
+          </div>
+          <button type="button" id="direct-add-choice-btn" class="direct-secondary-btn">
+            <i class="fa-solid fa-plus"></i>
+            \u9078\u629e\u80a2\u3092\u8ffd\u52a0
+          </button>
+        </div>
+
+        <div id="direct-choices-container" class="direct-choices-container"></div>
+      </div>
+
+      <div class="direct-actions">
+        <button type="submit" id="direct-save-btn" class="direct-save-btn">
+          <i class="fa-solid fa-floppy-disk"></i>
+          \u3053\u306e\u554f\u984c\u3092\u767b\u9332
+        </button>
+        <button type="button" id="direct-reset-btn" class="direct-secondary-btn">
+          \u5165\u529b\u3092\u30af\u30ea\u30a2
+        </button>
+      </div>
+    </form>
+
+    <div id="direct-ocr-modal" class="direct-ocr-modal" style="display: none;">
+      <div class="direct-ocr-sheet">
+        <div class="direct-ocr-toolbar">
+          <div>
+            <h3>\u30ab\u30e1\u30e9OCR</h3>
+            <p>\u554f\u984c\u6587\u3068\u9078\u629e\u80a2\u304c\u5199\u308b\u3088\u3046\u306b\u64ae\u5f71\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p>
+          </div>
+          <button type="button" id="direct-ocr-close-btn" class="direct-ocr-icon-btn" aria-label="Close OCR">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <video id="direct-ocr-video" class="direct-ocr-video" autoplay playsinline muted></video>
+        <canvas id="direct-ocr-canvas" class="direct-ocr-canvas"></canvas>
+        <img id="direct-ocr-preview" class="direct-ocr-preview" alt="OCR preview" style="display: none;">
+
+        <div class="direct-ocr-actions">
+          <button type="button" id="direct-ocr-capture-btn" class="direct-save-btn">
+            <i class="fa-solid fa-camera"></i>
+            OCR\u5b9f\u884c
+          </button>
+          <button type="button" id="direct-ocr-retake-btn" class="direct-secondary-btn">
+            \u64ae\u308a\u76f4\u3057
+          </button>
+        </div>
+
+        <p id="direct-ocr-status" class="direct-ocr-status"></p>
+        <div id="direct-ocr-results" class="direct-ocr-results"></div>
+      </div>
+    </div>
+  `;
+
+  mainContent.insertBefore(card, importCard);
+
+  const addChoiceBtn = document.getElementById("direct-add-choice-btn");
+  const resetBtn = document.getElementById("direct-reset-btn");
+  const form = document.getElementById("direct-question-form");
+
+  addChoiceBtn.addEventListener("click", () => addDirectChoiceRow());
+  resetBtn.addEventListener("click", resetDirectForm);
+  form.addEventListener("submit", saveDirectQuestion);
+  document.querySelectorAll(".direct-inline-tool").forEach((button) => {
+    button.addEventListener("click", () => insertDirectImage(button.dataset.target));
+  });
+  setupMobileOcrControls();
+
+  resetDirectForm();
+}
+
+function addDirectChoiceRow(value = "", checked = false) {
+  const container = document.getElementById("direct-choices-container");
+  if (!container) return;
+
+  directFormState.choiceCount += 1;
+
+  const row = document.createElement("div");
+  row.className = "direct-choice-row";
+
+  const correctLabel = document.createElement("label");
+  correctLabel.className = "direct-correct-toggle";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.className = "direct-choice-correct";
+  checkbox.checked = checked;
+
+  const checkText = document.createElement("span");
+  checkText.textContent = "\u6b63\u89e3";
+
+  correctLabel.appendChild(checkbox);
+  correctLabel.appendChild(checkText);
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "direct-choice-input";
+  input.placeholder = `\u9078\u629e\u80a2 ${directFormState.choiceCount}`;
+  input.value = value;
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "direct-remove-choice-btn";
+  removeBtn.title = "\u9078\u629e\u80a2\u3092\u524a\u9664";
+  removeBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+  removeBtn.addEventListener("click", () => {
+    row.remove();
+    updateDirectChoicePlaceholders();
+  });
+
+  row.appendChild(correctLabel);
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+  updateDirectChoicePlaceholders();
+}
+
+function updateDirectChoicePlaceholders() {
+  document.querySelectorAll(".direct-choice-input").forEach((input, index) => {
+    input.placeholder = `\u9078\u629e\u80a2 ${index + 1}`;
+  });
+}
+
+function resetDirectForm() {
+  const category = document.getElementById("direct-category");
+  const question = document.getElementById("direct-question");
+  const explanation = document.getElementById("direct-explanation");
+  const choicesContainer = document.getElementById("direct-choices-container");
+
+  if (category) category.value = "";
+  if (question) question.value = "";
+  if (explanation) explanation.value = "";
+  if (choicesContainer) choicesContainer.innerHTML = "";
+
+  directFormState.choiceCount = 0;
+  addDirectChoiceRow("", true);
+  addDirectChoiceRow();
+  addDirectChoiceRow();
+  addDirectChoiceRow();
+}
+
+function collectDirectQuestion() {
+  const category = document.getElementById("direct-category").value.trim();
+  const question = document.getElementById("direct-question").value.trim();
+  const explanation = document.getElementById("direct-explanation").value.trim();
+  const rows = [...document.querySelectorAll(".direct-choice-row")];
+
+  if (!category) {
+    throw new Error("Please enter a category.");
+  }
+
+  if (!question) {
+    throw new Error("Please enter a question.");
+  }
+
+  const choices = rows
+    .map((row, index) => ({
+      choice_index: index + 1,
+      content: row.querySelector(".direct-choice-input").value.trim(),
+      is_correct: row.querySelector(".direct-choice-correct").checked ? 1 : 0
+    }))
+    .filter((choice) => choice.content)
+    .map((choice, index) => ({
+      ...choice,
+      choice_index: index + 1
+    }));
+
+  if (choices.length < 2) {
+    throw new Error("Please enter at least two choices.");
+  }
+
+  if (!choices.some((choice) => choice.is_correct)) {
+    throw new Error("Please select at least one correct answer.");
+  }
+
+  return {
+    category,
+    question,
+    explanation,
+    choices
+  };
+}
+
+async function insertQuestionWithChoices(questionData) {
+  const { data: questionResult, error: questionError } =
+    await supabaseClient
+      .from('questions')
+      .insert({
+        exam_id: selectedExam,
+        category: questionData.category,
+        question: questionData.question,
+        explanation: questionData.explanation || ''
+      })
+      .select();
+
+  if (questionError) {
+    throw questionError;
+  }
+
+  const questionId = questionResult[0]?.id;
+  if (!questionId) {
+    throw new Error("Failed to get the question ID.");
+  }
+
+  const choicesToInsert = questionData.choices.map((choice) => ({
+    question_id: questionId,
+    choice_index: choice.choice_index,
+    content: choice.content,
+    is_correct: choice.is_correct
+  }));
+
+  const { error: choiceError } =
+    await supabaseClient
+      .from('choices')
+      .insert(choicesToInsert);
+
+  if (choiceError) {
+    throw choiceError;
+  }
+
+  return questionId;
+}
+
+async function saveDirectQuestion(event) {
+  event.preventDefault();
+
+  const saveBtn = document.getElementById("direct-save-btn");
+
+  try {
+    const questionData = collectDirectQuestion();
+
+    if (!initSupabase()) {
+      addLog("Failed to initialize Supabase.", "error");
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> \u767b\u9332\u4e2d...';
+
+    await insertQuestionWithChoices(questionData);
+
+    addLog(`\u767b\u9332\u5b8c\u4e86: ${questionData.question}`, "success");
+    alert("\u554f\u984c\u3092\u767b\u9332\u3057\u307e\u3057\u305f");
+    resetDirectForm();
+  } catch (error) {
+    console.error("Direct add error:", error);
+    addLog(error.message || "Failed to save the question.", "error");
+    alert(error.message || "Failed to save the question.");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> \u3053\u306e\u554f\u984c\u3092\u767b\u9332';
+  }
+}
+
+createDirectAddForm();
 
 // ======================================
 // インポート処理
