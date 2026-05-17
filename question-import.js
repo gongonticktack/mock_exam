@@ -621,8 +621,8 @@ function createDirectAddForm() {
   card.innerHTML = `
     <div class="direct-add-header">
       <div>
-        <h2>\u554f\u984c\u3092\u76f4\u63a5\u8ffd\u52a0</h2>
-        <p>Excel / JSON\u3092\u4f7f\u308f\u305a\u30011\u554f\u305a\u3064\u767b\u9332\u3067\u304d\u307e\u3059\u3002</p>
+        <h2>問題を追加</h2>
+        <p>問題と選択肢を入力して問題追加できます。</p>
       </div>
       <button type="button" id="direct-add-toggle-btn" class="collapse-toggle-btn" aria-expanded="false">
         <i class="fa-solid fa-chevron-down"></i>

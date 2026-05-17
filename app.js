@@ -224,7 +224,7 @@ async function fetchExamSummary(examId) {
 }
 
 async function fetchExamWeaknesses(examId) {
-  // 直近1週間の不正解データを見て、苦手カテゴリを推測します。
+  // 直近1週間の回答データを見て、カテゴリごとの不正解率を計算します。
   // exam_histories に question_id があれば questions テーブルからカテゴリを引きます。
   if (!supabaseClient) {
     return [];
@@ -234,22 +234,28 @@ async function fetchExamWeaknesses(examId) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    let data;
-    let error;
+    const selectAttempts = [
+      { columns: 'question_id,activity,is_correct', useLegacy: false },
+      { columns: 'question_id,activity,correct_count,total_count', useLegacy: true },
+      { columns: 'activity,is_correct', useLegacy: false },
+      { columns: 'activity,correct_count,total_count', useLegacy: true }
+    ];
 
-    ({ data, error } = await supabaseClient
-      .from('exam_histories')
-      .select('question_id,activity')
-      .eq('exam_id', examId)
-      .gte('answered_at', oneWeekAgo.toISOString()));
+    let data = null;
+    let error = null;
+    let useLegacy = false;
 
-    if (error) {
-      console.warn('苦手分野取得でquestion_id列が見つかりません。legacy schemaを試行します:', error.message || error);
+    for (const attempt of selectAttempts) {
       ({ data, error } = await supabaseClient
         .from('exam_histories')
-        .select('activity')
+        .select(attempt.columns)
         .eq('exam_id', examId)
         .gte('answered_at', oneWeekAgo.toISOString()));
+
+      if (!error) {
+        useLegacy = attempt.useLegacy;
+        break;
+      }
     }
 
     if (error) {
@@ -282,19 +288,28 @@ async function fetchExamWeaknesses(examId) {
     const grouped = data.reduce((acc, item) => {
       const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : item.activity || '未分類';
       if (!acc[key]) {
-        acc[key] = { count: 0 };
+        acc[key] = { wrongCount: 0, totalCount: 0 };
       }
-      acc[key].count += 1;
+
+      const totalCount = useLegacy ? (item.total_count || 0) : 1;
+      const correctCount = useLegacy ? (item.correct_count || 0) : (item.is_correct ? 1 : 0);
+      const wrongCount = Math.max(0, totalCount - correctCount);
+
+      acc[key].totalCount += totalCount;
+      acc[key].wrongCount += wrongCount;
       return acc;
     }, {});
 
     const weaknesses = Object.entries(grouped)
+      .filter(([, stats]) => stats.totalCount > 0)
       .map(([name, stats]) => ({
         name,
-        rate: `${stats.count}問`,
-        count: stats.count
+        rate: `${Math.round((stats.wrongCount / stats.totalCount) * 100)}%`,
+        count: stats.wrongCount,
+        totalCount: stats.totalCount,
+        wrongRate: stats.wrongCount / stats.totalCount
       }))
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.wrongRate - a.wrongRate || b.count - a.count || b.totalCount - a.totalCount)
       .slice(0, 3);
 
     return weaknesses;
