@@ -148,7 +148,9 @@ async function initPage() {
     { id: 1, shortName: "AWS CCP" },
     { id: 2, shortName: "UML L2" },
     { id: 3, shortName: "HTML5 L1" },
-    { id: 4, shortName: "アジャイル" }
+    { id: 4, shortName: "アジャイル" },
+    { id: 5, shortName: "AWS SAA" },
+    { id: 6, shortName: "JCSQE 初級" }
   ];
 
   // 資格名から資格IDを取得
@@ -161,12 +163,12 @@ async function initPage() {
   }
 
   if (!selectedExamId) {
-    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 3;
   }
 
   currentExamId = selectedExamId;
   const selectedExam = exams.find(e => e.id === selectedExamId);
-  const selectedExamName = selectedExam?.shortName || "AWS CCP";
+  const selectedExamName = selectedExam?.shortName || "HTML5 L1";
 
   // 資格名を表示
   document.getElementById("exam-name").textContent = selectedExamName;

@@ -154,6 +154,46 @@ const exams = [
 
     }
 
+  },
+
+  {
+    id: 5,
+    shortName: "AWS SAA",
+
+    title: "AWS Certified Solutions Architect - Associate",
+
+    description:
+      "AWSの設計と運用を問う中級資格。ネットワーク、セキュリティ、可用性設計などを学びます。",
+
+    stats: {
+
+      questions: 300,
+      accuracy: "75%",
+      studyTime: "20時間",
+      studyDays: "14日"
+
+    }
+
+  },
+
+  {
+    id: 6,
+    shortName: "JCSQE 初級",
+
+    title: "JCSQE 初級",
+
+    description:
+      "ソフトウェア品質管理の基礎資格。テスト技法、品質保証、開発プロセスについて学びます。",
+
+    stats: {
+
+      questions: 210,
+      accuracy: "80%",
+      studyTime: "12時間",
+      studyDays: "8日"
+
+    }
+
   }
 
 ];
@@ -167,7 +207,7 @@ const exams = [
 // 必要なら数値 ID に変換する処理を追加してください。
 const selectedExamName =
   localStorage.getItem("selectedExam")
-  || "AWS CCP";
+  || "HTML5 L1";
 
 // exams 配列から ID を取得
 const selectedExam = exams.find(exam => exam.shortName === selectedExamName)?.id || 1;

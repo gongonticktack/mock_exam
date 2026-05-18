@@ -325,14 +325,14 @@ async function fetchExamWeaknesses(examId) {
 
 const exams = [
   {
-    id: 1,
-    shortName: "AWS CCP",
-    title: "AWS Cloud Practitioner",
-    description: "AWSの基礎知識を問う入門資格。クラウド、セキュリティ、料金、サービスなど幅広く出題されます。",
-    icon: "fa-cloud",
-    stats: { questions: 320, accuracy: "78%", studyTime: "18時間", studyDays: "12日" },
-    history: ["EC2 インスタンスの基本", "IAM ユーザーとグループ", "S3 ストレージの仕組み"],
-    weakness: [{ name: "IAM", rate: "45%" }, { name: "VPC", rate: "55%" }, { name: "セキュリティ", rate: "60%" }]
+    id: 3,
+    shortName: "HTML5 L1",
+    title: "HTML5 Professional Level1",
+    description: "HTML5/CSS/JavaScriptの基礎を学ぶWeb資格。マークアップ、スタイリング、アクセシビリティなどを幅広く出題します。",
+    icon: "fa-code",
+    stats: { questions: 250, accuracy: "83%", studyTime: "14時間", studyDays: "10日" },
+    history: ["HTML5の新要素", "CSS Flexbox", "JavaScript DOM操作"],
+    weakness: [{ name: "Canvas API", rate: "35%" }, { name: "Web Storage", rate: "45%" }, { name: "Geolocation", rate: "55%" }]
   },
   {
     id: 2,
@@ -345,24 +345,24 @@ const exams = [
     weakness: [{ name: "シーケンス図", rate: "40%" }, { name: "ステートマシン", rate: "50%" }, { name: "コンポーネント図", rate: "65%" }]
   },
   {
-    id: 3,
-    shortName: "HTML5 L1",
-    title: "HTML5 Professional Level1",
-    description: "HTML/CSS/APIなどWebフロントエンド技術の基礎資格。",
-    icon: "fa-code",
-    stats: { questions: 250, accuracy: "83%", studyTime: "14時間", studyDays: "10日" },
-    history: ["HTML5の新要素", "CSS Flexbox", "JavaScript DOM操作"],
-    weakness: [{ name: "Canvas API", rate: "35%" }, { name: "Web Storage", rate: "45%" }, { name: "Geolocation", rate: "55%" }]
+    id: 5,
+    shortName: "AWS SAA",
+    title: "AWS Certified Solutions Architect - Associate",
+    description: "AWSの設計と運用を問う中級資格。インフラ構築、ネットワーク、セキュリティ、可用性設計などが出題されます。",
+    icon: "fa-cloud",
+    stats: { questions: 300, accuracy: "75%", studyTime: "20時間", studyDays: "14日" },
+    history: ["VPC設計の基本", "IAMベストプラクティス", "高可用性アーキテクチャ"],
+    weakness: [{ name: "VPC", rate: "50%" }, { name: "設計パターン", rate: "60%" }, { name: "コスト最適化", rate: "55%" }]
   },
   {
-    id: 4,
-    shortName: "アジャイル",
-    title: "アジャイル開発技術者試験",
-    description: "スクラム、XP、反復開発などアジャイル開発手法を学ぶ資格。",
-    icon: "fa-rotate",
-    stats: { questions: 90, accuracy: "92%", studyTime: "5時間", studyDays: "3日" },
-    history: ["スクラムの役割", "XPのプラクティス", "アジャイルマニフェスト"],
-    weakness: [{ name: "テスト駆動開発", rate: "30%" }, { name: "継続的インテグレーション", rate: "40%" }, { name: "ペアプログラミング", rate: "50%" }]
+    id: 6,
+    shortName: "JCSQE 初級",
+    title: "JCSQE 初級",
+    description: "ソフトウェア品質管理の基礎資格。テスト技法、品質保証、ソフトウェア開発プロセスについて学びます。",
+    icon: "fa-book",
+    stats: { questions: 210, accuracy: "80%", studyTime: "12時間", studyDays: "8日" },
+    history: ["テスト設計基礎", "品質管理プロセス", "レビュー手法"],
+    weakness: [{ name: "テストケース設計", rate: "40%" }, { name: "品質指標", rate: "55%" }, { name: "プロセス改善", rate: "50%" }]
   }
 ];
 
@@ -533,10 +533,10 @@ importButton.addEventListener("click", () => {
   let selectedExam = activeCard ? activeCard.dataset.examShortName : null;
 
   if (!selectedExamId || Number.isNaN(selectedExamId)) {
-    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 3;
   }
   if (!selectedExam) {
-    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+    selectedExam = localStorage.getItem("selectedExam") || "HTML5 L1";
   }
 
   // 🔄 ブラウザ保存の機能を使って選択情報を保持
@@ -579,10 +579,10 @@ startButton.addEventListener("click", () => {
 
   // fallback: localStorage に保存されているものを使う
   if (!selectedExamId || Number.isNaN(selectedExamId)) {
-    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 3;
   }
   if (!selectedExam) {
-    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+    selectedExam = localStorage.getItem("selectedExam") || "HTML5 L1";
   }
 
   // 📖 学習ページへ移動 - URLパラメータで試験情報を渡します
@@ -630,10 +630,10 @@ editButton.addEventListener("click", () => {
 
   // fallback: localStorage に保存されているものを使う
   if (!selectedExamId || Number.isNaN(selectedExamId)) {
-    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 1;
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 3;
   }
   if (!selectedExam) {
-    selectedExam = localStorage.getItem("selectedExam") || "AWS CCP";
+    selectedExam = localStorage.getItem("selectedExam") || "HTML5 L1";
   }
 
   // LocalStorage保存
@@ -656,7 +656,7 @@ editButton.addEventListener("click", () => {
 // 🎯 ページロード時の初期処理
 // ======================================
 
-// 最初に表示する試験（AWS CCP：id=0）
+// 最初に表示する試験（HTML5 L1：id=0）
 (async () => {
   await updateExam(0);
 })();

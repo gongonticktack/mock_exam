@@ -168,7 +168,9 @@ async function initPage() {
     { id: 1, shortName: "AWS CCP", name: "AWS Cloud Practitioner" },
     { id: 2, shortName: "UML L2", name: "UMLモデリング技能認定 L2" },
     { id: 3, shortName: "HTML5 L1", name: "HTML5 Professional Level1" },
-    { id: 4, shortName: "アジャイル", name: "アジャイル開発技術者試験" }
+    { id: 4, shortName: "アジャイル", name: "アジャイル開発技術者試験" },
+    { id: 5, shortName: "AWS SAA", name: "AWS Certified Solutions Architect - Associate" },
+    { id: 6, shortName: "JCSQE 初級", name: "JCSQE 初級" }
   ];
 
   let selectedExamName = selectedExamFromQuery || storedExamName;
@@ -190,12 +192,12 @@ async function initPage() {
   }
 
   if (!selectedExamId) {
-    selectedExamId = 1;
+    selectedExamId = 3;
   }
 
   const currentExam = exams.find(e => e.id === selectedExamId);
   if (!selectedExamName) {
-    selectedExamName = currentExam?.name || "AWS Cloud Practitioner";
+    selectedExamName = currentExam?.name || "HTML5 Professional Level1";
   }
 
   currentExamId = selectedExamId;
