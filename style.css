@@ -74,6 +74,12 @@ body {
   font-size: 0.86rem;
 }
 
+.menu {
+  display: grid;
+  width: max-content;
+  max-width: 100%;
+}
+
 .exam-card {
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
@@ -88,6 +94,11 @@ body {
   transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.exam-card > div {
+  min-width: 0;
+  text-align: left;
 }
 
 .exam-card:hover {
@@ -110,6 +121,9 @@ body {
 .exam-card p {
   font-size: 0.92rem;
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .main-content {
