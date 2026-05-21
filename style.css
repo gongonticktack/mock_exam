@@ -363,10 +363,16 @@ body {
 }
 
 .history-card li {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: var(--text-muted);
+  display: -webkit-box;
+  line-height: 1.6;
+  overflow: hidden;
   padding: 14px 18px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 18px;
+  overflow-wrap: anywhere;
 }
 
 .weak-item {

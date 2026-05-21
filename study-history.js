@@ -1,4 +1,5 @@
 let supabaseClient = null;
+const HISTORY_ACTIVITY_MAX_LENGTH = 160;
 
 const params = new URLSearchParams(window.location.search);
 const examId = Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
@@ -7,6 +8,20 @@ const selectedExam = params.get("selectedExam") || localStorage.getItem("selecte
 const examNameElement = document.getElementById("exam-name");
 const historyCountElement = document.getElementById("history-count");
 const historyListElement = document.getElementById("history-list");
+
+function stripMediaMarkup(text) {
+  return String(text || "").replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, "[画像]");
+}
+
+function truncateText(text, maxLength) {
+  const normalized = stripMediaMarkup(text).replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength)}...`;
+}
 
 function returnToTop(message) {
   if (message) {
@@ -118,7 +133,8 @@ function renderHistory(items, categoryMap) {
 
     const activity = document.createElement("p");
     activity.className = "history-activity";
-    activity.textContent = item.activity || "問題演習";
+    activity.textContent = truncateText(item.activity || "問題演習", HISTORY_ACTIVITY_MAX_LENGTH);
+    activity.title = stripMediaMarkup(item.activity || "問題演習").replace(/\s+/g, " ").trim();
 
     historyItem.appendChild(meta);
     historyItem.appendChild(activity);

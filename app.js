@@ -19,6 +19,21 @@
 // ======================================
 
 let supabaseClient = null;
+const TOP_HISTORY_ACTIVITY_MAX_LENGTH = 80;
+
+function stripMediaMarkup(text) {
+  return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[画像]');
+}
+
+function truncateText(text, maxLength) {
+  const normalized = stripMediaMarkup(text).replace(/\s+/g, ' ').trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength)}...`;
+}
 
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
@@ -477,13 +492,16 @@ async function updateExam(index) {
         day: '2-digit'
       });
       const resultLabel = item.is_correct ? '正解' : '不正解';
-      li.textContent = `${date}：${item.activity}（${resultLabel}）`;
+      const activity = truncateText(item.activity || '問題練習', TOP_HISTORY_ACTIVITY_MAX_LENGTH);
+      li.textContent = `${date}：${activity}（${resultLabel}）`;
+      li.title = stripMediaMarkup(item.activity || '問題練習').replace(/\s+/g, ' ').trim();
       historyList.appendChild(li);
     });
   } else if (exam.history && exam.history.length > 0) {
     exam.history.forEach(item => {
       const li = document.createElement("li");
-      li.textContent = item;
+      li.textContent = truncateText(item, TOP_HISTORY_ACTIVITY_MAX_LENGTH);
+      li.title = stripMediaMarkup(item).replace(/\s+/g, ' ').trim();
       historyList.appendChild(li);
     });
   } else {

@@ -97,6 +97,7 @@ body {
   display: grid;
   gap: 8px;
   font: inherit;
+  min-width: 0;
   padding: 16px;
   text-align: left;
 }
@@ -144,8 +145,13 @@ body {
 }
 
 .history-activity {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   color: var(--text);
+  display: -webkit-box;
   line-height: 1.7;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .empty-message {
