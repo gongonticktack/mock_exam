@@ -176,7 +176,8 @@
         document.body.appendChild(script);
       })
       .catch(error => {
-        alert('Supabase設定ファイルが見つかりません');
+        alert('Supabase設定ファイルが見つかりません。トップへ戻ります。');
+        window.location.replace('index.html');
       });
   </script>
 

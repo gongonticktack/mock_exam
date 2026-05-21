@@ -29,13 +29,21 @@ let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
 let examHistoryColumnSupport = {};
 
+function returnToTop(message) {
+  if (message) {
+    alert(message);
+  }
+
+  window.location.replace("index.html");
+}
+
 function initSupabase() {
 
   const config = window.SUPABASE_CONFIG;
 
   if (!config || !config.url || !config.key) {
 
-    alert('Supabaseの設定が不足しています。study.htmlのSUPABASE_CONFIGを設定してください.');
+    returnToTop('Supabaseの設定が不足しています。トップへ戻ります。');
 
     return false;
 
@@ -127,8 +135,6 @@ async function startStudyApp() {
   // Supabase初期化
   if (!initSupabase()) {
 
-    alert('Supabaseの初期化に失敗しました');
-
     return;
 
   }
@@ -211,7 +217,11 @@ async function initPage() {
     currentCategoryFilter ? `${selectedExamName} / ${currentCategoryFilter}` : selectedExamName;
 
   // DBから問題を取得
-  await loadQuestions();
+  const loaded = await loadQuestions();
+
+  if (!loaded) {
+    return;
+  }
 
   // 問題をランダムにシャッフル
   shuffleQuestions();
@@ -226,7 +236,7 @@ async function initPage() {
 
   } else {
 
-    alert('問題がありません');
+    returnToTop('問題がありません。トップへ戻ります。');
 
   }
 
@@ -286,21 +296,21 @@ async function loadQuestions() {
 
     if (questionsError) {
 
-      alert('問題の取得に失敗しました');
+      returnToTop('問題の取得に失敗しました。トップへ戻ります。');
 
       stopLoading();
 
-      return;
+      return false;
 
     }
 
     if (!questionsData || questionsData.length === 0) {
 
-      alert('該当する問題が見つかりませんでした');
+      returnToTop('該当する問題が見つかりませんでした。トップへ戻ります。');
 
       stopLoading();
 
-      return;
+      return false;
 
     }
 
@@ -321,7 +331,23 @@ async function loadQuestions() {
 
       if (choicesError) {
 
-        continue;
+        console.error('選択肢の取得に失敗しました', choicesError);
+
+        stopLoading();
+
+        returnToTop('選択肢の取得に失敗しました。トップへ戻ります。');
+
+        return false;
+
+      }
+
+      if (!choicesData || choicesData.length === 0) {
+
+        stopLoading();
+
+        returnToTop('選択肢が見つかりませんでした。トップへ戻ります。');
+
+        return false;
 
       }
 
@@ -343,11 +369,22 @@ async function loadQuestions() {
 
     stopLoading();
 
+    if (questions.length === 0) {
+      returnToTop('問題の選択肢を読み込めませんでした。トップへ戻ります。');
+      return false;
+    }
+
+    return true;
+
   } catch (error) {
 
-    alert('問題の読み込み中にエラーが発生しました');
+    console.error('問題の読み込み中にエラーが発生しました', error);
 
     stopLoading();
+
+    returnToTop('問題の読み込み中にエラーが発生しました。トップへ戻ります。');
+
+    return false;
 
   }
 

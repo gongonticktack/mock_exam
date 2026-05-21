@@ -8,10 +8,18 @@ const examNameElement = document.getElementById("exam-name");
 const historyCountElement = document.getElementById("history-count");
 const historyListElement = document.getElementById("history-list");
 
+function returnToTop(message) {
+  if (message) {
+    alert(message);
+  }
+
+  window.location.replace("index.html");
+}
+
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
   if (!config || !config.url || !config.key) {
-    historyListElement.textContent = "Supabase設定が不足しています。";
+    returnToTop("Supabase設定が不足しています。トップへ戻ります。");
     return false;
   }
 
@@ -129,8 +137,7 @@ async function loadHistory() {
 
   if (error) {
     console.error("学習履歴の取得に失敗しました:", error);
-    historyCountElement.textContent = "取得失敗";
-    historyListElement.textContent = "学習履歴の取得に失敗しました。";
+    returnToTop("学習履歴の取得に失敗しました。トップへ戻ります。");
     return;
   }
 

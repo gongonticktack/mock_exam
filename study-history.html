@@ -53,7 +53,8 @@
       })
       .catch(error => {
         console.error('Supabase設定エラー:', error);
-        document.getElementById('history-list').textContent = 'Supabase設定の読み込みに失敗しました。';
+        alert('Supabase設定の読み込みに失敗しました。トップへ戻ります。');
+        window.location.replace('index.html');
       });
   </script>
 </body>
