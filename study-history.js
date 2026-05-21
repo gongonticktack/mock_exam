@@ -53,6 +53,20 @@ function getResult(item) {
   return null;
 }
 
+function buildStudyUrl(item, category) {
+  const searchParams = new URLSearchParams({
+    examId,
+    selectedExam,
+    questionId: item.question_id
+  });
+
+  if (category) {
+    searchParams.set("category", category);
+  }
+
+  return `study.html?${searchParams.toString()}`;
+}
+
 function renderHistory(items, categoryMap) {
   historyListElement.innerHTML = "";
   historyCountElement.textContent = `${items.length}件`;
@@ -68,8 +82,17 @@ function renderHistory(items, categoryMap) {
   items.forEach(item => {
     const result = getResult(item);
     const category = item.question_id ? categoryMap[item.question_id] : "";
-    const article = document.createElement("article");
-    article.className = "history-item";
+    const historyItem = document.createElement(item.question_id ? "button" : "article");
+    historyItem.className = item.question_id ? "history-item history-item-link" : "history-item";
+
+    if (item.question_id) {
+      historyItem.type = "button";
+      historyItem.addEventListener("click", () => {
+        localStorage.setItem("selectedExamId", examId);
+        localStorage.setItem("selectedExam", selectedExam);
+        window.location.href = buildStudyUrl(item, category);
+      });
+    }
 
     const meta = document.createElement("div");
     meta.className = "history-meta";
@@ -97,9 +120,9 @@ function renderHistory(items, categoryMap) {
     activity.className = "history-activity";
     activity.textContent = item.activity || "問題演習";
 
-    article.appendChild(meta);
-    article.appendChild(activity);
-    historyListElement.appendChild(article);
+    historyItem.appendChild(meta);
+    historyItem.appendChild(activity);
+    historyListElement.appendChild(historyItem);
   });
 }
 

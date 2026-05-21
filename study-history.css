@@ -93,9 +93,24 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
+  color: inherit;
   display: grid;
   gap: 8px;
+  font: inherit;
   padding: 16px;
+  text-align: left;
+}
+
+.history-item-link {
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  width: 100%;
+}
+
+.history-item-link:hover {
+  background: rgba(139, 125, 255, 0.1);
+  border-color: rgba(139, 125, 255, 0.38);
+  transform: translateY(-1px);
 }
 
 .history-meta {

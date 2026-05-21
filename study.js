@@ -24,6 +24,7 @@ let questions = [];
 let currentQuestionIndex = 0;
 let currentExamId = 1;
 let currentCategoryFilter = "";
+let currentTargetQuestionId = null;
 let answered = false;
 let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
@@ -165,6 +166,7 @@ async function initPage() {
   const params = new URLSearchParams(window.location.search);
   const examIdFromQuery = Number(params.get("examId"));
   const questionIndexFromQuery = Number(params.get("questionIndex")) || 0;
+  const questionIdFromQuery = Number(params.get("questionId")) || null;
   const selectedExamFromQuery = params.get("selectedExam");
   const categoryFromQuery = params.get("category") || "";
 
@@ -210,6 +212,7 @@ async function initPage() {
 
   currentExamId = selectedExamId;
   currentCategoryFilter = categoryFromQuery;
+  currentTargetQuestionId = questionIdFromQuery;
   currentStudySessionStartedAt = new Date().toISOString();
 
   // ヘッダーに資格名を表示
@@ -226,8 +229,18 @@ async function initPage() {
   // 問題をランダムにシャッフル
   shuffleQuestions();
 
-  // URLパラメータで指定された問題インデックスを使用（ただしシャッフル後は0から開始）
-  const startIndex = 0;
+  let startIndex = 0;
+
+  if (currentTargetQuestionId) {
+    startIndex = questions.findIndex(question => Number(question.id) === currentTargetQuestionId);
+
+    if (startIndex === -1) {
+      returnToTop('指定された問題が見つかりませんでした。トップへ戻ります。');
+      return;
+    }
+  } else if (questionIndexFromQuery > 0 && questionIndexFromQuery < questions.length) {
+    startIndex = questionIndexFromQuery;
+  }
 
   // 問題を表示
   if (questions.length > 0) {
