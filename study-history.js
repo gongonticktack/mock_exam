@@ -1,0 +1,144 @@
+let supabaseClient = null;
+
+const params = new URLSearchParams(window.location.search);
+const examId = Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
+const selectedExam = params.get("selectedExam") || localStorage.getItem("selectedExam") || "HTML5 L1";
+
+const examNameElement = document.getElementById("exam-name");
+const historyCountElement = document.getElementById("history-count");
+const historyListElement = document.getElementById("history-list");
+
+function initSupabase() {
+  const config = window.SUPABASE_CONFIG;
+  if (!config || !config.url || !config.key) {
+    historyListElement.textContent = "Supabase設定が不足しています。";
+    return false;
+  }
+
+  supabaseClient = window.supabase.createClient(config.url, config.key);
+  return true;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "日時不明";
+  }
+
+  return new Date(value).toLocaleString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function getResult(item) {
+  if (typeof item.is_correct === "boolean") {
+    return item.is_correct;
+  }
+
+  if (typeof item.correct_count === "number" && typeof item.total_count === "number") {
+    return item.correct_count >= item.total_count;
+  }
+
+  return null;
+}
+
+function renderHistory(items, categoryMap) {
+  historyListElement.innerHTML = "";
+  historyCountElement.textContent = `${items.length}件`;
+
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-message";
+    empty.textContent = "学習履歴はまだありません。";
+    historyListElement.appendChild(empty);
+    return;
+  }
+
+  items.forEach(item => {
+    const result = getResult(item);
+    const category = item.question_id ? categoryMap[item.question_id] : "";
+    const article = document.createElement("article");
+    article.className = "history-item";
+
+    const meta = document.createElement("div");
+    meta.className = "history-meta";
+
+    const date = document.createElement("span");
+    date.className = "history-date";
+    date.textContent = formatDate(item.answered_at || item.created_at);
+    meta.appendChild(date);
+
+    if (result !== null) {
+      const resultBadge = document.createElement("span");
+      resultBadge.className = `history-result ${result ? "correct" : "incorrect"}`;
+      resultBadge.textContent = result ? "正解" : "不正解";
+      meta.appendChild(resultBadge);
+    }
+
+    if (category) {
+      const categoryBadge = document.createElement("span");
+      categoryBadge.className = "history-category";
+      categoryBadge.textContent = category;
+      meta.appendChild(categoryBadge);
+    }
+
+    const activity = document.createElement("p");
+    activity.className = "history-activity";
+    activity.textContent = item.activity || "問題演習";
+
+    article.appendChild(meta);
+    article.appendChild(activity);
+    historyListElement.appendChild(article);
+  });
+}
+
+async function fetchCategoryMap(items) {
+  const questionIds = [...new Set(items.map(item => item.question_id).filter(Boolean))];
+  if (questionIds.length === 0) {
+    return {};
+  }
+
+  const { data, error } = await supabaseClient
+    .from("questions")
+    .select("id,category")
+    .in("id", questionIds);
+
+  if (error || !data) {
+    return {};
+  }
+
+  return data.reduce((map, question) => {
+    map[question.id] = question.category || "";
+    return map;
+  }, {});
+}
+
+async function loadHistory() {
+  examNameElement.textContent = selectedExam;
+  historyCountElement.textContent = "読み込み中";
+
+  const { data, error } = await supabaseClient
+    .from("exam_histories")
+    .select("*")
+    .eq("exam_id", examId)
+    .order("answered_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("学習履歴の取得に失敗しました:", error);
+    historyCountElement.textContent = "取得失敗";
+    historyListElement.textContent = "学習履歴の取得に失敗しました。";
+    return;
+  }
+
+  const items = data || [];
+  const categoryMap = await fetchCategoryMap(items);
+  renderHistory(items, categoryMap);
+}
+
+if (initSupabase()) {
+  loadHistory();
+}

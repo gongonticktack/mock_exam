@@ -23,6 +23,7 @@ let supabaseClient = null;
 let questions = [];
 let currentQuestionIndex = 0;
 let currentExamId = 1;
+let currentCategoryFilter = "";
 let answered = false;
 let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
@@ -159,6 +160,7 @@ async function initPage() {
   const examIdFromQuery = Number(params.get("examId"));
   const questionIndexFromQuery = Number(params.get("questionIndex")) || 0;
   const selectedExamFromQuery = params.get("selectedExam");
+  const categoryFromQuery = params.get("category") || "";
 
   // localStorageから選択中の資格を取得
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
@@ -201,10 +203,12 @@ async function initPage() {
   }
 
   currentExamId = selectedExamId;
+  currentCategoryFilter = categoryFromQuery;
   currentStudySessionStartedAt = new Date().toISOString();
 
   // ヘッダーに資格名を表示
-  document.getElementById("exam-name-header").textContent = selectedExamName;
+  document.getElementById("exam-name-header").textContent =
+    currentCategoryFilter ? `${selectedExamName} / ${currentCategoryFilter}` : selectedExamName;
 
   // DBから問題を取得
   await loadQuestions();
@@ -269,11 +273,16 @@ async function loadQuestions() {
     startLoading();
 
     // 問題を取得
-    const { data: questionsData, error: questionsError } =
-      await supabaseClient
-        .from('questions')
-        .select('*')
-        .eq('exam_id', currentExamId);
+    let query = supabaseClient
+      .from('questions')
+      .select('*')
+      .eq('exam_id', currentExamId);
+
+    if (currentCategoryFilter) {
+      query = query.eq('category', currentCategoryFilter);
+    }
+
+    const { data: questionsData, error: questionsError } = await query;
 
     if (questionsError) {
 

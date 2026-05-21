@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学習履歴 | QualiStudy</title>
+  <link rel="stylesheet" href="study-history.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <main class="history-shell">
+    <header class="history-header">
+      <div>
+        <a href="index.html" class="brand">QualiStudy</a>
+        <p id="exam-name" class="exam-name">学習履歴</p>
+      </div>
+
+      <a href="index.html" class="back-link">
+        <i class="fa-solid fa-arrow-left"></i>
+        トップへ戻る
+      </a>
+    </header>
+
+    <section class="history-panel">
+      <div class="panel-heading">
+        <h1>学習履歴</h1>
+        <span id="history-count" class="history-count">読み込み中</span>
+      </div>
+
+      <div id="history-list" class="history-list"></div>
+    </section>
+  </main>
+
+  <script>
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.json が見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        const script = document.createElement('script');
+        script.src = 'study-history.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+        document.getElementById('history-list').textContent = 'Supabase設定の読み込みに失敗しました。';
+      });
+  </script>
+</body>
+
+</html>

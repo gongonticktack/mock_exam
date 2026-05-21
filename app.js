@@ -400,6 +400,33 @@ const historyList =
 const weaknessItems =
   document.querySelectorAll(".weak-item");
 
+const historyMoreButton =
+  document.querySelector(".history-more-btn");
+
+function getActiveExamIndex() {
+  const activeCard = document.querySelector(".exam-card.active");
+  const index = Array.from(examCards).indexOf(activeCard);
+  return index >= 0 ? index : 0;
+}
+
+function getActiveExam() {
+  return exams[getActiveExamIndex()] || exams[0];
+}
+
+function buildStudyUrl(exam, params = {}) {
+  const searchParams = new URLSearchParams({
+    examId: exam.id,
+    selectedExam: exam.shortName,
+    questionIndex: params.questionIndex || 0
+  });
+
+  if (params.category) {
+    searchParams.set("category", params.category);
+  }
+
+  return `study.html?${searchParams.toString()}`;
+}
+
 // ======================================
 // 画面更新
 // ======================================
@@ -472,6 +499,13 @@ async function updateExam(index) {
     if (weakness) {
       item.querySelector("span:first-child").textContent = weakness.name;
       item.querySelector("span:last-child").textContent = weakness.rate;
+      item.dataset.category = weakness.name;
+      item.disabled = false;
+    } else {
+      item.querySelector("span:first-child").textContent = "未分類";
+      item.querySelector("span:last-child").textContent = "-";
+      item.dataset.category = "";
+      item.disabled = true;
     }
   });
 
@@ -510,6 +544,38 @@ examCards.forEach((card, index) => {
   });
 
 });
+
+weaknessItems.forEach((item) => {
+  item.addEventListener("click", () => {
+    const category = item.dataset.category;
+    const exam = getActiveExam();
+
+    if (!category) {
+      return;
+    }
+
+    localStorage.setItem("selectedExamId", exam.id);
+    localStorage.setItem("selectedExam", exam.shortName);
+
+    window.location.href = buildStudyUrl(exam, { category });
+  });
+});
+
+if (historyMoreButton) {
+  historyMoreButton.addEventListener("click", () => {
+    const exam = getActiveExam();
+
+    localStorage.setItem("selectedExamId", exam.id);
+    localStorage.setItem("selectedExam", exam.shortName);
+
+    const searchParams = new URLSearchParams({
+      examId: exam.id,
+      selectedExam: exam.shortName
+    });
+
+    window.location.href = `study-history.html?${searchParams.toString()}`;
+  });
+}
 
 // ======================================
 // 問題追加ボタン
@@ -603,7 +669,7 @@ startButton.addEventListener("click", () => {
 
   // 学習ページへ移動
   window.location.href =
-    `study.html?examId=${selectedExamId}&selectedExam=${encodeURIComponent(selectedExam)}&questionIndex=${startIndex}`;
+    buildStudyUrl({ id: selectedExamId, shortName: selectedExam }, { questionIndex: startIndex });
 
 });
 

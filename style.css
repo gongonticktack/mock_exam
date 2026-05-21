@@ -317,10 +317,42 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
 .history-card h2,
 .weak-card h2 {
-  margin-bottom: 24px;
   color: var(--text);
+}
+
+.weak-card h2 {
+  margin-bottom: 24px;
+}
+
+.history-more-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 9px 14px;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+}
+
+.history-more-btn:hover {
+  background: rgba(139, 125, 255, 0.14);
+  border-color: rgba(139, 125, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .history-card ul {
@@ -340,9 +372,35 @@ body {
 .weak-item {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  background: transparent;
+  border: 0;
   padding: 16px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: color 0.3s ease, padding-left 0.3s ease;
+}
+
+.weak-item:hover {
+  color: var(--accent);
+  padding-left: 6px;
+}
+
+.weak-item:disabled {
+  cursor: default;
+  opacity: 0.55;
+  padding-left: 0;
+}
+
+.weak-item span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 1200px) {
@@ -386,15 +444,37 @@ body {
 
 @media (max-width: 640px) {
   body {
-    padding: 12px;
+    padding: 8px;
   }
 
   .sidebar {
-    padding: 20px;
+    padding: 16px;
   }
 
   .menu {
     width: 100%;
+  }
+
+  .main-content {
+    padding: 16px 4px 4px;
+  }
+
+  .hero-card,
+  .history-card,
+  .weak-card {
+    padding: 20px 16px;
+  }
+
+  .section-heading {
+    margin-bottom: 18px;
+  }
+
+  .hero-left p {
+    max-width: none;
+  }
+
+  .stat-card {
+    padding: 18px 16px;
   }
 
   .exam-card {
