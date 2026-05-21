@@ -29,16 +29,16 @@ body {
   color: var(--text);
   min-height: 100vh;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
-  padding: 28px 24px;
+  padding: 0;
 }
 
 .app-shell {
   width: 100%;
-  max-width: 1320px;
+  min-height: 100vh;
   display: flex;
-  gap: 32px;
+  gap: 0;
 }
 
 .sidebar {
@@ -130,7 +130,6 @@ body {
   flex: 1 1 0;
   min-width: 0;
   width: 100%;
-  max-width: calc(100% - 300px);
   padding: 32px;
 }
 
@@ -351,6 +350,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    padding: 20px;
   }
 
   .app-shell {
@@ -381,5 +381,36 @@ body {
 
   .hero-left h1 {
     font-size: 2.4rem;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 12px;
+  }
+
+  .sidebar {
+    padding: 20px;
+  }
+
+  .menu {
+    width: 100%;
+  }
+
+  .exam-card {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .exam-card i {
+    flex: 0 0 auto;
+  }
+
+  .exam-card h3 {
+    font-size: 0.98rem;
+  }
+
+  .exam-card p {
+    font-size: 0.84rem;
   }
 }
