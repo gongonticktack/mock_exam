@@ -295,24 +295,90 @@ function getHistoryResultCounts(item) {
   };
 }
 
+function getHistoryResultLabel(correctCount, totalCount) {
+  if (totalCount <= 0) {
+    return {
+      text: "集計外",
+      className: "skipped"
+    };
+  }
+
+  if (correctCount >= totalCount) {
+    return {
+      text: "正解",
+      className: "correct"
+    };
+  }
+
+  if (correctCount <= 0) {
+    return {
+      text: "不正解",
+      className: "incorrect"
+    };
+  }
+
+  return {
+    text: "一部正解",
+    className: "incorrect"
+  };
+}
+
+function renderWeaknessDebugLogs(logs) {
+  if (!debugLogSummary || !debugLogList) {
+    return;
+  }
+
+  debugLogList.innerHTML = "";
+
+  const totalCount = logs.reduce((sum, log) => sum + log.totalCount, 0);
+  const correctCount = logs.reduce((sum, log) => sum + log.correctCount, 0);
+  const includedCount = logs.filter(log => log.totalCount > 0).length;
+  const skippedCount = logs.length - includedCount;
+
+  debugLogSummary.textContent =
+    `${includedCount}件を集計 / 正解 ${correctCount}/${totalCount}${skippedCount > 0 ? ` / 集計外 ${skippedCount}件` : ""}`;
+
+  if (logs.length === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "集計対象の履歴がありません。";
+    debugLogList.appendChild(empty);
+    return;
+  }
+
+  logs.forEach(log => {
+    const row = document.createElement("div");
+    const result = document.createElement("strong");
+    const detail = document.createTextNode(
+      ` ${log.date} / ${log.category} / question_id=${log.questionId || "-"} / correct=${log.correctCount}, total=${log.totalCount} / is_correct=${log.rawIsCorrect}, correct_count=${log.rawCorrectCount}, total_count=${log.rawTotalCount}`
+    );
+    const activity = document.createElement("div");
+
+    row.className = `debug-log-row ${log.className}`;
+    result.textContent = log.resultLabel;
+    activity.textContent = log.activity;
+    row.appendChild(result);
+    row.appendChild(detail);
+    row.appendChild(activity);
+    debugLogList.appendChild(row);
+  });
+}
+
 async function fetchExamWeaknesses(examId) {
-  // 直近1週間の回答データを見て、カテゴリごとの不正解率を計算します。
+  // すべての回答履歴を見て、カテゴリごとの正答率を計算します。
   // exam_histories に question_id があれば questions テーブルからカテゴリを引きます。
   if (!supabaseClient) {
+    weaknessDebugLogs = [];
     return [];
   }
 
   try {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
     const selectAttempts = [
-      'question_id,activity,is_correct,correct_count,total_count,result_rate',
-      'question_id,activity,is_correct',
-      'question_id,activity,correct_count,total_count,result_rate',
-      'activity,is_correct,correct_count,total_count,result_rate',
-      'activity,is_correct',
-      'activity,correct_count,total_count,result_rate'
+      'question_id,activity,answered_at,is_correct,correct_count,total_count,result_rate',
+      'question_id,activity,answered_at,is_correct',
+      'question_id,activity,answered_at,correct_count,total_count,result_rate',
+      'activity,answered_at,is_correct,correct_count,total_count,result_rate',
+      'activity,answered_at,is_correct',
+      'activity,answered_at,correct_count,total_count,result_rate'
     ];
 
     let data = null;
@@ -323,7 +389,7 @@ async function fetchExamWeaknesses(examId) {
         .from('exam_histories')
         .select(columns)
         .eq('exam_id', examId)
-        .gte('answered_at', oneWeekAgo.toISOString()));
+        .order('answered_at', { ascending: false }));
 
       if (!error) {
         break;
@@ -332,10 +398,12 @@ async function fetchExamWeaknesses(examId) {
 
     if (error) {
       console.error('苦手分野取得エラー:', error);
+      weaknessDebugLogs = [];
       return [];
     }
 
     if (!data || data.length === 0) {
+      weaknessDebugLogs = [];
       return [];
     }
 
@@ -357,6 +425,8 @@ async function fetchExamWeaknesses(examId) {
       }
     }
 
+    const debugLogs = [];
+
     const grouped = data.reduce((acc, item) => {
       const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : item.activity || '未分類';
       if (!acc[key]) {
@@ -364,10 +434,31 @@ async function fetchExamWeaknesses(examId) {
       }
 
       const { correctCount, totalCount } = getHistoryResultCounts(item);
+      const result = getHistoryResultLabel(correctCount, totalCount);
+      const answeredAt = item.answered_at ? new Date(item.answered_at) : null;
+
+      debugLogs.push({
+        category: key,
+        questionId: item.question_id,
+        activity: truncateText(item.activity || "問題履歴なし", 120),
+        date: answeredAt && !Number.isNaN(answeredAt.getTime())
+          ? answeredAt.toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+          : "日時なし",
+        resultLabel: result.text,
+        className: result.className,
+        correctCount,
+        totalCount,
+        rawIsCorrect: item.is_correct === undefined ? "-" : String(item.is_correct),
+        rawCorrectCount: item.correct_count === undefined ? "-" : String(item.correct_count),
+        rawTotalCount: item.total_count === undefined ? "-" : String(item.total_count)
+      });
+
       acc[key].totalCount += totalCount;
       acc[key].correctCount += correctCount;
       return acc;
     }, {});
+
+    weaknessDebugLogs = debugLogs;
 
     const weaknesses = Object.entries(grouped)
       .filter(([, stats]) => stats.totalCount > 0)
@@ -384,6 +475,7 @@ async function fetchExamWeaknesses(examId) {
     return weaknesses;
   } catch (error) {
     console.error('苦手分野計算中にエラー発生:', error);
+    weaknessDebugLogs = [];
     return [];
   }
 }
@@ -471,6 +563,14 @@ const weaknessItems =
 
 const historyMoreButton =
   document.querySelector(".history-more-btn");
+
+const debugLogSummary =
+  document.getElementById("debug-log-summary");
+
+const debugLogList =
+  document.getElementById("debug-log-list");
+
+let weaknessDebugLogs = [];
 
 function getActiveExamIndex() {
   const activeCard = document.querySelector(".exam-card.active");
@@ -566,6 +666,7 @@ async function updateExam(index) {
 
   // 苦手分野
   const weaknessData = await fetchExamWeaknesses(exam.id);
+  renderWeaknessDebugLogs(weaknessDebugLogs);
   weaknessItems.forEach((item, i) => {
     const weakness = weaknessData[i] || exam.weakness[i];
     if (weakness) {

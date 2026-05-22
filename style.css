@@ -317,6 +317,71 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
+.debug-log-card {
+  background: rgba(18, 24, 60, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  margin-top: 24px;
+  padding: 18px;
+}
+
+.debug-log-card .section-heading {
+  margin-bottom: 12px;
+}
+
+.debug-log-card h2 {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+#debug-log-summary {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.debug-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.debug-log-list p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.debug-log-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding: 9px 10px;
+  overflow-wrap: anywhere;
+}
+
+.debug-log-row strong {
+  color: var(--text);
+}
+
+.debug-log-row.correct strong {
+  color: #8ef6b2;
+}
+
+.debug-log-row.incorrect strong {
+  color: #ff9aa8;
+}
+
+.debug-log-row.skipped strong {
+  color: var(--text-muted);
+}
+
 .section-heading {
   display: flex;
   align-items: center;
@@ -467,7 +532,8 @@ body {
 
   .hero-card,
   .history-card,
-  .weak-card {
+  .weak-card,
+  .debug-log-card {
     padding: 20px 16px;
   }
 
