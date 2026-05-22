@@ -238,6 +238,63 @@ async function fetchExamSummary(examId) {
   }
 }
 
+function getHistoryResultCounts(item) {
+  if (typeof item.is_correct === 'boolean') {
+    return {
+      correctCount: item.is_correct ? 1 : 0,
+      totalCount: 1
+    };
+  }
+
+  if (item.is_correct === 'true' || item.is_correct === 'false') {
+    return {
+      correctCount: item.is_correct === 'true' ? 1 : 0,
+      totalCount: 1
+    };
+  }
+
+  if (item.is_correct === 1 || item.is_correct === 0 || item.is_correct === '1' || item.is_correct === '0') {
+    return {
+      correctCount: item.is_correct === 1 || item.is_correct === '1' ? 1 : 0,
+      totalCount: 1
+    };
+  }
+
+  const hasLegacyTotal = item.total_count !== null && item.total_count !== undefined && item.total_count !== '';
+  const hasLegacyCorrect = item.correct_count !== null && item.correct_count !== undefined && item.correct_count !== '';
+  const legacyTotal = Number(item.total_count);
+  const legacyCorrect = Number(item.correct_count);
+
+  if (hasLegacyTotal && Number.isFinite(legacyTotal) && legacyTotal > 0) {
+    return {
+      correctCount: hasLegacyCorrect && Number.isFinite(legacyCorrect) ? legacyCorrect : 0,
+      totalCount: legacyTotal
+    };
+  }
+
+  if (hasLegacyCorrect && Number.isFinite(legacyCorrect)) {
+    return {
+      correctCount: legacyCorrect,
+      totalCount: 1
+    };
+  }
+
+  const hasResultRate = item.result_rate !== null && item.result_rate !== undefined && item.result_rate !== '';
+  const resultRate = Number(item.result_rate);
+
+  if (hasResultRate && Number.isFinite(resultRate)) {
+    return {
+      correctCount: resultRate >= 100 ? 1 : 0,
+      totalCount: 1
+    };
+  }
+
+  return {
+    correctCount: 0,
+    totalCount: 0
+  };
+}
+
 async function fetchExamWeaknesses(examId) {
   // 直近1週間の回答データを見て、カテゴリごとの不正解率を計算します。
   // exam_histories に question_id があれば questions テーブルからカテゴリを引きます。
@@ -250,25 +307,25 @@ async function fetchExamWeaknesses(examId) {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const selectAttempts = [
-      { columns: 'question_id,activity,is_correct', useLegacy: false },
-      { columns: 'question_id,activity,correct_count,total_count', useLegacy: true },
-      { columns: 'activity,is_correct', useLegacy: false },
-      { columns: 'activity,correct_count,total_count', useLegacy: true }
+      'question_id,activity,is_correct,correct_count,total_count,result_rate',
+      'question_id,activity,is_correct',
+      'question_id,activity,correct_count,total_count,result_rate',
+      'activity,is_correct,correct_count,total_count,result_rate',
+      'activity,is_correct',
+      'activity,correct_count,total_count,result_rate'
     ];
 
     let data = null;
     let error = null;
-    let useLegacy = false;
 
-    for (const attempt of selectAttempts) {
+    for (const columns of selectAttempts) {
       ({ data, error } = await supabaseClient
         .from('exam_histories')
-        .select(attempt.columns)
+        .select(columns)
         .eq('exam_id', examId)
         .gte('answered_at', oneWeekAgo.toISOString()));
 
       if (!error) {
-        useLegacy = attempt.useLegacy;
         break;
       }
     }
@@ -306,8 +363,7 @@ async function fetchExamWeaknesses(examId) {
         acc[key] = { wrongCount: 0, totalCount: 0 };
       }
 
-      const totalCount = useLegacy ? (item.total_count || 0) : 1;
-      const correctCount = useLegacy ? (item.correct_count || 0) : (item.is_correct ? 1 : 0);
+      const { correctCount, totalCount } = getHistoryResultCounts(item);
       const wrongCount = Math.max(0, totalCount - correctCount);
 
       acc[key].totalCount += totalCount;
