@@ -360,14 +360,12 @@ async function fetchExamWeaknesses(examId) {
     const grouped = data.reduce((acc, item) => {
       const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : item.activity || '未分類';
       if (!acc[key]) {
-        acc[key] = { wrongCount: 0, totalCount: 0 };
+        acc[key] = { correctCount: 0, totalCount: 0 };
       }
 
       const { correctCount, totalCount } = getHistoryResultCounts(item);
-      const wrongCount = Math.max(0, totalCount - correctCount);
-
       acc[key].totalCount += totalCount;
-      acc[key].wrongCount += wrongCount;
+      acc[key].correctCount += correctCount;
       return acc;
     }, {});
 
@@ -375,12 +373,12 @@ async function fetchExamWeaknesses(examId) {
       .filter(([, stats]) => stats.totalCount > 0)
       .map(([name, stats]) => ({
         name,
-        rate: `${Math.round((stats.wrongCount / stats.totalCount) * 100)}%`,
-        count: stats.wrongCount,
+        rate: `${Math.round((stats.correctCount / stats.totalCount) * 100)}%`,
+        count: stats.correctCount,
         totalCount: stats.totalCount,
-        wrongRate: stats.wrongCount / stats.totalCount
+        correctRate: stats.correctCount / stats.totalCount
       }))
-      .sort((a, b) => b.wrongRate - a.wrongRate || b.count - a.count || b.totalCount - a.totalCount)
+      .sort((a, b) => a.correctRate - b.correctRate || b.totalCount - a.totalCount || a.count - b.count)
       .slice(0, 3);
 
     return weaknesses;
