@@ -414,7 +414,8 @@ async function fetchExamWeaknesses(examId) {
       const { data: questionsData, error: questionsError } = await supabaseClient
         .from('questions')
         .select('id,category')
-        .in('id', questionIds);
+        .in('id', questionIds)
+        .eq('exam_id', examId);
 
       if (!questionsError && questionsData) {
         questionsData.forEach(q => {
@@ -436,6 +437,25 @@ async function fetchExamWeaknesses(examId) {
       const { correctCount, totalCount } = getHistoryResultCounts(item);
       const result = getHistoryResultLabel(correctCount, totalCount);
       const answeredAt = item.answered_at ? new Date(item.answered_at) : null;
+
+      if (!item.question_id || !categoryMap[item.question_id]) {
+        debugLogs.push({
+          category: "対象外",
+          questionId: item.question_id,
+          activity: truncateText(item.activity || "問題履歴なし", 120),
+          date: answeredAt && !Number.isNaN(answeredAt.getTime())
+            ? answeredAt.toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+            : "日時なし",
+          resultLabel: "対象外",
+          className: "skipped",
+          correctCount: 0,
+          totalCount: 0,
+          rawIsCorrect: item.is_correct === undefined ? "-" : String(item.is_correct),
+          rawCorrectCount: item.correct_count === undefined ? "-" : String(item.correct_count),
+          rawTotalCount: item.total_count === undefined ? "-" : String(item.total_count)
+        });
+        return acc;
+      }
 
       debugLogs.push({
         category: key,
@@ -668,7 +688,7 @@ async function updateExam(index) {
   const weaknessData = await fetchExamWeaknesses(exam.id);
   renderWeaknessDebugLogs(weaknessDebugLogs);
   weaknessItems.forEach((item, i) => {
-    const weakness = weaknessData[i] || exam.weakness[i];
+    const weakness = weaknessData[i];
     if (weakness) {
       item.querySelector("span:first-child").textContent = weakness.name;
       item.querySelector("span:last-child").textContent = weakness.rate;
