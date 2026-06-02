@@ -514,6 +514,25 @@ body {
   }
 }
 
+@media (min-width: 641px) and (max-width: 1200px) {
+  .menu {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .menu-title {
+    grid-column: 1 / -1;
+    margin-bottom: 4px;
+  }
+
+  .exam-card {
+    min-height: 96px;
+    margin-bottom: 0;
+  }
+}
+
 @media (max-width: 640px) {
   body {
     padding: 8px;
