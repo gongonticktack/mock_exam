@@ -339,6 +339,20 @@ body {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.direct-duplicate-warning {
+  color: var(--danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.direct-duplicate-warning[hidden] {
+  display: none;
 }
 
 .direct-save-btn,

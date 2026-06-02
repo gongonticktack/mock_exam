@@ -248,7 +248,9 @@ const directFormState = {
   choiceCount: 0,
   ocrStream: null,
   ocrCandidates: [],
-  categoriesLoaded: false
+  categoriesLoaded: false,
+  duplicateCheckTimer: null,
+  duplicateCheckSequence: 0
 };
 
 function renderRichText(container, text) {
@@ -300,6 +302,7 @@ function insertAtCursor(textarea, text) {
   const cursor = before.length + prefix.length + text.length;
   textarea.focus();
   textarea.setSelectionRange(cursor, cursor);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function insertDirectImage(textareaId) {
@@ -643,6 +646,7 @@ function applyOcrCandidate(candidate) {
     choices.forEach((choice, index) => addDirectChoiceRow(choice, index === 0));
   }
 
+  scheduleDirectDuplicateCheck();
   closeOcrScanner();
 }
 
@@ -725,6 +729,10 @@ function createDirectAddForm() {
           <i class="fa-solid fa-floppy-disk"></i>
           \u3053\u306e\u554f\u984c\u3092\u767b\u9332
         </button>
+        <p id="direct-duplicate-warning" class="direct-duplicate-warning" hidden>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          \u540c\u3058\u554f\u984c\u6587\u30fb\u753b\u50cf\u30fb\u9078\u629e\u80a2\u306e\u554f\u984c\u304c\u767b\u9332\u6e08\u307f\u3067\u3059
+        </p>
         <button type="button" id="direct-reset-btn" class="direct-secondary-btn">
           \u5165\u529b\u3092\u30af\u30ea\u30a2
         </button>
@@ -777,6 +785,7 @@ function createDirectAddForm() {
   addChoiceBtn.addEventListener("click", () => addDirectChoiceRow());
   resetBtn.addEventListener("click", resetDirectForm);
   form.addEventListener("submit", saveDirectQuestion);
+  form.addEventListener("input", scheduleDirectDuplicateCheck);
   document.querySelectorAll(".direct-inline-tool").forEach((button) => {
     button.addEventListener("click", () => insertDirectImage(button.dataset.target));
   });
@@ -906,6 +915,7 @@ function addDirectChoiceRow(value = "", checked = false) {
   removeBtn.addEventListener("click", () => {
     row.remove();
     updateDirectChoicePlaceholders();
+    scheduleDirectDuplicateCheck();
   });
 
   row.appendChild(correctLabel);
@@ -934,11 +944,122 @@ function resetDirectForm() {
   if (explanation) explanation.value = "";
   if (choicesContainer) choicesContainer.innerHTML = "";
 
+  clearTimeout(directFormState.duplicateCheckTimer);
+  directFormState.duplicateCheckSequence += 1;
   directFormState.choiceCount = 0;
   addDirectChoiceRow("", true);
   addDirectChoiceRow();
   addDirectChoiceRow();
   addDirectChoiceRow();
+  setDirectDuplicateWarning(false);
+}
+
+function normalizeDuplicateText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function buildDuplicateContentKey(value) {
+  const images = [];
+  const text = String(value || "").replace(
+    /!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/gi,
+    (_, source) => {
+      images.push(normalizeDuplicateText(source));
+      return " ";
+    }
+  );
+
+  return JSON.stringify({
+    text: normalizeDuplicateText(text),
+    images: images.sort()
+  });
+}
+
+function collectDuplicateImages(value) {
+  const images = [];
+  String(value || "").replace(
+    /!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/gi,
+    (_, source) => {
+      images.push(normalizeDuplicateText(source));
+      return "";
+    }
+  );
+  return images.sort();
+}
+
+function buildDirectDuplicateKey(questionData) {
+  const choices = (questionData.choices || [])
+    .map((choice) => buildDuplicateContentKey(choice.content))
+    .sort();
+
+  return JSON.stringify({
+    question: buildDuplicateContentKey(questionData.question),
+    explanationImages: collectDuplicateImages(questionData.explanation),
+    choices
+  });
+}
+
+function collectDirectDuplicateCandidate() {
+  const question = document.getElementById("direct-question")?.value.trim() || "";
+  const explanation = document.getElementById("direct-explanation")?.value.trim() || "";
+  const choices = [...document.querySelectorAll(".direct-choice-input")]
+    .map((input) => ({ content: input.value.trim() }))
+    .filter((choice) => choice.content);
+
+  if (!question || choices.length < 2) {
+    return null;
+  }
+
+  return { question, explanation, choices };
+}
+
+function setDirectDuplicateWarning(isDuplicate) {
+  const warning = document.getElementById("direct-duplicate-warning");
+  if (warning) {
+    warning.hidden = !isDuplicate;
+  }
+}
+
+async function findDuplicateDirectQuestion(questionData) {
+  if (!initSupabase()) {
+    return false;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("questions")
+    .select("id,question,explanation,choices(choice_index,content)")
+    .eq("exam_id", selectedExam);
+
+  if (error) {
+    throw error;
+  }
+
+  const duplicateKey = buildDirectDuplicateKey(questionData);
+  return (data || []).some((item) => buildDirectDuplicateKey(item) === duplicateKey);
+}
+
+function scheduleDirectDuplicateCheck() {
+  clearTimeout(directFormState.duplicateCheckTimer);
+  const sequence = ++directFormState.duplicateCheckSequence;
+
+  directFormState.duplicateCheckTimer = setTimeout(async () => {
+    const questionData = collectDirectDuplicateCandidate();
+    if (!questionData) {
+      setDirectDuplicateWarning(false);
+      return;
+    }
+
+    try {
+      const isDuplicate = await findDuplicateDirectQuestion(questionData);
+      if (sequence === directFormState.duplicateCheckSequence) {
+        setDirectDuplicateWarning(isDuplicate);
+      }
+    } catch (error) {
+      console.error("Duplicate check error:", error);
+      if (sequence === directFormState.duplicateCheckSequence) {
+        setDirectDuplicateWarning(false);
+      }
+    }
+  }, 400);
 }
 
 function collectDirectQuestion() {
@@ -1039,6 +1160,12 @@ async function saveDirectQuestion(event) {
 
     if (!initSupabase()) {
       addLog("Failed to initialize Supabase.", "error");
+      return;
+    }
+
+    const isDuplicate = await findDuplicateDirectQuestion(questionData);
+    setDirectDuplicateWarning(isDuplicate);
+    if (isDuplicate && !window.confirm("\u540c\u3058\u554f\u984c\u6587\u30fb\u753b\u50cf\u30fb\u9078\u629e\u80a2\u306e\u554f\u984c\u304c\u767b\u9332\u6e08\u307f\u3067\u3059\u3002\u305d\u308c\u3067\u3082\u767b\u9332\u3057\u307e\u3059\u304b\uff1f")) {
       return;
     }
 
