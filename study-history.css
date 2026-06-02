@@ -84,6 +84,87 @@ body {
   font-size: 0.92rem;
 }
 
+.practice-tools {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.practice-tool {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.practice-tool-copy h2 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.practice-tool-copy p {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.unanswered-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.period-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 7px 11px;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.period-tab:hover,
+.period-tab.active {
+  background: rgba(139, 125, 255, 0.18);
+  border-color: rgba(139, 125, 255, 0.62);
+  color: var(--text);
+}
+
+.practice-start-btn {
+  align-items: center;
+  background: linear-gradient(135deg, #7768f3, #9a8fff);
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  justify-self: start;
+  padding: 11px 15px;
+}
+
+.practice-start-btn-secondary {
+  background: rgba(251, 113, 133, 0.16);
+  border: 1px solid rgba(251, 113, 133, 0.42);
+  color: #fecdd3;
+}
+
 .history-list {
   display: grid;
   gap: 12px;

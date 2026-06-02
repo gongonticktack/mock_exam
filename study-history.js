@@ -8,6 +8,10 @@ const selectedExam = params.get("selectedExam") || localStorage.getItem("selecte
 const examNameElement = document.getElementById("exam-name");
 const historyCountElement = document.getElementById("history-count");
 const historyListElement = document.getElementById("history-list");
+const unansweredPeriodTabs = document.querySelectorAll(".period-tab");
+const startUnansweredButton = document.getElementById("start-unanswered-btn");
+const startIncorrectButton = document.getElementById("start-incorrect-btn");
+let selectedUnansweredPeriod = "7";
 
 function stripMediaMarkup(text) {
   return String(text || "").replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, "[画像]");
@@ -81,6 +85,37 @@ function buildStudyUrl(item, category) {
 
   return `study.html?${searchParams.toString()}`;
 }
+
+function buildPracticeUrl(mode) {
+  const searchParams = new URLSearchParams({
+    examId,
+    selectedExam,
+    mode
+  });
+
+  if (mode === "unanswered") {
+    searchParams.set("periodDays", selectedUnansweredPeriod);
+  }
+
+  return `study.html?${searchParams.toString()}`;
+}
+
+function startPractice(mode) {
+  localStorage.setItem("selectedExamId", examId);
+  localStorage.setItem("selectedExam", selectedExam);
+  window.location.href = buildPracticeUrl(mode);
+}
+
+unansweredPeriodTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    unansweredPeriodTabs.forEach(item => item.classList.remove("active"));
+    tab.classList.add("active");
+    selectedUnansweredPeriod = tab.dataset.periodDays;
+  });
+});
+
+startUnansweredButton.addEventListener("click", () => startPractice("unanswered"));
+startIncorrectButton.addEventListener("click", () => startPractice("incorrect"));
 
 function renderHistory(items, categoryMap) {
   historyListElement.innerHTML = "";

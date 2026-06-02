@@ -25,6 +25,8 @@ let currentQuestionIndex = 0;
 let currentExamId = 1;
 let currentCategoryFilter = "";
 let currentTargetQuestionId = null;
+let currentStudyMode = "";
+let currentUnansweredPeriodDays = "7";
 let answered = false;
 let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
@@ -169,6 +171,8 @@ async function initPage() {
   const questionIdFromQuery = Number(params.get("questionId")) || null;
   const selectedExamFromQuery = params.get("selectedExam");
   const categoryFromQuery = params.get("category") || "";
+  const studyModeFromQuery = params.get("mode") || "";
+  const unansweredPeriodDaysFromQuery = params.get("periodDays") || "7";
 
   // localStorageから選択中の資格を取得
   const storedExamId = Number(localStorage.getItem("selectedExamId"));
@@ -213,11 +217,21 @@ async function initPage() {
   currentExamId = selectedExamId;
   currentCategoryFilter = categoryFromQuery;
   currentTargetQuestionId = questionIdFromQuery;
+  currentStudyMode = ["unanswered", "incorrect"].includes(studyModeFromQuery) ? studyModeFromQuery : "";
+  currentUnansweredPeriodDays = unansweredPeriodDaysFromQuery;
   currentStudySessionStartedAt = new Date().toISOString();
 
   // ヘッダーに資格名を表示
-  document.getElementById("exam-name-header").textContent =
-    currentCategoryFilter ? `${selectedExamName} / ${currentCategoryFilter}` : selectedExamName;
+  const headerLabels = [selectedExamName];
+  if (currentCategoryFilter) {
+    headerLabels.push(currentCategoryFilter);
+  }
+  if (currentStudyMode === "unanswered") {
+    headerLabels.push("未回答問題");
+  } else if (currentStudyMode === "incorrect") {
+    headerLabels.push("間違えた問題");
+  }
+  document.getElementById("exam-name-header").textContent = headerLabels.join(" / ");
 
   // DBから問題を取得
   const loaded = await loadQuestions();
@@ -305,7 +319,7 @@ async function loadQuestions() {
       query = query.eq('category', currentCategoryFilter);
     }
 
-    const { data: questionsData, error: questionsError } = await query;
+    const { data: loadedQuestionsData, error: questionsError } = await query;
 
     if (questionsError) {
 
@@ -317,7 +331,7 @@ async function loadQuestions() {
 
     }
 
-    if (!questionsData || questionsData.length === 0) {
+    if (!loadedQuestionsData || loadedQuestionsData.length === 0) {
 
       returnToTop('該当する問題が見つかりませんでした。トップへ戻ります。');
 
@@ -325,6 +339,14 @@ async function loadQuestions() {
 
       return false;
 
+    }
+
+    const questionsData = await filterQuestionsForStudyMode(loadedQuestionsData);
+
+    if (questionsData.length === 0) {
+      stopLoading();
+      returnToTop(getEmptyStudyModeMessage());
+      return false;
     }
 
     // 各問題に対して選択肢を取得
@@ -395,12 +417,95 @@ async function loadQuestions() {
 
     stopLoading();
 
-    returnToTop('問題の読み込み中にエラーが発生しました。トップへ戻ります。');
+    const message = error.message === "回答履歴に question_id 列がないため、復習モードを利用できません。"
+      ? `${error.message}トップへ戻ります。`
+      : '問題の読み込み中にエラーが発生しました。トップへ戻ります。';
+    returnToTop(message);
 
     return false;
 
   }
 
+}
+
+function getHistoryResult(item) {
+  if (typeof item.is_correct === "boolean") {
+    return item.is_correct;
+  }
+
+  if (typeof item.correct_count === "number" && typeof item.total_count === "number") {
+    return item.correct_count >= item.total_count;
+  }
+
+  return null;
+}
+
+function getEmptyStudyModeMessage() {
+  if (currentStudyMode === "unanswered") {
+    return "指定した期間内に未回答の問題はありません。トップへ戻ります。";
+  }
+
+  if (currentStudyMode === "incorrect") {
+    return "過去に間違えた問題はありません。トップへ戻ります。";
+  }
+
+  return "該当する問題が見つかりませんでした。トップへ戻ります。";
+}
+
+async function filterQuestionsForStudyMode(questionsData) {
+  if (!currentStudyMode) {
+    return questionsData;
+  }
+
+  if (!await hasExamHistoryColumn("question_id")) {
+    throw new Error("回答履歴に question_id 列がないため、復習モードを利用できません。");
+  }
+
+  const { data: historyData, error } = await supabaseClient
+    .from("exam_histories")
+    .select("*")
+    .eq("exam_id", currentExamId);
+
+  if (error) {
+    throw error;
+  }
+
+  const histories = historyData || [];
+  let targetQuestionIds;
+
+  if (currentStudyMode === "incorrect") {
+    targetQuestionIds = new Set(
+      histories
+        .filter(item => item.question_id && getHistoryResult(item) === false)
+        .map(item => Number(item.question_id))
+    );
+
+    return questionsData.filter(question => targetQuestionIds.has(Number(question.id)));
+  }
+
+  const periodDays = Number(currentUnansweredPeriodDays);
+  const cutoffTime = currentUnansweredPeriodDays === "all"
+    ? null
+    : Date.now() - (Number.isFinite(periodDays) && periodDays > 0 ? periodDays : 7) * 24 * 60 * 60 * 1000;
+
+  targetQuestionIds = new Set(
+    histories
+      .filter(item => {
+        if (!item.question_id) {
+          return false;
+        }
+
+        if (cutoffTime === null) {
+          return true;
+        }
+
+        const answeredAt = new Date(item.answered_at || item.created_at).getTime();
+        return Number.isFinite(answeredAt) && answeredAt >= cutoffTime;
+      })
+      .map(item => Number(item.question_id))
+  );
+
+  return questionsData.filter(question => !targetQuestionIds.has(Number(question.id)));
 }
 
 // ======================================
