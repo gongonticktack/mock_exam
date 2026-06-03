@@ -91,6 +91,12 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 30px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.22);
 }
 
 .collapsible-card {
@@ -150,6 +156,15 @@ body {
   padding: 30px;
   backdrop-filter: blur(20px);
   box-shadow: 0 26px 80px rgba(0, 0, 0, 0.22);
+}
+
+.import-card .format-box,
+.import-card .upload-area {
+  background: var(--surface-soft);
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: none;
 }
 
 .direct-add-card {
@@ -714,11 +729,17 @@ input[type="file"] {
     grid-template-columns: 1fr;
   }
 
+  .import-card,
   .format-box,
   .upload-area,
   .log-card,
   .confirm-card,
   .direct-add-card {
+    padding: 24px;
+  }
+
+  .import-card .format-box,
+  .import-card .upload-area {
     padding: 24px;
   }
 }
@@ -737,11 +758,17 @@ input[type="file"] {
     border-radius: 0 0 26px 26px;
   }
 
+  .import-card,
   .format-box,
   .upload-area,
   .log-card,
   .confirm-card,
   .direct-add-card {
+    padding: 18px 14px;
+  }
+
+  .import-card .format-box,
+  .import-card .upload-area {
     padding: 18px 14px;
   }
 
