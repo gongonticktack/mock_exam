@@ -823,25 +823,61 @@ function moveDirectFormFocusWithTab(event) {
   const target = event.target;
   const categoryInput = document.getElementById("direct-category");
   const questionInput = document.getElementById("direct-question");
+  const addChoiceButton = document.getElementById("direct-add-choice-btn");
   const choiceInputs = [...document.querySelectorAll(".direct-choice-input")];
+  const correctInputs = [...document.querySelectorAll(".direct-choice-correct")];
+  const explanationInput = document.getElementById("direct-explanation");
+  const saveButton = document.getElementById("direct-save-btn");
 
   if (target === categoryInput && questionInput) {
-    event.preventDefault();
-    questionInput.focus();
+    focusDirectNext(event, questionInput);
     return;
   }
 
-  if (target === questionInput && choiceInputs.length > 0) {
-    event.preventDefault();
-    choiceInputs[0].focus();
+  if (target === questionInput && addChoiceButton) {
+    focusDirectNext(event, addChoiceButton);
+    return;
+  }
+
+  if (target === addChoiceButton) {
+    focusDirectNext(event, choiceInputs[0] || explanationInput || saveButton);
     return;
   }
 
   const choiceIndex = choiceInputs.indexOf(target);
   if (choiceIndex >= 0 && choiceIndex < choiceInputs.length - 1) {
-    event.preventDefault();
-    choiceInputs[choiceIndex + 1].focus();
+    focusDirectNext(event, choiceInputs[choiceIndex + 1]);
+    return;
   }
+
+  if (choiceIndex === choiceInputs.length - 1) {
+    focusDirectNext(event, correctInputs[0] || explanationInput || saveButton);
+    return;
+  }
+
+  const correctIndex = correctInputs.indexOf(target);
+  if (correctIndex >= 0 && correctIndex < correctInputs.length - 1) {
+    focusDirectNext(event, correctInputs[correctIndex + 1]);
+    return;
+  }
+
+  if (correctIndex === correctInputs.length - 1) {
+    focusDirectNext(event, explanationInput || saveButton);
+    return;
+  }
+
+  if (target === explanationInput && saveButton) {
+    focusDirectNext(event, saveButton);
+  }
+}
+
+function focusDirectNext(event, element) {
+  if (!element) {
+    return;
+  }
+
+  event.preventDefault();
+  element.focus();
 }
 
 function toggleCollapsible(card, button) {
