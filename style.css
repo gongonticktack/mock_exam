@@ -307,7 +307,13 @@ body {
   gap: 24px;
 }
 
+.history-column {
+  display: grid;
+  gap: 24px;
+}
+
 .history-card,
+.history-practice-card,
 .weak-card {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -421,12 +427,9 @@ body {
   transform: translateY(-1px);
 }
 
-.history-practice-tools {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.history-practice-card {
   display: grid;
-  gap: 14px;
-  margin: -4px 0 18px;
-  padding-bottom: 18px;
+  gap: 18px;
 }
 
 .history-practice-block {
@@ -484,6 +487,44 @@ body {
   background: rgba(139, 125, 255, 0.18);
   border-color: rgba(139, 125, 255, 0.62);
   color: var(--text);
+}
+
+.custom-period-field {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.custom-period-field.is-active {
+  border-color: rgba(139, 125, 255, 0.5);
+  color: var(--text);
+}
+
+.custom-period-field input {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  width: 4.5em;
+}
+
+.custom-period-field input:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.custom-period-field input:focus {
+  outline: 0;
 }
 
 .history-practice-btn {
@@ -640,6 +681,7 @@ body {
 
   .hero-card,
   .history-card,
+  .history-practice-card,
   .weak-card,
   .debug-log-card {
     padding: 20px 16px;

@@ -593,6 +593,12 @@ const topStartUnansweredButton =
 const topStartIncorrectButton =
   document.getElementById("top-start-incorrect-btn");
 
+const topCustomPeriodInput =
+  document.getElementById("top-custom-period-days");
+
+const topCustomPeriodField =
+  document.getElementById("top-custom-period-field");
+
 const debugLogSummary =
   document.getElementById("debug-log-summary");
 
@@ -636,13 +642,29 @@ function buildStudyUrl(exam, params = {}) {
 
 function startTopPractice(mode) {
   const exam = getActiveExam();
+  let periodDays = null;
+
+  if (mode === "unanswered") {
+    periodDays = selectedTopUnansweredPeriod;
+
+    if (selectedTopUnansweredPeriod === "custom") {
+      const customDays = Number(topCustomPeriodInput ? topCustomPeriodInput.value : NaN);
+
+      if (!Number.isFinite(customDays) || customDays < 1) {
+        alert("指定期間は1日以上で入力してください。");
+        return;
+      }
+
+      periodDays = String(Math.floor(customDays));
+    }
+  }
 
   localStorage.setItem("selectedExamId", exam.id);
   localStorage.setItem("selectedExam", exam.shortName);
 
   window.location.href = buildStudyUrl(exam, {
     mode,
-    periodDays: mode === "unanswered" ? selectedTopUnansweredPeriod : null
+    periodDays
   });
 }
 
@@ -805,6 +827,15 @@ topPeriodTabs.forEach(tab => {
     topPeriodTabs.forEach(item => item.classList.remove("active"));
     tab.classList.add("active");
     selectedTopUnansweredPeriod = tab.dataset.periodDays;
+
+    if (topCustomPeriodInput) {
+      topCustomPeriodInput.disabled = selectedTopUnansweredPeriod !== "custom";
+      topCustomPeriodField?.classList.toggle("is-active", selectedTopUnansweredPeriod === "custom");
+
+      if (!topCustomPeriodInput.disabled) {
+        topCustomPeriodInput.focus();
+      }
+    }
   });
 });
 

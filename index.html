@@ -248,22 +248,8 @@
     <!-- 下部 -->
     <section class="bottom-grid">
 
-      <!-- 履歴 -->
-      <div class="history-card">
-
-        <div class="section-heading">
-
-          <h2>
-            最近の学習履歴
-          </h2>
-
-          <button type="button" class="history-more-btn">
-            すべて見る
-          </button>
-
-        </div>
-
-        <section class="history-practice-tools" aria-label="復習メニュー">
+      <div class="history-column">
+        <section class="history-practice-card" aria-label="復習メニュー">
           <div class="history-practice-block">
             <div class="history-practice-title">
               <i class="fa-solid fa-clock-rotate-left"></i>
@@ -279,7 +265,13 @@
                 <button type="button" class="top-period-tab" data-period-days="30">1か月</button>
                 <button type="button" class="top-period-tab" data-period-days="90">3か月</button>
                 <button type="button" class="top-period-tab" data-period-days="all">全期間</button>
+                <button type="button" class="top-period-tab" data-period-days="custom">指定期間</button>
               </div>
+
+              <label id="top-custom-period-field" class="custom-period-field" for="top-custom-period-days">
+                <input id="top-custom-period-days" type="number" min="1" step="1" value="7" disabled />
+                <span>日</span>
+              </label>
 
               <button id="top-start-unanswered-btn" type="button" class="history-practice-btn">
                 解く
@@ -299,14 +291,30 @@
           </div>
         </section>
 
-        <ul>
+        <!-- 履歴 -->
+        <div class="history-card">
 
-          <li>EC2 インスタンスの基本</li>
-          <li>IAM ユーザーとグループ</li>
-          <li>S3 ストレージの仕組み</li>
+          <div class="section-heading">
 
-        </ul>
+            <h2>
+              最近の学習履歴
+            </h2>
 
+            <button type="button" class="history-more-btn">
+              すべて見る
+            </button>
+
+          </div>
+
+          <ul>
+
+            <li>EC2 インスタンスの基本</li>
+            <li>IAM ユーザーとグループ</li>
+            <li>S3 ストレージの仕組み</li>
+
+          </ul>
+
+        </div>
       </div>
 
       <!-- 苦手 -->
