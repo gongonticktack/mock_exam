@@ -779,12 +779,15 @@ function createDirectAddForm() {
   const addChoiceBtn = document.getElementById("direct-add-choice-btn");
   const toggleBtn = document.getElementById("direct-add-toggle-btn");
   const resetBtn = document.getElementById("direct-reset-btn");
+  const saveBtn = document.getElementById("direct-save-btn");
   const form = document.getElementById("direct-question-form");
 
   toggleBtn.addEventListener("click", () => toggleCollapsible(card, toggleBtn));
   addChoiceBtn.addEventListener("click", () => addDirectChoiceRow());
   resetBtn.addEventListener("click", resetDirectForm);
-  form.addEventListener("submit", saveDirectQuestion);
+  saveBtn.addEventListener("click", saveDirectQuestion);
+  form.addEventListener("keydown", handleDirectFormKeydown);
+  form.addEventListener("submit", (event) => event.preventDefault());
   form.addEventListener("input", scheduleDirectDuplicateCheck);
   document.querySelectorAll(".direct-inline-tool").forEach((button) => {
     button.addEventListener("click", () => insertDirectImage(button.dataset.target));
@@ -793,6 +796,52 @@ function createDirectAddForm() {
   loadCategoryOptions();
 
   resetDirectForm();
+}
+
+function handleDirectFormKeydown(event) {
+  preventDirectFormEnterSubmit(event);
+  moveDirectFormFocusWithTab(event);
+}
+
+function preventDirectFormEnterSubmit(event) {
+  if (event.defaultPrevented || event.key !== "Enter") {
+    return;
+  }
+
+  if (event.target instanceof HTMLTextAreaElement) {
+    return;
+  }
+
+  event.preventDefault();
+}
+
+function moveDirectFormFocusWithTab(event) {
+  if (event.defaultPrevented || event.key !== "Tab" || event.shiftKey) {
+    return;
+  }
+
+  const target = event.target;
+  const categoryInput = document.getElementById("direct-category");
+  const questionInput = document.getElementById("direct-question");
+  const choiceInputs = [...document.querySelectorAll(".direct-choice-input")];
+
+  if (target === categoryInput && questionInput) {
+    event.preventDefault();
+    questionInput.focus();
+    return;
+  }
+
+  if (target === questionInput && choiceInputs.length > 0) {
+    event.preventDefault();
+    choiceInputs[0].focus();
+    return;
+  }
+
+  const choiceIndex = choiceInputs.indexOf(target);
+  if (choiceIndex >= 0 && choiceIndex < choiceInputs.length - 1) {
+    event.preventDefault();
+    choiceInputs[choiceIndex + 1].focus();
+  }
 }
 
 function toggleCollapsible(card, button) {
