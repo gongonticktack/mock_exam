@@ -263,6 +263,42 @@
 
         </div>
 
+        <section class="history-practice-tools" aria-label="復習メニュー">
+          <div class="history-practice-block">
+            <div class="history-practice-title">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>直近解いていない問題</span>
+            </div>
+
+            <div class="history-practice-actions">
+              <div class="top-period-tabs" role="group" aria-label="未回答とみなす期間">
+                <button type="button" class="top-period-tab" data-period-days="1">1日</button>
+                <button type="button" class="top-period-tab" data-period-days="3">3日</button>
+                <button type="button" class="top-period-tab active" data-period-days="7">7日</button>
+                <button type="button" class="top-period-tab" data-period-days="14">2週間</button>
+                <button type="button" class="top-period-tab" data-period-days="30">1か月</button>
+                <button type="button" class="top-period-tab" data-period-days="90">3か月</button>
+                <button type="button" class="top-period-tab" data-period-days="all">全期間</button>
+              </div>
+
+              <button id="top-start-unanswered-btn" type="button" class="history-practice-btn">
+                解く
+              </button>
+            </div>
+          </div>
+
+          <div class="history-practice-block history-practice-block-inline">
+            <div class="history-practice-title">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>間違えた問題</span>
+            </div>
+
+            <button id="top-start-incorrect-btn" type="button" class="history-practice-btn history-practice-btn-secondary">
+              復習する
+            </button>
+          </div>
+        </section>
+
         <ul>
 
           <li>EC2 インスタンスの基本</li>

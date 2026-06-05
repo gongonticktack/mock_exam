@@ -421,6 +421,94 @@ body {
   transform: translateY(-1px);
 }
 
+.history-practice-tools {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 14px;
+  margin: -4px 0 18px;
+  padding-bottom: 18px;
+}
+
+.history-practice-block {
+  display: grid;
+  gap: 10px;
+}
+
+.history-practice-block-inline {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-practice-title {
+  align-items: center;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.92rem;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.history-practice-title i {
+  color: #9a8fff;
+}
+
+.history-practice-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.top-period-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.top-period-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.top-period-tab:hover,
+.top-period-tab.active {
+  background: rgba(139, 125, 255, 0.18);
+  border-color: rgba(139, 125, 255, 0.62);
+  color: var(--text);
+}
+
+.history-practice-btn {
+  align-items: center;
+  background: linear-gradient(135deg, #7768f3, #9a8fff);
+  border: 0;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 13px;
+  white-space: nowrap;
+}
+
+.history-practice-btn-secondary {
+  background: rgba(251, 113, 133, 0.16);
+  border: 1px solid rgba(251, 113, 133, 0.42);
+  color: #fecdd3;
+}
+
 .history-card ul {
   list-style: none;
   display: flex;

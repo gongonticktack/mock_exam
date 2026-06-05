@@ -114,8 +114,13 @@ unansweredPeriodTabs.forEach(tab => {
   });
 });
 
-startUnansweredButton.addEventListener("click", () => startPractice("unanswered"));
-startIncorrectButton.addEventListener("click", () => startPractice("incorrect"));
+if (startUnansweredButton) {
+  startUnansweredButton.addEventListener("click", () => startPractice("unanswered"));
+}
+
+if (startIncorrectButton) {
+  startIncorrectButton.addEventListener("click", () => startPractice("incorrect"));
+}
 
 function renderHistory(items, categoryMap) {
   historyListElement.innerHTML = "";

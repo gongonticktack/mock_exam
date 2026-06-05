@@ -584,6 +584,15 @@ const weaknessItems =
 const historyMoreButton =
   document.querySelector(".history-more-btn");
 
+const topPeriodTabs =
+  document.querySelectorAll(".top-period-tab");
+
+const topStartUnansweredButton =
+  document.getElementById("top-start-unanswered-btn");
+
+const topStartIncorrectButton =
+  document.getElementById("top-start-incorrect-btn");
+
 const debugLogSummary =
   document.getElementById("debug-log-summary");
 
@@ -591,6 +600,7 @@ const debugLogList =
   document.getElementById("debug-log-list");
 
 let weaknessDebugLogs = [];
+let selectedTopUnansweredPeriod = "7";
 
 function getActiveExamIndex() {
   const activeCard = document.querySelector(".exam-card.active");
@@ -613,7 +623,27 @@ function buildStudyUrl(exam, params = {}) {
     searchParams.set("category", params.category);
   }
 
+  if (params.mode) {
+    searchParams.set("mode", params.mode);
+  }
+
+  if (params.periodDays) {
+    searchParams.set("periodDays", params.periodDays);
+  }
+
   return `study.html?${searchParams.toString()}`;
+}
+
+function startTopPractice(mode) {
+  const exam = getActiveExam();
+
+  localStorage.setItem("selectedExamId", exam.id);
+  localStorage.setItem("selectedExam", exam.shortName);
+
+  window.location.href = buildStudyUrl(exam, {
+    mode,
+    periodDays: mode === "unanswered" ? selectedTopUnansweredPeriod : null
+  });
 }
 
 // ======================================
@@ -768,6 +798,22 @@ if (historyMoreButton) {
 
     window.location.href = `study-history.html?${searchParams.toString()}`;
   });
+}
+
+topPeriodTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    topPeriodTabs.forEach(item => item.classList.remove("active"));
+    tab.classList.add("active");
+    selectedTopUnansweredPeriod = tab.dataset.periodDays;
+  });
+});
+
+if (topStartUnansweredButton) {
+  topStartUnansweredButton.addEventListener("click", () => startTopPractice("unanswered"));
+}
+
+if (topStartIncorrectButton) {
+  topStartIncorrectButton.addEventListener("click", () => startTopPractice("incorrect"));
 }
 
 // ======================================
