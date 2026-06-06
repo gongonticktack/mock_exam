@@ -280,9 +280,30 @@ body {
 
 .questions-panel h2,
 .editor-panel h2 {
-  margin-bottom: 20px;
   font-size: 1.1rem;
   color: var(--text);
+}
+
+.editor-panel h2 {
+  margin-bottom: 20px;
+}
+
+.questions-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.questions-count {
+  background: rgba(139, 125, 255, 0.14);
+  border: 1px solid rgba(139, 125, 255, 0.32);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  white-space: nowrap;
 }
 
 /* ========================= */

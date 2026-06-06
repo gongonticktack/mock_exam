@@ -27,6 +27,7 @@ let showOnlyDuplicateCandidates = false;
 let targetQuestionId = null;
 let duplicateCandidateIds = new Set();
 let duplicateCandidateMeta = new Map();
+let displayNumberByQuestionId = new Map();
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
@@ -394,6 +395,7 @@ async function loadQuestions() {
 function displayNoQuestions() {
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '<p class="no-questions">問題がありません</p>';
+  updateQuestionsCount(0);
 }
 
 function selectQuestionItem(item, question) {
@@ -430,6 +432,11 @@ function displayQuestionsList() {
   // クリックされた問題だけが active 表示になり、右側の編集フォームへ内容が入ります。
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '';
+  displayNumberByQuestionId = new Map();
+
+  questions.forEach((question, index) => {
+    displayNumberByQuestionId.set(Number(question.id), index + 1);
+  });
 
   questions.forEach((question, index) => {
     const duplicateMeta = duplicateCandidateMeta.get(Number(question.id));
@@ -455,8 +462,11 @@ function displayQuestionsList() {
     if (duplicateMeta) {
       const duplicateBadge = document.createElement('div');
       duplicateBadge.className = 'duplicate-badge';
+      const relatedDisplayNumbers = duplicateMeta.relatedIds
+        .map(id => displayNumberByQuestionId.get(id))
+        .filter(Boolean);
       duplicateBadge.textContent =
-        `重複候補 #${duplicateMeta.group} / 関連: ${duplicateMeta.relatedIds.join(', ')}`;
+        `重複候補 #${duplicateMeta.group} / 重複対象: ${relatedDisplayNumbers.join(', ')}`;
       contentDiv.appendChild(duplicateBadge);
     }
 
@@ -909,6 +919,7 @@ function applyQuestionFilters() {
   sortQuestionItemsForCurrentFilter();
 
   const questionItems = document.querySelectorAll('.question-item');
+  let visibleCount = 0;
   questionItems.forEach(item => {
     const text = item.dataset.filterText || item.textContent.toLowerCase();
     const matchesSearch = text.includes(searchQuery);
@@ -919,10 +930,22 @@ function applyQuestionFilters() {
 
     if (matchesSearch && matchesExplanationFilter && matchesDuplicateFilter) {
       item.style.display = 'flex';
+      visibleCount += 1;
     } else {
       item.style.display = 'none';
     }
   });
+
+  updateQuestionsCount(visibleCount);
+}
+
+function updateQuestionsCount(visibleCount) {
+  const countLabel = document.getElementById('questions-count');
+  if (!countLabel) {
+    return;
+  }
+
+  countLabel.textContent = `${visibleCount} / ${questions.length}件`;
 }
 
 document.getElementById('search-input').addEventListener('input', () => {
