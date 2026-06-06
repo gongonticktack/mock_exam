@@ -322,6 +322,7 @@ body {
 
 .history-card {
   grid-column: 1 / -1;
+  grid-row: 2;
 }
 
 .history-card,
@@ -443,6 +444,8 @@ body {
 .history-practice-card {
   display: grid;
   gap: 18px;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .history-practice-block {
@@ -471,7 +474,7 @@ body {
 .history-practice-actions {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
 }
 
@@ -512,6 +515,7 @@ body {
   gap: 7px;
   min-height: 34px;
   padding: 0 10px;
+  white-space: nowrap;
 }
 
 .custom-period-field.is-active {
@@ -553,6 +557,7 @@ body {
   justify-content: center;
   min-height: 34px;
   padding: 8px 13px;
+  width: 150px;
   white-space: nowrap;
 }
 
@@ -608,6 +613,8 @@ body {
 
 .weak-card {
   align-self: start;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .weak-item:hover {
@@ -664,6 +671,13 @@ body {
 
   .history-card {
     grid-column: auto;
+    grid-row: auto;
+  }
+
+  .history-practice-card,
+  .weak-card {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .hero-card {
@@ -687,6 +701,17 @@ body {
 
   .history-card {
     grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .history-practice-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .weak-card {
+    grid-column: 2;
+    grid-row: 1;
   }
 }
 
@@ -741,7 +766,12 @@ body {
   .history-practice-actions {
     align-items: stretch;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .history-practice-btn {
+    justify-self: stretch;
+    width: 100%;
   }
 
   .top-period-tabs {
