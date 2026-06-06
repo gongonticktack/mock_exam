@@ -283,7 +283,7 @@ function collectFormData() {
       id: item.dataset.choiceId ? Number(item.dataset.choiceId) : null,
       choice_index: index + 1,
       content,
-      is_correct: item.querySelector(".correct-checkbox").checked
+      is_correct: item.querySelector(".correct-checkbox").checked ? 1 : 0
     };
   });
 
