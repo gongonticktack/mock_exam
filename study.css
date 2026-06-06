@@ -389,7 +389,8 @@ body {
 }
 
 .answer-btn,
-.next-btn {
+.next-btn,
+.edit-question-btn {
   background: linear-gradient(135deg, #8b7dff, #6159d6);
   color: white;
   border: none;
@@ -408,9 +409,22 @@ body {
 }
 
 .answer-btn:hover,
-.next-btn:hover {
+.next-btn:hover,
+.edit-question-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 24px 48px rgba(107, 93, 255, 0.34);
+}
+
+.edit-question-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+.edit-question-btn:hover {
+  background: rgba(139, 125, 255, 0.14);
+  border-color: rgba(139, 125, 255, 0.45);
+  box-shadow: 0 16px 34px rgba(107, 93, 255, 0.18);
 }
 
 .completion-card {

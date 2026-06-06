@@ -311,14 +311,17 @@ body {
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2.8fr) minmax(220px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
   gap: 18px;
   align-items: start;
 }
 
 .history-column {
-  display: grid;
-  gap: 18px;
+  display: contents;
+}
+
+.history-card {
+  grid-column: 1 / -1;
 }
 
 .history-card,
@@ -448,10 +451,8 @@ body {
 }
 
 .history-practice-block-inline {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
 }
 
 .history-practice-title {
@@ -469,8 +470,8 @@ body {
 
 .history-practice-actions {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
 }
 
@@ -552,7 +553,12 @@ body {
   justify-content: center;
   min-height: 34px;
   padding: 8px 13px;
+  width: 100%;
   white-space: nowrap;
+}
+
+.history-practice-actions .history-practice-btn {
+  grid-column: 1 / -1;
 }
 
 .history-practice-btn-secondary {
@@ -648,6 +654,15 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .history-column {
+    display: grid;
+    gap: 18px;
+  }
+
+  .history-card {
+    grid-column: auto;
+  }
+
   .hero-card {
     flex-direction: column;
     gap: 30px;
@@ -709,7 +724,7 @@ body {
   .history-practice-actions {
     align-items: stretch;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .top-period-tabs {

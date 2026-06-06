@@ -666,6 +666,18 @@ function displayQuestion(index) {
 
   document.getElementById("next-btn").style.display = "none";
 
+  document.getElementById("edit-current-question-btn").style.display = "none";
+
+}
+
+function buildCurrentQuestionEditUrl() {
+  const question = questions[currentQuestionIndex];
+  const params = new URLSearchParams({
+    examId: currentExamId,
+    questionId: question?.id || ""
+  });
+
+  return `question-editor.html?${params.toString()}`;
 }
 
 // ======================================
@@ -756,6 +768,12 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
   document.getElementById("next-btn").style.display = "block";
 
+  document.getElementById("edit-current-question-btn").style.display = "flex";
+
+});
+
+document.getElementById("edit-current-question-btn").addEventListener("click", () => {
+  window.open(buildCurrentQuestionEditUrl(), "_blank", "noopener");
 });
 
 // ======================================

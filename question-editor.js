@@ -22,6 +22,8 @@ let supabaseClient = null;
 let questions = [];
 let currentExamId = 1;
 let currentSelectedQuestion = null;
+let showOnlyMissingExplanation = false;
+let targetQuestionId = null;
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
@@ -50,6 +52,10 @@ function stripMediaMarkup(text) {
   // 問題一覧では画像そのものを表示せず、[画像] という短い表示に置き換えます。
   // 一覧が長くなりすぎるのを防ぐためです。
   return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[\u753b\u50cf]');
+}
+
+function hasExplanation(question) {
+  return !!String(question?.explanation || '').trim();
 }
 
 function insertAtCursor(textarea, text) {
@@ -142,6 +148,7 @@ async function initPage() {
   const params = new URLSearchParams(window.location.search);
   const examIdFromQuery = Number(params.get("examId"));
   const selectedExamFromQuery = params.get("selectedExam");
+  const questionIdFromQuery = Number(params.get("questionId"));
 
   // 資格データ
   const exams = [
@@ -167,6 +174,9 @@ async function initPage() {
   }
 
   currentExamId = selectedExamId;
+  targetQuestionId = questionIdFromQuery && !Number.isNaN(questionIdFromQuery)
+    ? questionIdFromQuery
+    : null;
   const selectedExam = exams.find(e => e.id === selectedExamId);
   const selectedExamName = selectedExam?.shortName || "HTML5 L1";
 
@@ -256,6 +266,31 @@ function displayNoQuestions() {
   listContainer.innerHTML = '<p class="no-questions">問題がありません</p>';
 }
 
+function selectQuestionItem(item, question) {
+  document.querySelectorAll('.question-item').forEach(el => {
+    el.classList.remove('active');
+  });
+
+  item.classList.add('active');
+  displayQuestionEditor(question);
+}
+
+function selectTargetQuestion() {
+  if (!targetQuestionId) {
+    return;
+  }
+
+  const targetItem = document.querySelector(`.question-item[data-question-id="${targetQuestionId}"]`);
+  const targetQuestion = questions.find(question => Number(question.id) === targetQuestionId);
+
+  if (!targetItem || !targetQuestion) {
+    return;
+  }
+
+  selectQuestionItem(targetItem, targetQuestion);
+  targetItem.scrollIntoView({ block: 'center' });
+}
+
 // ======================================
 // 問題一覧を表示
 // ======================================
@@ -269,6 +304,8 @@ function displayQuestionsList() {
   questions.forEach((question, index) => {
     const item = document.createElement('div');
     item.className = 'question-item';
+    item.dataset.questionId = question.id;
+    item.dataset.hasExplanation = hasExplanation(question) ? 'true' : 'false';
 
     const numberDiv = document.createElement('div');
     numberDiv.className = 'question-item-number';
@@ -285,6 +322,7 @@ function displayQuestionsList() {
     textDiv.className = 'question-item-text';
     const questionText = stripMediaMarkup(question.question || '');
     textDiv.textContent = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText;
+    item.dataset.filterText = `${question.category || ''} ${questionText}`.toLowerCase();
 
     contentDiv.appendChild(categoryDiv);
     contentDiv.appendChild(textDiv);
@@ -292,18 +330,14 @@ function displayQuestionsList() {
     item.appendChild(contentDiv);
 
     item.addEventListener('click', () => {
-      // 全ての問題アイテムからactiveクラスを削除
-      document.querySelectorAll('.question-item').forEach(el => {
-        el.classList.remove('active');
-      });
-      // クリックされたアイテムにactiveクラスを追加
-      item.classList.add('active');
-      // フォームを表示
-      displayQuestionEditor(question);
+      selectQuestionItem(item, question);
     });
 
     listContainer.appendChild(item);
   });
+
+  applyQuestionFilters();
+  selectTargetQuestion();
 }
 
 // ======================================
@@ -713,19 +747,36 @@ function downloadFile(blob, filename) {
 // 検索機能
 // ======================================
 
-document.getElementById('search-input').addEventListener('input', (e) => {
-  const searchQuery = e.target.value.toLowerCase();
-
+function applyQuestionFilters() {
+  const searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
   const questionItems = document.querySelectorAll('.question-item');
   questionItems.forEach(item => {
-    const text = item.textContent.toLowerCase();
-    if (text.includes(searchQuery)) {
+    const text = item.dataset.filterText || item.textContent.toLowerCase();
+    const matchesSearch = text.includes(searchQuery);
+    const matchesExplanationFilter =
+      !showOnlyMissingExplanation || item.dataset.hasExplanation === 'false';
+
+    if (matchesSearch && matchesExplanationFilter) {
       item.style.display = 'flex';
     } else {
       item.style.display = 'none';
     }
   });
+}
+
+document.getElementById('search-input').addEventListener('input', () => {
+  applyQuestionFilters();
 });
+
+const missingExplanationFilterButton = document.getElementById('missing-explanation-filter-btn');
+if (missingExplanationFilterButton) {
+  missingExplanationFilterButton.addEventListener('click', () => {
+    showOnlyMissingExplanation = !showOnlyMissingExplanation;
+    missingExplanationFilterButton.classList.toggle('active', showOnlyMissingExplanation);
+    missingExplanationFilterButton.setAttribute('aria-pressed', String(showOnlyMissingExplanation));
+    applyQuestionFilters();
+  });
+}
 
 // ======================================
 // ページロード時の初期化
