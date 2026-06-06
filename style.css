@@ -471,7 +471,7 @@ body {
 .history-practice-actions {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
 }
 
@@ -553,12 +553,15 @@ body {
   justify-content: center;
   min-height: 34px;
   padding: 8px 13px;
-  width: 100%;
   white-space: nowrap;
 }
 
 .history-practice-actions .history-practice-btn {
-  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.history-practice-block-inline .history-practice-btn {
+  justify-self: end;
 }
 
 .history-practice-btn-secondary {
@@ -673,6 +676,20 @@ body {
   }
 }
 
+@media (min-width: 821px) and (max-width: 1200px) {
+  .bottom-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  }
+
+  .history-column {
+    display: contents;
+  }
+
+  .history-card {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (min-width: 641px) and (max-width: 1200px) {
   .menu {
     width: 100%;
@@ -724,7 +741,7 @@ body {
   .history-practice-actions {
     align-items: stretch;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
   .top-period-tabs {
