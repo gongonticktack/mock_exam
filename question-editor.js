@@ -26,6 +26,7 @@ let showOnlyMissingExplanation = false;
 let showOnlyDuplicateCandidates = false;
 let targetQuestionId = null;
 let duplicateCandidateIds = new Set();
+let duplicateCandidateMeta = new Map();
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
@@ -105,13 +106,16 @@ function getTokenSimilarity(leftText, rightText) {
 
 function updateDuplicateCandidates() {
   duplicateCandidateIds = new Set();
+  duplicateCandidateMeta = new Map();
 
   const comparableQuestions = questions
-    .map(question => ({
+    .map((question, index) => ({
       id: Number(question.id),
+      originalIndex: index,
       text: getDuplicateCheckText(question)
     }))
     .filter(item => item.id && item.text.length >= 20);
+  const duplicatePairs = [];
 
   for (let i = 0; i < comparableQuestions.length; i++) {
     for (let j = i + 1; j < comparableQuestions.length; j++) {
@@ -128,11 +132,59 @@ function updateDuplicateCandidates() {
       const isSimilar = getTokenSimilarity(current.text, other.text) >= 0.72;
 
       if (isExactMatch || isSimilar) {
-        duplicateCandidateIds.add(current.id);
-        duplicateCandidateIds.add(other.id);
+        duplicatePairs.push([current.id, other.id]);
       }
     }
   }
+
+  if (duplicatePairs.length === 0) {
+    return;
+  }
+
+  const parent = new Map(comparableQuestions.map(item => [item.id, item.id]));
+  const findParent = (id) => {
+    let current = id;
+    while (parent.get(current) !== current) {
+      current = parent.get(current);
+    }
+    return current;
+  };
+  const unite = (leftId, rightId) => {
+    const leftRoot = findParent(leftId);
+    const rightRoot = findParent(rightId);
+    if (leftRoot !== rightRoot) {
+      parent.set(rightRoot, leftRoot);
+    }
+  };
+
+  duplicatePairs.forEach(([leftId, rightId]) => unite(leftId, rightId));
+
+  const indexById = new Map(comparableQuestions.map(item => [item.id, item.originalIndex]));
+  const grouped = new Map();
+  comparableQuestions.forEach(item => {
+    const root = findParent(item.id);
+    if (!grouped.has(root)) {
+      grouped.set(root, []);
+    }
+    grouped.get(root).push(item.id);
+  });
+
+  const groups = [...grouped.values()]
+    .filter(group => group.length > 1)
+    .map(group => group.sort((leftId, rightId) => indexById.get(leftId) - indexById.get(rightId)))
+    .sort((leftGroup, rightGroup) => indexById.get(leftGroup[0]) - indexById.get(rightGroup[0]));
+
+  groups.forEach((group, groupIndex) => {
+    group.forEach((id, itemIndex) => {
+      duplicateCandidateIds.add(id);
+      duplicateCandidateMeta.set(id, {
+        group: groupIndex + 1,
+        order: itemIndex + 1,
+        sortKey: groupIndex * 1000 + itemIndex,
+        relatedIds: group.filter(relatedId => relatedId !== id)
+      });
+    });
+  });
 }
 
 function insertAtCursor(textarea, text) {
@@ -380,11 +432,14 @@ function displayQuestionsList() {
   listContainer.innerHTML = '';
 
   questions.forEach((question, index) => {
+    const duplicateMeta = duplicateCandidateMeta.get(Number(question.id));
     const item = document.createElement('div');
     item.className = 'question-item';
     item.dataset.questionId = question.id;
+    item.dataset.originalIndex = index;
     item.dataset.hasExplanation = hasExplanation(question) ? 'true' : 'false';
     item.dataset.isDuplicateCandidate = duplicateCandidateIds.has(Number(question.id)) ? 'true' : 'false';
+    item.dataset.duplicateSortKey = duplicateMeta ? duplicateMeta.sortKey : 999999;
 
     const numberDiv = document.createElement('div');
     numberDiv.className = 'question-item-number';
@@ -396,6 +451,14 @@ function displayQuestionsList() {
     const categoryDiv = document.createElement('div');
     categoryDiv.className = 'question-item-category';
     categoryDiv.textContent = question.category;
+
+    if (duplicateMeta) {
+      const duplicateBadge = document.createElement('div');
+      duplicateBadge.className = 'duplicate-badge';
+      duplicateBadge.textContent =
+        `重複候補 #${duplicateMeta.group} / 関連: ${duplicateMeta.relatedIds.join(', ')}`;
+      contentDiv.appendChild(duplicateBadge);
+    }
 
     const textDiv = document.createElement('div');
     textDiv.className = 'question-item-text';
@@ -417,6 +480,21 @@ function displayQuestionsList() {
 
   applyQuestionFilters();
   selectTargetQuestion();
+}
+
+function sortQuestionItemsForCurrentFilter() {
+  const listContainer = document.getElementById('questions-list');
+  const items = Array.from(listContainer.querySelectorAll('.question-item'));
+
+  items
+    .sort((leftItem, rightItem) => {
+      if (showOnlyDuplicateCandidates) {
+        return Number(leftItem.dataset.duplicateSortKey) - Number(rightItem.dataset.duplicateSortKey);
+      }
+
+      return Number(leftItem.dataset.originalIndex) - Number(rightItem.dataset.originalIndex);
+    })
+    .forEach(item => listContainer.appendChild(item));
 }
 
 // ======================================
@@ -828,6 +906,8 @@ function downloadFile(blob, filename) {
 
 function applyQuestionFilters() {
   const searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+  sortQuestionItemsForCurrentFilter();
+
   const questionItems = document.querySelectorAll('.question-item');
   questionItems.forEach(item => {
     const text = item.dataset.filterText || item.textContent.toLowerCase();

@@ -384,6 +384,22 @@ body {
   letter-spacing: 0.05em;
 }
 
+.duplicate-badge {
+  align-items: center;
+  background: rgba(251, 113, 133, 0.14);
+  border: 1px solid rgba(251, 113, 133, 0.38);
+  border-radius: 999px;
+  color: #fecdd3;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 4px 8px;
+}
+
 .question-item-text {
   font-size: 0.9rem;
   color: var(--text);
