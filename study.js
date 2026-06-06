@@ -236,7 +236,7 @@ async function initPage() {
   currentExamId = selectedExamId;
   currentCategoryFilter = categoryFromQuery;
   currentTargetQuestionId = questionIdFromQuery;
-  currentStudyMode = ["unanswered", "incorrect"].includes(studyModeFromQuery) ? studyModeFromQuery : "";
+  currentStudyMode = ["unanswered", "incorrect", "recent-incorrect"].includes(studyModeFromQuery) ? studyModeFromQuery : "";
   currentUnansweredPeriodDays = unansweredPeriodDaysFromQuery;
   currentStudySessionStartedAt = new Date().toISOString();
 
@@ -247,8 +247,10 @@ async function initPage() {
   }
   if (currentStudyMode === "unanswered") {
     headerLabels.push("未回答問題");
+  } else if (currentStudyMode === "recent-incorrect") {
+    headerLabels.push("直近で間違えた問題");
   } else if (currentStudyMode === "incorrect") {
-    headerLabels.push("間違えた問題");
+    headerLabels.push("過去に間違えた問題");
   }
   document.getElementById("exam-name-header").textContent = headerLabels.join(" / ");
 
@@ -459,6 +461,11 @@ function getHistoryResult(item) {
   return null;
 }
 
+function getHistoryAnsweredTime(item) {
+  const answeredTime = new Date(item.answered_at || item.created_at).getTime();
+  return Number.isFinite(answeredTime) ? answeredTime : 0;
+}
+
 function getEmptyStudyModeMessage() {
   if (currentStudyMode === "unanswered") {
     return "指定した期間内に未回答の問題はありません。トップへ戻ります。";
@@ -466,6 +473,10 @@ function getEmptyStudyModeMessage() {
 
   if (currentStudyMode === "incorrect") {
     return "過去に間違えた問題はありません。トップへ戻ります。";
+  }
+
+  if (currentStudyMode === "recent-incorrect") {
+    return "直近で間違えた問題はありません。トップへ戻ります。";
   }
 
   return "該当する問題が見つかりませんでした。トップへ戻ります。";
@@ -497,6 +508,31 @@ async function filterQuestionsForStudyMode(questionsData) {
       histories
         .filter(item => item.question_id && getHistoryResult(item) === false)
         .map(item => Number(item.question_id))
+    );
+
+    return questionsData.filter(question => targetQuestionIds.has(Number(question.id)));
+  }
+
+  if (currentStudyMode === "recent-incorrect") {
+    const latestHistoryByQuestionId = histories.reduce((map, item) => {
+      if (!item.question_id) {
+        return map;
+      }
+
+      const questionId = Number(item.question_id);
+      const latestItem = map.get(questionId);
+
+      if (!latestItem || getHistoryAnsweredTime(item) > getHistoryAnsweredTime(latestItem)) {
+        map.set(questionId, item);
+      }
+
+      return map;
+    }, new Map());
+
+    targetQuestionIds = new Set(
+      [...latestHistoryByQuestionId.entries()]
+        .filter(([, item]) => getHistoryResult(item) === false)
+        .map(([questionId]) => questionId)
     );
 
     return questionsData.filter(question => targetQuestionIds.has(Number(question.id)));
@@ -697,10 +733,11 @@ function buildCurrentQuestionEditUrl() {
   const question = questions[currentQuestionIndex];
   const params = new URLSearchParams({
     examId: currentExamId,
+    selectedExam: localStorage.getItem("selectedExam") || "",
     questionId: question?.id || ""
   });
 
-  return `question-editor.html?${params.toString()}`;
+  return `question-single-editor.html?${params.toString()}`;
 }
 
 // ======================================
@@ -800,7 +837,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 });
 
 document.getElementById("edit-current-question-btn").addEventListener("click", () => {
-  window.open(buildCurrentQuestionEditUrl(), "_blank", "noopener");
+  window.open(buildCurrentQuestionEditUrl(), "_blank");
 });
 
 // ======================================

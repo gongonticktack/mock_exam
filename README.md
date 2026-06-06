@@ -72,8 +72,8 @@ wrangler pages deploy
 ## ファイル構成
 
 - `index.html` - メインページ（資格選択）
-- `app.js` - メインページのロジック
-- `style.css` - メインページのスタイル
+- `index.js` - メインページのロジック
+- `index.css` - メインページのスタイル
 - `question-import.html` - 問題インポートページ
 - `question-import.js` - 問題インポートのロジック
 - `question-import.css` - インポートページのスタイル

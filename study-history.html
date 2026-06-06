@@ -34,6 +34,51 @@
         <span id="history-count" class="history-count">読み込み中</span>
       </div>
 
+      <section class="practice-tools" aria-label="復習メニュー">
+        <div class="practice-tool">
+          <div class="practice-tool-copy">
+            <h2>直近で解いていない問題</h2>
+            <p>選んだ期間に解いていない問題だけを出題します。</p>
+          </div>
+
+          <div class="unanswered-actions">
+            <div class="period-tabs" role="group" aria-label="未回答とみなす期間">
+              <button type="button" class="period-tab" data-period-days="1">1日</button>
+              <button type="button" class="period-tab" data-period-days="3">3日</button>
+              <button type="button" class="period-tab active" data-period-days="7">7日</button>
+              <button type="button" class="period-tab" data-period-days="14">2週間</button>
+              <button type="button" class="period-tab" data-period-days="30">1か月</button>
+              <button type="button" class="period-tab" data-period-days="90">3か月</button>
+              <button type="button" class="period-tab" data-period-days="all">全期間</button>
+            </div>
+
+            <button id="start-unanswered-btn" type="button" class="practice-start-btn">
+              <i class="fa-solid fa-play"></i>
+              未回答問題を解く
+            </button>
+          </div>
+        </div>
+
+        <div class="practice-tool">
+          <div class="practice-tool-copy">
+            <h2>間違えた問題</h2>
+            <p>直近で間違えた問題、または過去に一度でも間違えた問題を復習できます。</p>
+          </div>
+
+          <div class="incorrect-practice-actions">
+            <button id="start-recent-incorrect-btn" type="button" class="practice-start-btn practice-start-btn-secondary">
+              <i class="fa-solid fa-rotate-right"></i>
+              直近で間違えた問題
+            </button>
+
+            <button id="start-incorrect-btn" type="button" class="practice-start-btn practice-start-btn-secondary">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              過去に間違えた問題
+            </button>
+          </div>
+        </div>
+      </section>
+
       <div id="history-list" class="history-list"></div>
     </section>
   </main>

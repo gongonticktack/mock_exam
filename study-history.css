@@ -123,6 +123,13 @@ body {
   gap: 12px;
 }
 
+.incorrect-practice-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .period-tab {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);

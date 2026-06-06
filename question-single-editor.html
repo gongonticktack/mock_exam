@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>この問題を編集 | QualiStudy</title>
+  <link rel="stylesheet" href="question-single-editor.css">
+  <link rel="icon" type="image/png" href="exam_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+      <i class="fa-solid fa-circle-notch fa-spin"></i>
+      <p>問題を読み込み中...</p>
+    </div>
+  </div>
+
+  <main class="single-editor-shell">
+    <header class="single-editor-header">
+      <div>
+        <a href="index.html" class="brand">QualiStudy</a>
+        <p id="exam-name" class="exam-name">問題編集</p>
+      </div>
+
+      <button type="button" id="close-btn" class="close-btn">
+        <i class="fa-solid fa-xmark"></i>
+        閉じる
+      </button>
+    </header>
+
+    <section class="editor-panel">
+      <div class="panel-heading">
+        <div>
+          <h1>この問題を編集</h1>
+          <p>回答画面で開いた問題だけを編集します。</p>
+        </div>
+        <span id="question-id-label" class="question-id-label"></span>
+      </div>
+
+      <form id="editor-form" class="editor-form">
+        <input type="hidden" id="question-id">
+
+        <div class="form-group">
+          <label for="category">カテゴリ</label>
+          <input type="text" id="category" class="form-input" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="question">問題文</label>
+          <textarea id="question" class="form-textarea" rows="7"></textarea>
+        </div>
+
+        <div class="form-group">
+          <div class="choices-heading">
+            <label>選択肢</label>
+            <button type="button" id="add-choice-btn" class="add-choice-btn">
+              <i class="fa-solid fa-plus"></i>
+              選択肢を追加
+            </button>
+          </div>
+
+          <div id="choices-container" class="choices-container"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="explanation">解説</label>
+          <textarea id="explanation" class="form-textarea" rows="7"></textarea>
+        </div>
+
+        <p id="save-status" class="save-status" aria-live="polite"></p>
+
+        <div class="form-buttons">
+          <button type="submit" id="save-btn" class="save-btn">
+            <i class="fa-solid fa-floppy-disk"></i>
+            保存して閉じる
+          </button>
+
+          <button type="button" id="delete-btn" class="delete-btn">
+            <i class="fa-solid fa-trash-can"></i>
+            削除
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    fetch('supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.json が見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        const script = document.createElement('script');
+        script.src = 'question-single-editor.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+        alert('Supabase設定の読み込みに失敗しました。');
+      });
+  </script>
+</body>
+
+</html>

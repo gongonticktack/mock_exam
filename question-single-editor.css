@@ -1,0 +1,330 @@
+:root {
+  --surface: rgba(18, 24, 60, 0.94);
+  --surface-soft: rgba(255, 255, 255, 0.045);
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #8b7dff;
+  --text: #eef2ff;
+  --text-muted: #aab3d1;
+  --danger: #fb7185;
+  --success: #5eead4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.18), transparent 30%), linear-gradient(135deg, #04050c 0%, #0b1121 45%, #090912 100%);
+  color: var(--text);
+  font-family: "Noto Sans JP", sans-serif;
+  min-height: 100vh;
+}
+
+.loading-overlay {
+  align-items: center;
+  background: rgba(4, 5, 12, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 10;
+}
+
+.loading-content {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.loading-content i {
+  color: var(--accent);
+  font-size: 1.4rem;
+}
+
+.single-editor-shell {
+  margin: 0 auto;
+  padding: 28px;
+  width: min(960px, 100%);
+}
+
+.single-editor-header {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.brand {
+  color: var(--accent);
+  display: inline-block;
+  font-size: 1.55rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  text-decoration: none;
+}
+
+.exam-name,
+.panel-heading p,
+.save-status {
+  color: var(--text-muted);
+}
+
+.close-btn,
+.add-choice-btn,
+.delete-choice-btn,
+.save-btn,
+.delete-btn {
+  align-items: center;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 11px 14px;
+}
+
+.editor-panel {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 26px;
+}
+
+.panel-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.panel-heading h1 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.question-id-label {
+  background: rgba(139, 125, 255, 0.14);
+  border: 1px solid rgba(139, 125, 255, 0.38);
+  border-radius: 999px;
+  color: #c8c2ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.editor-form {
+  display: grid;
+  gap: 20px;
+}
+
+.form-group {
+  display: grid;
+  gap: 9px;
+}
+
+.form-group label,
+.choices-heading label {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.form-input,
+.form-textarea,
+.choice-input {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.65;
+  outline: none;
+  padding: 12px 13px;
+  width: 100%;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.choice-input:focus {
+  border-color: rgba(139, 125, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(139, 125, 255, 0.12);
+}
+
+.form-textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.choices-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.add-choice-btn {
+  background: rgba(139, 125, 255, 0.15);
+  border: 1px solid rgba(139, 125, 255, 0.38);
+  color: #d7d2ff;
+  padding: 9px 12px;
+}
+
+.choices-container {
+  display: grid;
+  gap: 12px;
+}
+
+.choice-item {
+  background: var(--surface-soft);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.choice-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.choice-title {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.choice-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.correct-label {
+  align-items: center;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.9rem;
+  gap: 7px;
+}
+
+.delete-choice-btn {
+  background: rgba(251, 113, 133, 0.12);
+  border: 1px solid rgba(251, 113, 133, 0.34);
+  color: #fecdd3;
+  height: 34px;
+  width: 38px;
+}
+
+.media-tools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.media-insert-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  gap: 8px;
+  padding: 8px 11px;
+}
+
+.media-hint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.media-file-input {
+  display: none;
+}
+
+.save-status {
+  min-height: 1.4em;
+}
+
+.save-status.success {
+  color: var(--success);
+}
+
+.save-status.error {
+  color: var(--danger);
+}
+
+.form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #7768f3, #9a8fff);
+  color: white;
+  min-height: 44px;
+  padding: 12px 18px;
+}
+
+.delete-btn {
+  background: rgba(251, 113, 133, 0.16);
+  border: 1px solid rgba(251, 113, 133, 0.42);
+  color: #fecdd3;
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+@media (max-width: 640px) {
+  .single-editor-shell {
+    padding: 16px;
+  }
+
+  .single-editor-header,
+  .panel-heading,
+  .choices-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .editor-panel {
+    padding: 20px 16px;
+  }
+
+  .form-buttons,
+  .close-btn,
+  .save-btn,
+  .delete-btn {
+    width: 100%;
+  }
+}

@@ -11,6 +11,7 @@ const historyListElement = document.getElementById("history-list");
 const unansweredPeriodTabs = document.querySelectorAll(".period-tab");
 const startUnansweredButton = document.getElementById("start-unanswered-btn");
 const startIncorrectButton = document.getElementById("start-incorrect-btn");
+const startRecentIncorrectButton = document.getElementById("start-recent-incorrect-btn");
 let selectedUnansweredPeriod = "7";
 
 function stripMediaMarkup(text) {
@@ -118,6 +119,10 @@ if (startUnansweredButton) {
 
 if (startIncorrectButton) {
   startIncorrectButton.addEventListener("click", () => startPractice("incorrect"));
+}
+
+if (startRecentIncorrectButton) {
+  startRecentIncorrectButton.addEventListener("click", () => startPractice("recent-incorrect"));
 }
 
 function renderHistory(items, categoryMap) {

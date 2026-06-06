@@ -13,7 +13,7 @@
   <title>QualiStudy</title>
 
   <!-- CSS -->
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="index.css" />
   <link rel="icon" type="image/png" href="exam_icon.png" />
 
   <!-- Google Fonts -->
@@ -285,9 +285,15 @@
               <span>間違えた問題</span>
             </div>
 
-            <button id="top-start-incorrect-btn" type="button" class="history-practice-btn history-practice-btn-secondary">
-              間違えた問題を復習
-            </button>
+            <div class="incorrect-practice-actions">
+              <button id="top-start-recent-incorrect-btn" type="button" class="history-practice-btn history-practice-btn-secondary">
+                直近で間違えた問題
+              </button>
+
+              <button id="top-start-incorrect-btn" type="button" class="history-practice-btn history-practice-btn-secondary">
+                過去に間違えた問題
+              </button>
+            </div>
           </div>
         </section>
 
@@ -379,16 +385,16 @@
       })
       .then(config => {
         window.SUPABASE_CONFIG = config.supabase;
-        // 設定完了後に app.js を読み込む
+        // 設定完了後に index.js を読み込む
         const script = document.createElement('script');
-        script.src = 'app.js';
+        script.src = 'index.js';
         document.body.appendChild(script);
       })
       .catch(error => {
         console.error('Supabase設定エラー:', error);
-        // 例外誰場合でも app.js を読み込む
+        // 例外の場合でも index.js を読み込む
         const script = document.createElement('script');
-        script.src = 'app.js';
+        script.src = 'index.js';
         document.body.appendChild(script);
       });
   </script>

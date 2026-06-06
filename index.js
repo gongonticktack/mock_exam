@@ -1,5 +1,5 @@
 // ======================================
-// app.js
+// index.js
 // ======================================
 // トップページ（index.html）を動かすためのファイルです。
 //
@@ -593,6 +593,9 @@ const topStartUnansweredButton =
 const topStartIncorrectButton =
   document.getElementById("top-start-incorrect-btn");
 
+const topStartRecentIncorrectButton =
+  document.getElementById("top-start-recent-incorrect-btn");
+
 const topCustomPeriodInput =
   document.getElementById("top-custom-period-days");
 
@@ -845,6 +848,10 @@ if (topStartUnansweredButton) {
 
 if (topStartIncorrectButton) {
   topStartIncorrectButton.addEventListener("click", () => startTopPractice("incorrect"));
+}
+
+if (topStartRecentIncorrectButton) {
+  topStartRecentIncorrectButton.addEventListener("click", () => startTopPractice("recent-incorrect"));
 }
 
 // ======================================

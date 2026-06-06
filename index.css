@@ -459,6 +459,13 @@ body {
   gap: 10px;
 }
 
+.incorrect-practice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .history-practice-title {
   align-items: center;
   color: var(--text);
@@ -558,7 +565,7 @@ body {
   justify-content: center;
   min-height: 34px;
   padding: 8px 13px;
-  width: 150px;
+  min-width: 150px;
   white-space: nowrap;
 }
 
@@ -566,7 +573,8 @@ body {
   justify-self: end;
 }
 
-.history-practice-block-inline .history-practice-btn {
+.history-practice-block-inline .history-practice-btn,
+.incorrect-practice-actions {
   justify-self: end;
 }
 
