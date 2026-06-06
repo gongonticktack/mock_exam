@@ -660,9 +660,9 @@ function displayQuestion(index) {
 
     numberSpan.textContent = `${displayIndex + 1}`;
 
-    label.appendChild(numberSpan);
-
     label.appendChild(checkbox);
+
+    label.appendChild(numberSpan);
 
     // テキスト
     const textSpan = document.createElement("span");
