@@ -161,8 +161,15 @@
       <div class="questions-panel">
 
         <div class="questions-heading">
-          <h2>問題一覧</h2>
-          <span id="questions-count" class="questions-count">0件</span>
+          <div class="questions-heading-main">
+            <h2>問題一覧</h2>
+            <span id="questions-count" class="questions-count">0件</span>
+          </div>
+
+          <button type="button" id="bulk-delete-btn" class="bulk-delete-btn" disabled>
+            <i class="fa-solid fa-trash-can"></i>
+            選択した問題を削除
+          </button>
         </div>
 
         <div id="questions-list" class="questions-list">

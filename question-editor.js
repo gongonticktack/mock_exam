@@ -28,6 +28,7 @@ let targetQuestionId = null;
 let duplicateCandidateIds = new Set();
 let duplicateCandidateMeta = new Map();
 let displayNumberByQuestionId = new Map();
+let selectedQuestionIds = new Set();
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
@@ -395,7 +396,9 @@ async function loadQuestions() {
 function displayNoQuestions() {
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '<p class="no-questions">問題がありません</p>';
+  selectedQuestionIds = new Set();
   updateQuestionsCount(0);
+  updateBulkDeleteButton();
 }
 
 function selectQuestionItem(item, question) {
@@ -432,6 +435,9 @@ function displayQuestionsList() {
   // クリックされた問題だけが active 表示になり、右側の編集フォームへ内容が入ります。
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '';
+  selectedQuestionIds = new Set([...selectedQuestionIds].filter(id => {
+    return questions.some(question => Number(question.id) === id);
+  }));
   displayNumberByQuestionId = new Map();
 
   questions.forEach((question, index) => {
@@ -440,8 +446,10 @@ function displayQuestionsList() {
 
   questions.forEach((question, index) => {
     const duplicateMeta = duplicateCandidateMeta.get(Number(question.id));
+    const questionId = Number(question.id);
     const item = document.createElement('div');
     item.className = 'question-item';
+    item.classList.toggle('selected', selectedQuestionIds.has(questionId));
     item.dataset.questionId = question.id;
     item.dataset.originalIndex = index;
     item.dataset.hasExplanation = hasExplanation(question) ? 'true' : 'false';
@@ -451,6 +459,22 @@ function displayQuestionsList() {
     const numberDiv = document.createElement('div');
     numberDiv.className = 'question-item-number';
     numberDiv.textContent = index + 1;
+
+    const selectLabel = document.createElement('label');
+    selectLabel.className = 'question-select';
+    selectLabel.title = '削除対象に選択';
+
+    const selectCheckbox = document.createElement('input');
+    selectCheckbox.type = 'checkbox';
+    selectCheckbox.checked = selectedQuestionIds.has(questionId);
+    selectCheckbox.setAttribute('aria-label', `問題 ${index + 1} を選択`);
+
+    const selectMark = document.createElement('span');
+    selectMark.className = 'question-select-mark';
+    selectMark.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+    selectLabel.appendChild(selectCheckbox);
+    selectLabel.appendChild(selectMark);
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'question-item-content';
@@ -478,8 +502,24 @@ function displayQuestionsList() {
 
     contentDiv.appendChild(categoryDiv);
     contentDiv.appendChild(textDiv);
+    item.appendChild(selectLabel);
     item.appendChild(numberDiv);
     item.appendChild(contentDiv);
+
+    selectLabel.addEventListener('click', event => {
+      event.stopPropagation();
+    });
+
+    selectCheckbox.addEventListener('change', () => {
+      if (selectCheckbox.checked) {
+        selectedQuestionIds.add(questionId);
+      } else {
+        selectedQuestionIds.delete(questionId);
+      }
+
+      item.classList.toggle('selected', selectCheckbox.checked);
+      updateBulkDeleteButton();
+    });
 
     item.addEventListener('click', () => {
       selectQuestionItem(item, question);
@@ -489,6 +529,7 @@ function displayQuestionsList() {
   });
 
   applyQuestionFilters();
+  updateBulkDeleteButton();
   selectTargetQuestion();
 }
 
@@ -948,9 +989,77 @@ function updateQuestionsCount(visibleCount) {
   countLabel.textContent = `${visibleCount} / ${questions.length}件`;
 }
 
+function updateBulkDeleteButton() {
+  const bulkDeleteButton = document.getElementById('bulk-delete-btn');
+  if (!bulkDeleteButton) {
+    return;
+  }
+
+  const selectedCount = selectedQuestionIds.size;
+  bulkDeleteButton.disabled = selectedCount === 0;
+  bulkDeleteButton.innerHTML =
+    `<i class="fa-solid fa-trash-can"></i>${selectedCount > 0 ? `${selectedCount}件を削除` : '選択した問題を削除'}`;
+}
+
 document.getElementById('search-input').addEventListener('input', () => {
   applyQuestionFilters();
 });
+
+const bulkDeleteButton = document.getElementById('bulk-delete-btn');
+if (bulkDeleteButton) {
+  bulkDeleteButton.addEventListener('click', async () => {
+    const targetIds = [...selectedQuestionIds];
+    if (targetIds.length === 0) {
+      return;
+    }
+
+    if (!confirm(`${targetIds.length}件の問題と選択肢を削除しますか？`)) {
+      return;
+    }
+
+    try {
+      showLoading();
+
+      const { error: choicesError } = await supabaseClient
+        .from('choices')
+        .delete()
+        .in('question_id', targetIds);
+
+      if (choicesError) {
+        console.error('一括削除: 選択肢削除エラー:', choicesError);
+        alert('選択肢の一括削除に失敗しました');
+        hideLoading();
+        return;
+      }
+
+      const { error: questionsError } = await supabaseClient
+        .from('questions')
+        .delete()
+        .in('id', targetIds);
+
+      if (questionsError) {
+        console.error('一括削除: 問題削除エラー:', questionsError);
+        alert('問題の一括削除に失敗しました');
+        hideLoading();
+        return;
+      }
+
+      if (currentSelectedQuestion && targetIds.includes(Number(currentSelectedQuestion.id))) {
+        currentSelectedQuestion = null;
+        document.getElementById('editor-form').style.display = 'none';
+        document.getElementById('no-selection').style.display = 'flex';
+      }
+
+      selectedQuestionIds = new Set();
+      await loadQuestions();
+      alert(`${targetIds.length}件の問題を削除しました`);
+    } catch (error) {
+      console.error('一括削除エラー:', error);
+      alert('一括削除中にエラーが発生しました: ' + error.message);
+      hideLoading();
+    }
+  });
+}
 
 const missingExplanationFilterButton = document.getElementById('missing-explanation-filter-btn');
 if (missingExplanationFilterButton) {

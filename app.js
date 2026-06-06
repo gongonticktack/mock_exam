@@ -444,7 +444,7 @@ async function fetchExamWeaknesses(examId) {
           questionId: item.question_id,
           activity: truncateText(item.activity || "問題履歴なし", 120),
           date: answeredAt && !Number.isNaN(answeredAt.getTime())
-            ? answeredAt.toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+            ? answeredAt.toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit" })
             : "日時なし",
           resultLabel: "対象外",
           className: "skipped",
@@ -462,7 +462,7 @@ async function fetchExamWeaknesses(examId) {
         questionId: item.question_id,
         activity: truncateText(item.activity || "問題履歴なし", 120),
         date: answeredAt && !Number.isNaN(answeredAt.getTime())
-          ? answeredAt.toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+          ? answeredAt.toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit" })
           : "日時なし",
         resultLabel: result.text,
         className: result.className,

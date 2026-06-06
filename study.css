@@ -419,12 +419,21 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: none;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 0.86rem;
+  font-weight: 600;
+  min-height: 40px;
+  opacity: 0.82;
+  padding: 0.7rem 1rem;
 }
 
 .edit-question-btn:hover {
   background: rgba(139, 125, 255, 0.14);
   border-color: rgba(139, 125, 255, 0.45);
-  box-shadow: 0 16px 34px rgba(107, 93, 255, 0.18);
+  box-shadow: 0 10px 24px rgba(107, 93, 255, 0.14);
+  color: var(--text);
+  opacity: 1;
 }
 
 .completion-card {

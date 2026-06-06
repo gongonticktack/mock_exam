@@ -291,8 +291,16 @@ body {
 .questions-heading {
   align-items: center;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 20px;
+}
+
+.questions-heading-main {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
 }
 
 .questions-count {
@@ -304,6 +312,38 @@ body {
   font-weight: 700;
   padding: 4px 9px;
   white-space: nowrap;
+}
+
+.bulk-delete-btn {
+  align-items: center;
+  background: rgba(251, 113, 133, 0.14);
+  border: 1px solid rgba(251, 113, 133, 0.42);
+  border-radius: 12px;
+  color: #fecdd3;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 7px;
+  justify-content: center;
+  min-height: 32px;
+  padding: 7px 10px;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.bulk-delete-btn:not(:disabled):hover {
+  background: rgba(251, 113, 133, 0.22);
+  border-color: rgba(251, 113, 133, 0.62);
+  transform: translateY(-1px);
+}
+
+.bulk-delete-btn:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 /* ========================= */
@@ -403,6 +443,54 @@ body {
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.question-item.selected {
+  border-color: rgba(139, 125, 255, 0.46);
+  box-shadow: inset 0 0 0 1px rgba(139, 125, 255, 0.16);
+}
+
+.question-select {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 32px;
+  justify-content: center;
+  position: relative;
+  width: 32px;
+}
+
+.question-select input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.question-select-mark {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  color: transparent;
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  width: 22px;
+}
+
+.question-select input:checked + .question-select-mark {
+  background: linear-gradient(135deg, #8b7dff, #6c5af9);
+  border-color: rgba(139, 125, 255, 0.8);
+  box-shadow: 0 10px 24px rgba(107, 93, 255, 0.28);
+  color: white;
+}
+
+.question-select input:focus-visible + .question-select-mark {
+  outline: 2px solid rgba(139, 125, 255, 0.6);
+  outline-offset: 2px;
 }
 
 .duplicate-badge {
