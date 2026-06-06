@@ -552,6 +552,17 @@ function shuffleQuestions() {
 // ======================================
 // 指定されたインデックスの問題と選択肢を表示
 
+function getShuffledChoices(choices) {
+  const shuffledChoices = [...choices];
+
+  for (let i = shuffledChoices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledChoices[i], shuffledChoices[j]] = [shuffledChoices[j], shuffledChoices[i]];
+  }
+
+  return shuffledChoices;
+}
+
 function displayQuestion(index) {
   // 指定された番号の問題を画面へ表示します。
   // 問題文、カテゴリ、選択肢、ボタン表示をここでまとめてリセットします。
@@ -613,7 +624,7 @@ function displayQuestion(index) {
     choicesContainer.classList.add("choices-container-long");
   }
 
-  question.choices.forEach((choice) => {
+  getShuffledChoices(question.choices).forEach((choice) => {
 
     const choiceDiv = document.createElement("div");
 
@@ -631,6 +642,8 @@ function displayQuestion(index) {
     checkbox.dataset.is_correct = choice.is_correct ? '1' : '0';
 
     checkbox.dataset.choice_index = choice.choice_index;
+
+    checkbox.dataset.choice_content = choice.content || "";
 
     // ラベル
     const label = document.createElement("label");
@@ -710,7 +723,9 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
         choice_index: parseInt(checkbox.dataset.choice_index),
 
-        is_correct: checkbox.dataset.is_correct === '1'
+        is_correct: checkbox.dataset.is_correct === '1',
+
+        content: checkbox.dataset.choice_content || ""
 
       });
 
@@ -727,7 +742,9 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
       correctChoices.push({
 
-        choice_index: parseInt(checkbox.dataset.choice_index)
+        choice_index: parseInt(checkbox.dataset.choice_index),
+
+        content: checkbox.dataset.choice_content || ""
 
       });
 
@@ -776,6 +793,15 @@ document.getElementById("edit-current-question-btn").addEventListener("click", (
   window.open(buildCurrentQuestionEditUrl(), "_blank", "noopener");
 });
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // ======================================
 // 📊 回答結果を表示
 // ======================================
@@ -817,7 +843,7 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 
       <div class="correct-answer">
 
-        <p><strong>正解:</strong> ${correctChoices.map(c => c.choice_index).join(', ')}</p>
+        <p><strong>正解:</strong> ${correctChoices.map(c => escapeHtml(c.content)).join(' / ')}</p>
 
       </div>
 
