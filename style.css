@@ -311,8 +311,9 @@ body {
 
 .bottom-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2.8fr) minmax(220px, 0.72fr);
   gap: 18px;
+  align-items: start;
 }
 
 .history-column {
@@ -412,6 +413,7 @@ body {
 }
 
 .weak-card h2 {
+  font-size: 1rem;
   margin-bottom: 18px;
 }
 
@@ -488,6 +490,7 @@ body {
   font-size: 0.78rem;
   padding: 6px 10px;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
 }
 
 .top-period-tab:hover,
@@ -594,6 +597,10 @@ body {
   transition: color 0.3s ease, padding-left 0.3s ease;
 }
 
+.weak-card {
+  align-self: start;
+}
+
 .weak-item:hover {
   color: var(--accent);
   padding-left: 6px;
@@ -697,6 +704,23 @@ body {
 
   .section-heading {
     margin-bottom: 18px;
+  }
+
+  .history-practice-actions {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .top-period-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .top-period-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .hero-left p {

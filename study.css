@@ -196,7 +196,7 @@ body {
 }
 
 .question-card h2 {
-  font-size: clamp(1.7rem, 2vw, 2.5rem);
+  font-size: clamp(1.45rem, 1.8vw, 2.05rem);
   color: var(--text);
   margin-bottom: 2rem;
   line-height: 1.4;
@@ -204,13 +204,13 @@ body {
 }
 
 .question-card h2.question-text-long {
-  font-size: clamp(1.35rem, 1.7vw, 2rem);
+  font-size: clamp(1.12rem, 1.35vw, 1.45rem);
   line-height: 1.5;
   margin-bottom: 1.5rem;
 }
 
 .question-card h2.question-text-very-long {
-  font-size: clamp(1.12rem, 1.45vw, 1.55rem);
+  font-size: clamp(0.98rem, 1.15vw, 1.2rem);
   line-height: 1.55;
   margin-bottom: 1.2rem;
 }
@@ -482,15 +482,15 @@ body {
   }
 
   .question-card h2 {
-    font-size: 1.8rem;
+    font-size: 1.45rem;
   }
 
   .question-card h2.question-text-long {
-    font-size: 1.35rem;
+    font-size: 1.08rem;
   }
 
   .question-card h2.question-text-very-long {
-    font-size: 1.08rem;
+    font-size: 0.96rem;
   }
 
   .action-buttons {

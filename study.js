@@ -588,8 +588,8 @@ function displayQuestion(index) {
   // 質問を表示
   const questionText = document.getElementById("question-text");
   setLengthClass(questionText, "question-text", question.question, {
-    long: 150,
-    veryLong: 280
+    long: 110,
+    veryLong: 190
   });
   renderRichText(
     questionText,
