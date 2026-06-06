@@ -23,7 +23,9 @@ let questions = [];
 let currentExamId = 1;
 let currentSelectedQuestion = null;
 let showOnlyMissingExplanation = false;
+let showOnlyDuplicateCandidates = false;
 let targetQuestionId = null;
+let duplicateCandidateIds = new Set();
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
 function initSupabase() {
@@ -56,6 +58,81 @@ function stripMediaMarkup(text) {
 
 function hasExplanation(question) {
   return !!String(question?.explanation || '').trim();
+}
+
+function normalizeForDuplicateCheck(text) {
+  return stripMediaMarkup(text)
+    .toLowerCase()
+    .replace(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~、。，．・「」『』（）【】［］｛｝！？\s]/g, '')
+    .trim();
+}
+
+function getDuplicateCheckText(question) {
+  const choicesText = (question.choices || [])
+    .map(choice => choice.content || '')
+    .join(' ');
+
+  return normalizeForDuplicateCheck(`${question.question || ''} ${choicesText}`);
+}
+
+function getTextTokens(text) {
+  const tokens = new Set();
+
+  for (let i = 0; i < text.length - 1; i++) {
+    tokens.add(text.slice(i, i + 2));
+  }
+
+  return tokens;
+}
+
+function getTokenSimilarity(leftText, rightText) {
+  const leftTokens = getTextTokens(leftText);
+  const rightTokens = getTextTokens(rightText);
+
+  if (leftTokens.size === 0 || rightTokens.size === 0) {
+    return 0;
+  }
+
+  let intersection = 0;
+  leftTokens.forEach(token => {
+    if (rightTokens.has(token)) {
+      intersection += 1;
+    }
+  });
+
+  return (2 * intersection) / (leftTokens.size + rightTokens.size);
+}
+
+function updateDuplicateCandidates() {
+  duplicateCandidateIds = new Set();
+
+  const comparableQuestions = questions
+    .map(question => ({
+      id: Number(question.id),
+      text: getDuplicateCheckText(question)
+    }))
+    .filter(item => item.id && item.text.length >= 20);
+
+  for (let i = 0; i < comparableQuestions.length; i++) {
+    for (let j = i + 1; j < comparableQuestions.length; j++) {
+      const current = comparableQuestions[i];
+      const other = comparableQuestions[j];
+      const shorterLength = Math.min(current.text.length, other.text.length);
+      const longerLength = Math.max(current.text.length, other.text.length);
+
+      if (shorterLength / longerLength < 0.58) {
+        continue;
+      }
+
+      const isExactMatch = current.text === other.text;
+      const isSimilar = getTokenSimilarity(current.text, other.text) >= 0.72;
+
+      if (isExactMatch || isSimilar) {
+        duplicateCandidateIds.add(current.id);
+        duplicateCandidateIds.add(other.id);
+      }
+    }
+  }
 }
 
 function insertAtCursor(textarea, text) {
@@ -245,6 +322,7 @@ async function loadQuestions() {
     }
 
     questions = questionsWithChoices;
+    updateDuplicateCandidates();
     hideLoading();
 
     // 問題一覧を表示
@@ -306,6 +384,7 @@ function displayQuestionsList() {
     item.className = 'question-item';
     item.dataset.questionId = question.id;
     item.dataset.hasExplanation = hasExplanation(question) ? 'true' : 'false';
+    item.dataset.isDuplicateCandidate = duplicateCandidateIds.has(Number(question.id)) ? 'true' : 'false';
 
     const numberDiv = document.createElement('div');
     numberDiv.className = 'question-item-number';
@@ -755,8 +834,10 @@ function applyQuestionFilters() {
     const matchesSearch = text.includes(searchQuery);
     const matchesExplanationFilter =
       !showOnlyMissingExplanation || item.dataset.hasExplanation === 'false';
+    const matchesDuplicateFilter =
+      !showOnlyDuplicateCandidates || item.dataset.isDuplicateCandidate === 'true';
 
-    if (matchesSearch && matchesExplanationFilter) {
+    if (matchesSearch && matchesExplanationFilter && matchesDuplicateFilter) {
       item.style.display = 'flex';
     } else {
       item.style.display = 'none';
@@ -774,6 +855,16 @@ if (missingExplanationFilterButton) {
     showOnlyMissingExplanation = !showOnlyMissingExplanation;
     missingExplanationFilterButton.classList.toggle('active', showOnlyMissingExplanation);
     missingExplanationFilterButton.setAttribute('aria-pressed', String(showOnlyMissingExplanation));
+    applyQuestionFilters();
+  });
+}
+
+const duplicateFilterButton = document.getElementById('duplicate-filter-btn');
+if (duplicateFilterButton) {
+  duplicateFilterButton.addEventListener('click', () => {
+    showOnlyDuplicateCandidates = !showOnlyDuplicateCandidates;
+    duplicateFilterButton.classList.toggle('active', showOnlyDuplicateCandidates);
+    duplicateFilterButton.setAttribute('aria-pressed', String(showOnlyDuplicateCandidates));
     applyQuestionFilters();
   });
 }

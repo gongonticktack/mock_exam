@@ -146,6 +146,15 @@ body {
   z-index: 1;
 }
 
+.export-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+
 /* ========================= */
 /* ツールバー */
 /* ========================= */
@@ -154,7 +163,6 @@ body {
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
   align-items: center;
 }
 
@@ -163,11 +171,6 @@ body {
   gap: 10px;
   flex: 1;
   min-width: 250px;
-}
-
-.toolbar-right {
-  display: flex;
-  gap: 12px;
 }
 
 .search-input {
@@ -756,7 +759,7 @@ body {
   }
 
   .toolbar-left,
-  .toolbar-right {
+  .export-actions {
     width: 100%;
   }
 
@@ -764,7 +767,7 @@ body {
     flex-direction: column;
   }
 
-  .toolbar-right {
+  .export-actions {
     flex-direction: column;
   }
 

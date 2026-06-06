@@ -313,7 +313,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .history-column {
@@ -446,6 +446,7 @@ body {
   gap: 18px;
   grid-column: 1;
   grid-row: 1;
+  min-height: 240px;
 }
 
 .history-practice-block {
@@ -679,6 +680,10 @@ body {
     grid-row: auto;
   }
 
+  .history-practice-card {
+    min-height: auto;
+  }
+
   .hero-card {
     flex-direction: column;
     gap: 30px;
@@ -706,6 +711,7 @@ body {
   .history-practice-card {
     grid-column: 1;
     grid-row: 1;
+    min-height: 240px;
   }
 
   .weak-card {
