@@ -200,6 +200,19 @@ body {
   color: var(--text);
   margin-bottom: 2rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.question-card h2.question-text-long {
+  font-size: clamp(1.35rem, 1.7vw, 2rem);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.question-card h2.question-text-very-long {
+  font-size: clamp(1.12rem, 1.45vw, 1.55rem);
+  line-height: 1.55;
+  margin-bottom: 1.2rem;
 }
 
 .choices-container {
@@ -207,6 +220,14 @@ body {
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 2rem;
+}
+
+.choices-container-long {
+  gap: 0.78rem;
+}
+
+.choices-container-very-long {
+  gap: 0.62rem;
 }
 
 .choice-item {
@@ -227,6 +248,19 @@ body {
   width: 100%;
 }
 
+.choices-container-long .choice-label,
+.choice-label-long {
+  gap: 0.85rem;
+  padding: 1rem 1.05rem;
+}
+
+.choices-container-very-long .choice-label,
+.choice-label-very-long {
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.82rem 0.95rem;
+}
+
 .choice-label:hover {
   border-color: rgba(139, 125, 255, 0.45);
   background: rgba(139, 125, 255, 0.08);
@@ -237,6 +271,8 @@ body {
   height: 20px;
   cursor: pointer;
   accent-color: var(--accent);
+  flex: 0 0 auto;
+  margin-top: 0.1em;
 }
 
 .choice-checkbox:checked + span {
@@ -247,6 +283,21 @@ body {
 .choice-label span {
   font-size: 1rem;
   color: var(--text);
+  line-height: 1.55;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.choices-container-long .choice-label span,
+.choice-label-long span {
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.choices-container-very-long .choice-label span,
+.choice-label-very-long span {
+  font-size: 0.86rem;
+  line-height: 1.46;
 }
 
 .result-box {
@@ -432,6 +483,14 @@ body {
 
   .question-card h2 {
     font-size: 1.8rem;
+  }
+
+  .question-card h2.question-text-long {
+    font-size: 1.35rem;
+  }
+
+  .question-card h2.question-text-very-long {
+    font-size: 1.08rem;
   }
 
   .action-buttons {

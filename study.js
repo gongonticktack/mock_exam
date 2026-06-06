@@ -127,6 +127,25 @@ function renderRichText(container, text) {
   appendText(value.slice(lastIndex));
 }
 
+function getReadableTextLength(text) {
+  return String(text || "")
+    .replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, "")
+    .replace(/\s+/g, "")
+    .length;
+}
+
+function setLengthClass(element, baseClass, text, thresholds) {
+  element.classList.remove(`${baseClass}-long`, `${baseClass}-very-long`);
+
+  const textLength = getReadableTextLength(text);
+
+  if (textLength >= thresholds.veryLong) {
+    element.classList.add(`${baseClass}-very-long`);
+  } else if (textLength >= thresholds.long) {
+    element.classList.add(`${baseClass}-long`);
+  }
+}
+
 // ======================================
 // �🚀 アプリケーション開始
 // ======================================
@@ -567,8 +586,13 @@ function displayQuestion(index) {
     question.category;
 
   // 質問を表示
+  const questionText = document.getElementById("question-text");
+  setLengthClass(questionText, "question-text", question.question, {
+    long: 150,
+    veryLong: 280
+  });
   renderRichText(
-    document.getElementById("question-text"),
+    questionText,
     question.question
   );
 
@@ -577,6 +601,17 @@ function displayQuestion(index) {
     document.getElementById("choices-container");
 
   choicesContainer.innerHTML = "";
+  choicesContainer.classList.remove("choices-container-long", "choices-container-very-long");
+
+  const totalChoicesLength = question.choices.reduce((sum, choice) => {
+    return sum + getReadableTextLength(choice.content);
+  }, 0);
+
+  if (totalChoicesLength >= 520) {
+    choicesContainer.classList.add("choices-container-very-long");
+  } else if (totalChoicesLength >= 300) {
+    choicesContainer.classList.add("choices-container-long");
+  }
 
   question.choices.forEach((choice) => {
 
@@ -601,6 +636,10 @@ function displayQuestion(index) {
     const label = document.createElement("label");
 
     label.classList.add("choice-label");
+    setLengthClass(label, "choice-label", choice.content, {
+      long: 95,
+      veryLong: 170
+    });
 
     label.appendChild(checkbox);
 
