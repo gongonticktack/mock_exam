@@ -275,12 +275,27 @@ body {
   margin-top: 0.1em;
 }
 
-.choice-checkbox:checked + span {
+.choice-checkbox:checked ~ .choice-text {
   font-weight: 700;
   color: var(--accent);
 }
 
-.choice-label span {
+.choice-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.choice-text {
   font-size: 1rem;
   color: var(--text);
   line-height: 1.55;
@@ -288,14 +303,14 @@ body {
   overflow-wrap: anywhere;
 }
 
-.choices-container-long .choice-label span,
-.choice-label-long span {
+.choices-container-long .choice-text,
+.choice-label-long .choice-text {
   font-size: 0.94rem;
   line-height: 1.5;
 }
 
-.choices-container-very-long .choice-label span,
-.choice-label-very-long span {
+.choices-container-very-long .choice-text,
+.choice-label-very-long .choice-text {
   font-size: 0.86rem;
   line-height: 1.46;
 }

@@ -624,7 +624,7 @@ function displayQuestion(index) {
     choicesContainer.classList.add("choices-container-long");
   }
 
-  getShuffledChoices(question.choices).forEach((choice) => {
+  getShuffledChoices(question.choices).forEach((choice, displayIndex) => {
 
     const choiceDiv = document.createElement("div");
 
@@ -643,7 +643,7 @@ function displayQuestion(index) {
 
     checkbox.dataset.choice_index = choice.choice_index;
 
-    checkbox.dataset.choice_content = choice.content || "";
+    checkbox.dataset.display_index = displayIndex + 1;
 
     // ラベル
     const label = document.createElement("label");
@@ -654,10 +654,20 @@ function displayQuestion(index) {
       veryLong: 170
     });
 
+    const numberSpan = document.createElement("span");
+
+    numberSpan.className = "choice-number";
+
+    numberSpan.textContent = `${displayIndex + 1}`;
+
+    label.appendChild(numberSpan);
+
     label.appendChild(checkbox);
 
     // テキスト
     const textSpan = document.createElement("span");
+
+    textSpan.className = "choice-text";
 
     textSpan.textContent = choice.content;
 
@@ -725,7 +735,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
         is_correct: checkbox.dataset.is_correct === '1',
 
-        content: checkbox.dataset.choice_content || ""
+        display_index: parseInt(checkbox.dataset.display_index)
 
       });
 
@@ -744,7 +754,7 @@ document.getElementById("answer-btn").addEventListener("click", () => {
 
         choice_index: parseInt(checkbox.dataset.choice_index),
 
-        content: checkbox.dataset.choice_content || ""
+        display_index: parseInt(checkbox.dataset.display_index)
 
       });
 
@@ -793,15 +803,6 @@ document.getElementById("edit-current-question-btn").addEventListener("click", (
   window.open(buildCurrentQuestionEditUrl(), "_blank", "noopener");
 });
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 // ======================================
 // 📊 回答結果を表示
 // ======================================
@@ -843,7 +844,7 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 
       <div class="correct-answer">
 
-        <p><strong>正解:</strong> ${correctChoices.map(c => escapeHtml(c.content)).join(' / ')}</p>
+        <p><strong>正解:</strong> ${correctChoices.map(c => c.display_index).sort((a, b) => a - b).join(', ')}</p>
 
       </div>
 
