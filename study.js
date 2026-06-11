@@ -30,10 +30,12 @@ let currentUnansweredPeriodDays = "7";
 let answered = false;
 let loadingProgress = 0;
 let loadingStartedAt = 0;
+let loadingProgressTimer = null;
 let currentStudySessionStartedAt = null;
 let examHistoryColumnSupport = {};
 
 const MIN_LOADING_VISIBLE_MS = 1000;
+const COMPLETE_LOADING_VISIBLE_MS = 200;
 
 /**
  * メッセージを表示して、トップ画面へ戻します。
@@ -88,11 +90,19 @@ function startLoading() {
 
   document.getElementById('loading-overlay').style.display = 'flex';
 
+  if (loadingProgressTimer) {
+    clearInterval(loadingProgressTimer);
+  }
+
   loadingStartedAt = performance.now();
 
-  loadingProgress = 10;
+  setLoadingProgress(0);
 
-  updateLoadingProgress();
+  loadingProgressTimer = setInterval(() => {
+    const elapsed = performance.now() - loadingStartedAt;
+    const progress = Math.floor((elapsed / MIN_LOADING_VISIBLE_MS) * 95);
+    setLoadingProgress(Math.min(95, progress));
+  }, 30);
 
 }
 
@@ -143,6 +153,14 @@ async function stopLoading() {
   if (remaining > 0) {
     await wait(remaining);
   }
+
+  if (loadingProgressTimer) {
+    clearInterval(loadingProgressTimer);
+    loadingProgressTimer = null;
+  }
+
+  setLoadingProgress(100);
+  await wait(COMPLETE_LOADING_VISIBLE_MS);
 
   document.getElementById('loading-overlay').style.display = 'none';
 
@@ -470,8 +488,6 @@ async function loadQuestions() {
 
     }
 
-    setLoadingProgress(45);
-
     const questionsData = await filterQuestionsForStudyMode(loadedQuestionsData);
 
     if (questionsData.length === 0) {
@@ -493,7 +509,6 @@ async function loadQuestions() {
       return false;
     }
 
-    setLoadingProgress(100);
     questions = questionsWithChoices;
     await stopLoading();
     return true;
