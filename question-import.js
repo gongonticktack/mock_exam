@@ -23,6 +23,11 @@ let supabaseClient = null;
 const MAX_DIRECT_IMAGE_BYTES = 1024 * 1024;
 const MAX_OCR_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/**
+ * Supabase クライアントを初期化し、問題登録画面から DB 操作できる状態にします。
+ *
+ * @returns {boolean} 処理結果。
+ */
 function initSupabase() {
 
   const config = window.SUPABASE_CONFIG;
@@ -48,6 +53,13 @@ function initSupabase() {
 // ログ表示
 // ======================================
 
+/**
+ * インポートや登録の結果をログ欄に追加表示します。
+ *
+ * @param {Event} message - この関数に渡す値。
+ * @param {Event} type - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function addLog(message, type) {
 
   const p =
@@ -265,6 +277,13 @@ const DIRECT_QUESTION_SUGGESTIONS = {
   ]
 };
 
+/**
+ * 画像マークアップを含むテキストを確認画面へ安全に描画します。
+ *
+ * @param {HTMLElement} container - この関数に渡す値。
+ * @param {string} text - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function renderRichText(container, text) {
   // 確認画面で、本文中の画像記法を実際の<img>として表示します。
   // innerHTMLへ直接入れず、createTextNode/createElementで作ることで安全性を高めています。
@@ -275,6 +294,12 @@ function renderRichText(container, text) {
   let lastIndex = 0;
   let match;
 
+  /**
+   * 改行を保ちながら、通常テキストを確認画面へ追加します。
+   *
+   * @param {string} chunk - 追加したいテキストの一部分。
+   * @returns {void}
+   */
   const appendText = (chunk) => {
     chunk.split('\n').forEach((line, index) => {
       if (index > 0) {
@@ -302,6 +327,13 @@ function renderRichText(container, text) {
   appendText(value.slice(lastIndex));
 }
 
+/**
+ * textarea のカーソル位置へ画像マークアップなどの文字列を挿入します。
+ *
+ * @param {string} textarea - この関数に渡す値。
+ * @param {string} text - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function insertAtCursor(textarea, text) {
   // 問題文・解説のカーソル位置へ、画像記法などの文字列を差し込みます。
   const start = textarea.selectionStart || 0;
@@ -317,6 +349,12 @@ function insertAtCursor(textarea, text) {
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+/**
+ * 直接追加フォームの問題文・解説欄へ画像を挿入します。
+ *
+ * @param {string} textareaId - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function insertDirectImage(textareaId) {
   // 直接追加フォームの「画像を追加」ボタン用です。
   // ファイルはData URIに変換して、問題文または解説の中に保存します。
@@ -352,6 +390,11 @@ function insertDirectImage(textareaId) {
   input.click();
 }
 
+/**
+ * カメラOCRモーダル内のボタンにイベントを接続します。
+ *
+ * @returns {void} 処理結果。
+ */
 function setupMobileOcrControls() {
   // OCRモーダル内のボタンにイベントを登録します。
   // カメラ開始、閉じる、OCR実行、結果クリアをここでつなぎます。
@@ -380,6 +423,11 @@ function setupMobileOcrControls() {
   });
 }
 
+/**
+ * カメラを起動し、OCR撮影モーダルを開きます。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function openOcrScanner() {
   // スマホでは背面カメラを優先し、PCでは利用できるカメラを起動します。
   // getUserMedia はHTTPS環境でないと使えないため、Cloudflare Pages本番URLでの利用を想定しています。
@@ -411,6 +459,11 @@ async function openOcrScanner() {
   }
 }
 
+/**
+ * カメラを停止し、OCR撮影モーダルを閉じます。
+ *
+ * @returns {void} 処理結果。
+ */
 function closeOcrScanner() {
   // カメラを止め、canvasやOCR結果を消します。
   // 端末上に撮影画像を残さないための後片付けです。
@@ -444,6 +497,12 @@ function closeOcrScanner() {
   }
 }
 
+/**
+ * OCRモーダルの状態メッセージを更新します。
+ *
+ * @param {Event} message - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function setOcrStatus(message) {
   const status = document.getElementById("direct-ocr-status");
   if (status) {
@@ -451,6 +510,11 @@ function setOcrStatus(message) {
   }
 }
 
+/**
+ * 現在のカメラ映像を1枚キャプチャして OCR に送ります。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function captureOcrFrame() {
   // 現在カメラに映っている1フレームだけをcanvasへ描画し、
   // Blobに変換してCloudflare OCR APIへ送信します。
@@ -477,6 +541,12 @@ async function captureOcrFrame() {
   }
 }
 
+/**
+ * 選択された画像ファイルを OCR に送ります。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function handleOcrFileSelect(event) {
   // PCデバッグ用です。カメラがない環境でも、画像ファイルから同じOCR APIを試せます。
   const file = event.target.files && event.target.files[0];
@@ -496,6 +566,13 @@ async function handleOcrFileSelect(event) {
   await runCloudflareOcrBlob(file, document.getElementById("direct-ocr-file-btn"));
 }
 
+/**
+ * 画像BlobをOCR APIへ送り、候補を画面に表示します。
+ *
+ * @param {Blob} blob - この関数に渡す値。
+ * @param {HTMLElement} busyButton - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function runCloudflareOcrBlob(blob, busyButton) {
   // カメラ撮影でもファイル選択でも、この関数でCloudflare OCR APIへ送ります。
   try {
@@ -520,6 +597,12 @@ async function runCloudflareOcrBlob(blob, busyButton) {
   }
 }
 
+/**
+ * canvas の内容を Blob に変換します。
+ *
+ * @param {HTMLCanvasElement} canvas - この関数に渡す値。
+ * @returns {Promise<Blob>} 処理結果。
+ */
 function canvasToBlob(canvas) {
   // canvasの画像をBlobへ変換します。
   // Blobはメモリ上の一時データで、ファイルとして端末に保存されません。
@@ -534,6 +617,12 @@ function canvasToBlob(canvas) {
   });
 }
 
+/**
+ * Cloudflare OCR API に画像を送信して問題候補を取得します。
+ *
+ * @param {Blob} blob - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function extractQuestionsWithCloudflareOcr(blob) {
   // Cloudflare Pages Functionへ画像Blobを送り、Workers AIのOCR結果を受け取ります。
   // cache: "no-store" を付け、ブラウザキャッシュに残しにくくしています。
@@ -563,6 +652,12 @@ async function extractQuestionsWithCloudflareOcr(blob) {
   return result || { questions: [], rawText: "" };
 }
 
+/**
+ * OCR API の問題候補をフォームで扱いやすい配列へ整えます。
+ *
+ * @param {Array} questions - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 function normalizeCloudflareOcrCandidates(questions) {
   // APIから返った値を、画面側で扱いやすい形に整えます。
   // 文字列でない値や空の選択肢をここで取り除きます。
@@ -581,6 +676,13 @@ function normalizeCloudflareOcrCandidates(questions) {
     .filter((item) => item.question || item.choices.length);
 }
 
+/**
+ * OCRで見つかった候補を選択できる一覧として表示します。
+ *
+ * @param {Array} candidates - この関数に渡す値。
+ * @param {string} rawText - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function showOcrCandidates(candidates, rawText) {
   // OCR結果の候補一覧をモーダル内に表示します。
   // 候補をクリックすると、直接追加フォームへ反映されます。
@@ -636,6 +738,12 @@ function showOcrCandidates(candidates, rawText) {
   });
 }
 
+/**
+ * 選んだOCR候補を直接追加フォームへ反映します。
+ *
+ * @param {Event} candidate - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function applyOcrCandidate(candidate) {
   // 選ばれたOCR候補を、問題文・解説・選択肢の入力欄へコピーします。
   // 正解は画像だけでは確定できないので、先頭の選択肢だけ仮チェックにしています。
@@ -662,6 +770,11 @@ function applyOcrCandidate(candidate) {
   closeOcrScanner();
 }
 
+/**
+ * 一問ずつ直接登録するフォームを画面へ生成します。
+ *
+ * @returns {void} 処理結果。
+ */
 function createDirectAddForm() {
   // HTMLへ直接フォームを書き足さず、JavaScriptで直接追加フォームを生成します。
   // 既存のExcel/JSONインポート部分を壊さないためです。
@@ -812,6 +925,11 @@ function createDirectAddForm() {
   resetDirectForm();
 }
 
+/**
+ * 問題文入力欄の定型文候補表示を準備します。
+ *
+ * @returns {void} 処理結果。
+ */
 function setupDirectQuestionSuggestions() {
   const questionInput = document.getElementById("direct-question");
   const suggestions = document.getElementById("direct-question-suggestions");
@@ -840,6 +958,11 @@ function setupDirectQuestionSuggestions() {
   });
 }
 
+/**
+ * 入力中の文字に合わせて問題文の候補を出し分けます。
+ *
+ * @returns {void} 処理結果。
+ */
 function updateDirectQuestionSuggestions() {
   const questionInput = document.getElementById("direct-question");
   const suggestions = document.getElementById("direct-question-suggestions");
@@ -873,6 +996,11 @@ function updateDirectQuestionSuggestions() {
   suggestions.hidden = false;
 }
 
+/**
+ * 問題文の定型文候補を非表示にします。
+ *
+ * @returns {void} 処理結果。
+ */
 function hideDirectQuestionSuggestions() {
   const suggestions = document.getElementById("direct-question-suggestions");
   if (suggestions) {
@@ -882,6 +1010,12 @@ function hideDirectQuestionSuggestions() {
   directFormState.questionSuggestionTrigger = null;
 }
 
+/**
+ * 選択された定型文候補を問題文入力欄へ挿入します。
+ *
+ * @param {any} suggestion - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function applyDirectQuestionSuggestion(suggestion) {
   const questionInput = document.getElementById("direct-question");
   const trigger = directFormState.questionSuggestionTrigger;
@@ -900,11 +1034,23 @@ function applyDirectQuestionSuggestion(suggestion) {
   hideDirectQuestionSuggestions();
 }
 
+/**
+ * 直接追加フォームのキー操作をまとめて処理します。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function handleDirectFormKeydown(event) {
   preventDirectFormEnterSubmit(event);
   moveDirectFormFocusWithTab(event);
 }
 
+/**
+ * Enterキーで意図せずフォーム送信されるのを防ぎます。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function preventDirectFormEnterSubmit(event) {
   if (event.defaultPrevented || event.key !== "Enter") {
     return;
@@ -917,6 +1063,12 @@ function preventDirectFormEnterSubmit(event) {
   event.preventDefault();
 }
 
+/**
+ * Tabキーで入力しやすい順番にフォーカスを移動します。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function moveDirectFormFocusWithTab(event) {
   if (event.defaultPrevented || event.key !== "Tab" || event.shiftKey) {
     return;
@@ -973,6 +1125,13 @@ function moveDirectFormFocusWithTab(event) {
   }
 }
 
+/**
+ * 指定した次の要素へフォーカスを移します。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @param {HTMLElement} element - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function focusDirectNext(event, element) {
   if (!element) {
     return;
@@ -982,6 +1141,13 @@ function focusDirectNext(event, element) {
   element.focus();
 }
 
+/**
+ * 折りたたみカードの開閉状態を切り替えます。
+ *
+ * @param {HTMLElement} card - この関数に渡す値。
+ * @param {HTMLElement} button - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function toggleCollapsible(card, button) {
   const isCollapsed = card.classList.toggle("is-collapsed");
   button.setAttribute("aria-expanded", String(!isCollapsed));
@@ -990,6 +1156,11 @@ function toggleCollapsible(card, button) {
     : '<i class="fa-solid fa-chevron-up"></i> \u9589\u3058\u308b';
 }
 
+/**
+ * Excel/JSONインポート欄を初期状態で折りたためるようにします。
+ *
+ * @returns {void} 処理結果。
+ */
 function setupImportCardCollapse() {
   // Excel / JSON import is useful, but it takes a lot of space.
   // Keep it closed on initial load and let the user open it only when needed.
@@ -1018,6 +1189,11 @@ function setupImportCardCollapse() {
     .addEventListener("click", () => toggleCollapsible(importCard, document.getElementById("import-toggle-btn")));
 }
 
+/**
+ * 既存カテゴリをDBから読み込み、入力候補として表示します。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function loadCategoryOptions() {
   // Load existing categories from DB and show them as datalist options.
   // Users can still type a new category because datalist keeps the input editable.
@@ -1063,6 +1239,13 @@ async function loadCategoryOptions() {
   }
 }
 
+/**
+ * 直接追加フォームに選択肢行を1つ追加します。
+ *
+ * @param {string} value  - この関数に渡す値。
+ * @param {boolean} checked  - この関数に渡す値。
+ * @returns {HTMLElement} 処理結果。
+ */
 function addDirectChoiceRow(value = "", checked = false) {
   // 選択肢1行分の入力UIを作ります。
   // OCR候補から選択肢を流し込むときにも、この関数を使います。
@@ -1112,12 +1295,22 @@ function addDirectChoiceRow(value = "", checked = false) {
   updateDirectChoicePlaceholders();
 }
 
+/**
+ * 選択肢欄の番号表示を上から振り直します。
+ *
+ * @returns {void} 処理結果。
+ */
 function updateDirectChoicePlaceholders() {
   document.querySelectorAll(".direct-choice-input").forEach((input, index) => {
     input.placeholder = `\u9078\u629e\u80a2 ${index + 1}`;
   });
 }
 
+/**
+ * 直接追加フォームを初期状態に戻します。
+ *
+ * @returns {void} 処理結果。
+ */
 function resetDirectForm() {
   // 直接追加フォームを初期状態へ戻します。
   // 最初から4択を入力しやすいよう、空の選択肢を4つ用意します。
@@ -1141,10 +1334,22 @@ function resetDirectForm() {
   setDirectDuplicateWarning(false);
 }
 
+/**
+ * 重複判定用に文字列を比較しやすい形へ整えます。
+ *
+ * @param {Event} value - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function normalizeDuplicateText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * 本文と画像を含めた重複判定用キーを作ります。
+ *
+ * @param {Event} value - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function buildDuplicateContentKey(value) {
   const images = [];
   const text = String(value || "").replace(
@@ -1161,6 +1366,12 @@ function buildDuplicateContentKey(value) {
   });
 }
 
+/**
+ * テキスト内の画像参照だけを取り出します。
+ *
+ * @param {Event} value - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 function collectDuplicateImages(value) {
   const images = [];
   String(value || "").replace(
@@ -1173,6 +1384,12 @@ function collectDuplicateImages(value) {
   return images.sort();
 }
 
+/**
+ * 直接追加フォームの入力内容から重複判定キーを作ります。
+ *
+ * @param {any} questionData - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function buildDirectDuplicateKey(questionData) {
   const choices = (questionData.choices || [])
     .map((choice) => buildDuplicateContentKey(choice.content))
@@ -1185,6 +1402,11 @@ function buildDirectDuplicateKey(questionData) {
   });
 }
 
+/**
+ * 重複チェックに必要な直接追加フォームの入力内容を集めます。
+ *
+ * @returns {object} 処理結果。
+ */
 function collectDirectDuplicateCandidate() {
   const question = document.getElementById("direct-question")?.value.trim() || "";
   const explanation = document.getElementById("direct-explanation")?.value.trim() || "";
@@ -1199,6 +1421,12 @@ function collectDirectDuplicateCandidate() {
   return { question, explanation, choices };
 }
 
+/**
+ * 重複警告の表示/非表示を切り替えます。
+ *
+ * @param {Event} isDuplicate - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function setDirectDuplicateWarning(isDuplicate) {
   const warning = document.getElementById("direct-duplicate-warning");
   if (warning) {
@@ -1206,6 +1434,12 @@ function setDirectDuplicateWarning(isDuplicate) {
   }
 }
 
+/**
+ * DB内に同じ問題が登録済みか調べます。
+ *
+ * @param {any} questionData - この関数に渡す値。
+ * @returns {boolean} 処理結果。
+ */
 async function findDuplicateDirectQuestion(questionData) {
   if (!initSupabase()) {
     return false;
@@ -1224,6 +1458,11 @@ async function findDuplicateDirectQuestion(questionData) {
   return (data || []).some((item) => buildDirectDuplicateKey(item) === duplicateKey);
 }
 
+/**
+ * 入力中の重複チェックを少し遅らせて実行予約します。
+ *
+ * @returns {void} 処理結果。
+ */
 function scheduleDirectDuplicateCheck() {
   clearTimeout(directFormState.duplicateCheckTimer);
   const sequence = ++directFormState.duplicateCheckSequence;
@@ -1249,6 +1488,11 @@ function scheduleDirectDuplicateCheck() {
   }, 400);
 }
 
+/**
+ * 直接追加フォームの入力値を保存用データにまとめます。
+ *
+ * @returns {object} 処理結果。
+ */
 function collectDirectQuestion() {
   // 画面に入力された値を集め、DBへ保存しやすい形に整えます。
   // 必須項目や正解チェックの不足もここで確認します。
@@ -1293,6 +1537,12 @@ function collectDirectQuestion() {
   };
 }
 
+/**
+ * 問題本体と選択肢をDBへ保存します。
+ *
+ * @param {any} questionData - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function insertQuestionWithChoices(questionData) {
   // 1問分の問題と選択肢をDBへ保存します。
   // 先にquestionsへ登録し、返ってきたquestionIdをchoicesへ入れます。
@@ -1335,6 +1585,12 @@ async function insertQuestionWithChoices(questionData) {
   return questionId;
 }
 
+/**
+ * 直接追加フォームの問題を検証し、DBへ登録します。
+ *
+ * @param {Event} event - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function saveDirectQuestion(event) {
   // 直接追加フォームの保存ボタンが押されたときの処理です。
   // 入力チェック → Supabase接続 → DB保存 → フォーム初期化、の順に進みます。
@@ -1792,6 +2048,12 @@ importButton.addEventListener("click", async () => {
 // 確認画面表示
 // ======================================
 
+/**
+ * 一括インポート前の確認画面を表示します。
+ *
+ * @param {Array} questions - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function showConfirmScreen(questions) {
   // 一括インポート前の確認画面を作ります。
   // ここではまだDB保存せず、ユーザーが内容を確認してOKを押すのを待ちます。

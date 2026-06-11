@@ -18,6 +18,13 @@ const ALLOWED_TYPES = new Set([
   "image/webp"
 ]);
 
+/**
+ * API の結果を JSON レスポンスとして返します。
+ *
+ * @param {any} body - この関数に渡す値。
+ * @param {number} status  - この関数に渡す値。
+ * @returns {HTMLElement} 処理結果。
+ */
 function jsonResponse(body, status = 200) {
   // APIレスポンスをJSON形式に統一する小さなヘルパーです。
   return new Response(JSON.stringify(body), {
@@ -29,6 +36,12 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+/**
+ * 画像の ArrayBuffer を base64 文字列へ変換します。
+ *
+ * @param {any} buffer - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function arrayBufferToBase64(buffer) {
   // Workers AIの画像入力はdata URL形式を受け取れるため、
   // アップロードされた画像バイナリをBase64文字列へ変換します。
@@ -43,6 +56,12 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+/**
+ * AIモデルの応答から本文テキスト部分を取り出します。
+ *
+ * @param {any} result - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function extractModelText(result) {
   // Workers AIモデルによってレスポンス形状が少し違うことがあります。
   // どの形でも最終的なテキストだけ取り出せるようにしています。
@@ -63,6 +82,12 @@ function extractModelText(result) {
   return "";
 }
 
+/**
+ * AI応答の中から JSON 部分を探してパースします。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function parseJsonFromText(text) {
   // モデルには「JSONだけ返して」と指示していますが、まれに前後に説明文が混じります。
   // まずそのままJSON.parseし、失敗したら {...} 部分だけ抜き出して再挑戦します。
@@ -79,6 +104,12 @@ function parseJsonFromText(text) {
   }
 }
 
+/**
+ * OCR候補の問題文、選択肢、解説を扱いやすい形へ整えます。
+ *
+ * @param {Event} candidate - この関数に渡す値。
+ * @returns {object} 処理結果。
+ */
 function normalizeCandidate(candidate) {
   // モデルの出力を、画面側が扱いやすい安全な形へ整えます。
   // choicesが配列でなければ空配列にし、空文字は取り除きます。
@@ -91,6 +122,11 @@ function normalizeCandidate(candidate) {
   };
 }
 
+/**
+ * OCRモデルへ渡す、問題抽出用の指示文を作ります。
+ *
+ * @returns {string} 処理結果。
+ */
 function buildOcrPrompt() {
   // Visionモデルへ投げるプロンプトです。
   // 「問題文」「選択肢」「解説候補」をJSONで返すように強く指示しています。
@@ -109,6 +145,16 @@ function buildOcrPrompt() {
   ].join("\n");
 }
 
+/**
+ * 画像とプロンプトを Cloudflare Workers AI に送り、OCR結果を取得します。
+ *
+ * @param {any} env - この関数に渡す値。
+ * @param {string} model - この関数に渡す値。
+ * @param {any} imageBytes - この関数に渡す値。
+ * @param {any} imageBase64 - この関数に渡す値。
+ * @param {any} imageUrl - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function runVisionModel(env, model, imageBytes, imageBase64, imageUrl) {
   const prompt = buildOcrPrompt();
   const attempts = [

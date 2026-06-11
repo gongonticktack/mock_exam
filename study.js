@@ -32,6 +32,12 @@ let loadingProgress = 0;
 let currentStudySessionStartedAt = null;
 let examHistoryColumnSupport = {};
 
+/**
+ * メッセージを表示して、トップ画面へ戻します。
+ *
+ * @param {Event} message - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function returnToTop(message) {
   if (message) {
     alert(message);
@@ -40,6 +46,11 @@ function returnToTop(message) {
   window.location.replace("index.html");
 }
 
+/**
+ * Supabase クライアントを初期化し、学習画面から DB を使える状態にします。
+ *
+ * @returns {boolean} 処理結果。
+ */
 function initSupabase() {
 
   const config = window.SUPABASE_CONFIG;
@@ -65,6 +76,11 @@ function initSupabase() {
 // � ローディング画面制御
 // ======================================
 
+/**
+ * 問題読み込み中のオーバーレイを表示し、進捗を初期化します。
+ *
+ * @returns {void} 処理結果。
+ */
 function startLoading() {
 
   document.getElementById('loading-overlay').style.display = 'flex';
@@ -75,6 +91,11 @@ function startLoading() {
 
 }
 
+/**
+ * 読み込み進捗バーとパーセント表示を更新します。
+ *
+ * @returns {void} 処理結果。
+ */
 function updateLoadingProgress() {
 
   document.getElementById('loading-progress-bar').style.width = `${loadingProgress}%`;
@@ -83,12 +104,24 @@ function updateLoadingProgress() {
 
 }
 
+/**
+ * 読み込み中オーバーレイを非表示にします。
+ *
+ * @returns {void} 処理結果。
+ */
 function stopLoading() {
 
   document.getElementById('loading-overlay').style.display = 'none';
 
 }
 
+/**
+ * 画像マークアップを含む本文を、安全に DOM 要素へ描画します。
+ *
+ * @param {HTMLElement} container - この関数に渡す値。
+ * @param {string} text - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function renderRichText(container, text) {
   // 問題文や解説には、通常の文字だけでなく画像記法も入ることがあります。
   // 例: ![diagram](data:image/png;base64,...)
@@ -100,6 +133,12 @@ function renderRichText(container, text) {
   let lastIndex = 0;
   let match;
 
+  /**
+   * 改行を保ちながら、通常テキストを表示先へ追加します。
+   *
+   * @param {string} chunk - 追加したいテキストの一部分。
+   * @returns {void}
+   */
   const appendText = (chunk) => {
     chunk.split('\n').forEach((line, index) => {
       if (index > 0) {
@@ -127,6 +166,12 @@ function renderRichText(container, text) {
   appendText(value.slice(lastIndex));
 }
 
+/**
+ * 画像マークアップを除いた、画面表示用の文字数を数えます。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @returns {number} 処理結果。
+ */
 function getReadableTextLength(text) {
   return String(text || "")
     .replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, "")
@@ -134,6 +179,15 @@ function getReadableTextLength(text) {
     .length;
 }
 
+/**
+ * 文章量に応じて長文用の CSS クラスを付け替えます。
+ *
+ * @param {HTMLElement} element - この関数に渡す値。
+ * @param {any} baseClass - この関数に渡す値。
+ * @param {string} text - この関数に渡す値。
+ * @param {any} thresholds - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function setLengthClass(element, baseClass, text, thresholds) {
   element.classList.remove(`${baseClass}-long`, `${baseClass}-very-long`);
 
@@ -150,6 +204,11 @@ function setLengthClass(element, baseClass, text, thresholds) {
 // �🚀 アプリケーション開始
 // ======================================
 
+/**
+ * Supabase 初期化後、学習ページ全体の初期化を始めます。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function startStudyApp() {
   // この画面の最初の入口です。
   // Supabase接続に成功したら、ページ情報を読み込んで学習を開始します。
@@ -179,6 +238,11 @@ if (document.readyState === 'loading') {
 // ======================================
 // 試験選択情報を取得して、問題を読み込みます
 
+/**
+ * URLや保存情報から学習条件を決め、問題を読み込んで最初の問題を表示します。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function initPage() {
   // URLクエリやlocalStorageから「どの資格を学習するか」を決めます。
   // その後、DBから問題を読み込んで最初の問題を表示します。
@@ -290,6 +354,12 @@ async function initPage() {
 
 }
 
+/**
+ * exam_histories テーブルに指定列があるか確認し、結果をキャッシュします。
+ *
+ * @param {Event} columnName - この関数に渡す値。
+ * @returns {boolean} 処理結果。
+ */
 async function hasExamHistoryColumn(columnName) {
   // exam_histories テーブルは、環境によって列構成が少し違う可能性があります。
   // そこで「この列が存在するか」を一度確認し、結果をキャッシュしています。
@@ -322,6 +392,11 @@ async function hasExamHistoryColumn(columnName) {
 // ======================================
 // Supab aseから問題と選択肢を取得します
 
+/**
+ * 現在の資格・カテゴリ・学習モードに合う問題と選択肢を読み込みます。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function loadQuestions() {
   // questions テーブルから問題を取り、
   // それぞれの問題IDを使って choices テーブルから選択肢を取得します。
@@ -392,68 +467,6 @@ async function loadQuestions() {
     stopLoading();
     return true;
 
-    // 各問題に対して選択肢を取得
-    const legacyQuestionsWithChoices = [];
-    const total = questionsData.length;
-
-    for (let i = 0; i < total; i++) {
-
-      const question = questionsData[i];
-
-      const { data: choicesData, error: choicesError } =
-        await supabaseClient
-          .from('choices')
-          .select('*')
-          .eq('question_id', question.id)
-          .order('choice_index', { ascending: true });
-
-      if (choicesError) {
-
-        console.error('選択肢の取得に失敗しました', choicesError);
-
-        stopLoading();
-
-        returnToTop('選択肢の取得に失敗しました。トップへ戻ります。');
-
-        return false;
-
-      }
-
-      if (!choicesData || choicesData.length === 0) {
-
-        stopLoading();
-
-        returnToTop('選択肢が見つかりませんでした。トップへ戻ります。');
-
-        return false;
-
-      }
-
-      legacyQuestionsWithChoices.push({
-
-        ...question,
-        choices: choicesData
-
-      });
-
-      // プログレス更新
-      loadingProgress = Math.floor(((i + 1) / total) * 100);
-
-      updateLoadingProgress();
-
-    }
-
-    questions = legacyQuestionsWithChoices;
-
-    stopLoading();
-
-    if (questions.length === 0) {
-      returnToTop('問題の選択肢を読み込めませんでした。トップへ戻ります。');
-      return false;
-    }
-
-    return true;
-
   } catch (error) {
 
     console.error('問題の読み込み中にエラーが発生しました', error);
@@ -471,6 +484,12 @@ async function loadQuestions() {
 
 }
 
+/**
+ * 履歴レコードから正解/不正解を取り出します。
+ *
+ * @param {any} item - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function getHistoryResult(item) {
   if (typeof item.is_correct === "boolean") {
     return item.is_correct;
@@ -483,11 +502,22 @@ function getHistoryResult(item) {
   return null;
 }
 
+/**
+ * 履歴レコードの回答日時を比較しやすい数値に変換します。
+ *
+ * @param {any} item - この関数に渡す値。
+ * @returns {number} 処理結果。
+ */
 function getHistoryAnsweredTime(item) {
   const answeredTime = new Date(item.answered_at || item.created_at).getTime();
   return Number.isFinite(answeredTime) ? answeredTime : 0;
 }
 
+/**
+ * 復習モードで対象問題がないときに表示するメッセージを返します。
+ *
+ * @returns {string} 処理結果。
+ */
 function getEmptyStudyModeMessage() {
   if (currentStudyMode === "unanswered") {
     return "指定した期間内に未回答の問題はありません。トップへ戻ります。";
@@ -504,6 +534,12 @@ function getEmptyStudyModeMessage() {
   return "該当する問題が見つかりませんでした。トップへ戻ります。";
 }
 
+/**
+ * 未回答・不正解などの学習モードに合わせて問題を絞り込みます。
+ *
+ * @param {Array} questionsData - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 async function filterQuestionsForStudyMode(questionsData) {
   if (!currentStudyMode) {
     return questionsData;
@@ -590,6 +626,11 @@ async function filterQuestionsForStudyMode(questionsData) {
 // ======================================
 // Fisher-Yatesアルゴリズムで問題順序をランダム化
 
+/**
+ * 問題一覧をランダムな順番に並べ替えます。
+ *
+ * @returns {void} 処理結果。
+ */
 function shuffleQuestions() {
   // Fisher-Yatesという定番アルゴリズムで、問題の順番をランダムに並べ替えます。
 
@@ -610,6 +651,12 @@ function shuffleQuestions() {
 // ======================================
 // 指定されたインデックスの問題と選択肢を表示
 
+/**
+ * 表示用に選択肢の順番をランダムに並べ替えます。
+ *
+ * @param {Array} choices - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 function getShuffledChoices(choices) {
   const shuffledChoices = [...choices];
 
@@ -621,6 +668,12 @@ function getShuffledChoices(choices) {
   return shuffledChoices;
 }
 
+/**
+ * 指定された番号の問題を画面に表示します。
+ *
+ * @param {number} index - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function displayQuestion(index) {
   // 指定された番号の問題を画面へ表示します。
   // 問題文、カテゴリ、選択肢、ボタン表示をここでまとめてリセットします。
@@ -751,6 +804,11 @@ function displayQuestion(index) {
 
 }
 
+/**
+ * 現在表示中の問題を編集するための URL を作ります。
+ *
+ * @returns {string} 処理結果。
+ */
 function buildCurrentQuestionEditUrl() {
   const question = questions[currentQuestionIndex];
   const params = new URLSearchParams({
@@ -867,6 +925,14 @@ document.getElementById("edit-current-question-btn").addEventListener("click", (
 // ======================================
 // 正解・不正解の判定結果を画面に表示
 
+/**
+ * 回答結果、正解、選択した選択肢、解説を画面に表示します。
+ *
+ * @param {boolean} isCorrect - この関数に渡す値。
+ * @param {Array} correctChoices - この関数に渡す値。
+ * @param {Array} selectedChoices - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function displayResult(isCorrect, correctChoices, selectedChoices) {
   // 回答後に、正解/不正解と正しい選択肢、解説を表示します。
 
@@ -931,6 +997,14 @@ function displayResult(isCorrect, correctChoices, selectedChoices) {
 
 }
 
+/**
+ * 回答結果を exam_histories テーブルへ保存します。
+ *
+ * @param {boolean} isCorrect - この関数に渡す値。
+ * @param {number} questionIndex - この関数に渡す値。
+ * @param {Array} selectedChoices - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function saveExamHistory(isCorrect, questionIndex, selectedChoices) {
   // 1問回答するたびに、学習履歴をDBへ保存します。
   // トップ画面の正答率・学習履歴・苦手分野はこのデータから作られます。
@@ -1011,6 +1085,11 @@ document.getElementById("next-btn").addEventListener("click", () => {
 // ======================================
 // すべての問題が終わったら完了画面を表示
 
+/**
+ * 全問終了後の完了画面を表示します。
+ *
+ * @returns {void} 処理結果。
+ */
 function showCompletionScreen() {
   // 最後の問題まで解いたあとに表示する完了画面です。
 

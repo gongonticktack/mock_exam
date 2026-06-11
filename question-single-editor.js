@@ -17,6 +17,11 @@ const deleteButton = document.getElementById("delete-btn");
 const closeButton = document.getElementById("close-btn");
 const choicesContainer = document.getElementById("choices-container");
 
+/**
+ * Supabase クライアントを初期化し、この編集タブで DB 操作できる状態にします。
+ *
+ * @returns {boolean} 処理結果。
+ */
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
 
@@ -29,25 +34,53 @@ function initSupabase() {
   return true;
 }
 
+/**
+ * 問題読み込みなどの待ち時間に、ローディング表示を出します。
+ *
+ * @returns {void} 処理結果。
+ */
 function showLoading() {
   loadingOverlay.style.display = "flex";
 }
 
+/**
+ * ローディング表示を閉じ、通常の画面操作に戻します。
+ *
+ * @returns {void} 処理結果。
+ */
 function hideLoading() {
   loadingOverlay.style.display = "none";
 }
 
+/**
+ * 保存や削除などの結果メッセージを画面に表示します。
+ *
+ * @param {Event} message - この関数に渡す値。
+ * @param {string} type  - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function setStatus(message, type = "") {
   saveStatus.textContent = message;
   saveStatus.className = `save-status ${type}`.trim();
 }
 
+/**
+ * 保存ボタンを保存中の見た目に切り替え、二重送信を防ぎます。
+ *
+ * @param {boolean} isSaving - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function setSaving(isSaving) {
   saveButton.disabled = isSaving;
   deleteButton.disabled = isSaving;
   closeButton.disabled = isSaving;
 }
 
+/**
+ * 単独編集タブを閉じるか、閉じられない場合は案内メッセージを表示します。
+ *
+ * @returns {void} 処理結果。
+ */
 function closeEditorTab() {
   window.close();
   setTimeout(() => {
@@ -56,6 +89,13 @@ function closeEditorTab() {
   }, 350);
 }
 
+/**
+ * textarea の現在のカーソル位置へ指定文字列を挿入します。
+ *
+ * @param {string} textarea - この関数に渡す値。
+ * @param {string} text - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function insertAtCursor(textarea, text) {
   const start = textarea.selectionStart || 0;
   const end = textarea.selectionEnd || 0;
@@ -69,6 +109,11 @@ function insertAtCursor(textarea, text) {
   textarea.setSelectionRange(cursor, cursor);
 }
 
+/**
+ * 問題文と解説欄へ画像追加ボタンを差し込みます。
+ *
+ * @returns {void} 処理結果。
+ */
 function setupImageInsertControls() {
   [
     { textareaId: "question", label: "問題に画像を追加" },
@@ -128,6 +173,13 @@ function setupImageInsertControls() {
   });
 }
 
+/**
+ * 選択肢1行分の入力欄、正解チェック、削除ボタンを作ります。
+ *
+ * @param {any} choice  - この関数に渡す値。
+ * @param {number} index  - この関数に渡す値。
+ * @returns {HTMLElement} 処理結果。
+ */
 function createChoiceElement(choice = {}, index = 0) {
   const choiceDiv = document.createElement("div");
   choiceDiv.className = "choice-item";
@@ -184,6 +236,11 @@ function createChoiceElement(choice = {}, index = 0) {
   return choiceDiv;
 }
 
+/**
+ * 選択肢を削除・追加した後、表示番号を上から振り直します。
+ *
+ * @returns {void} 処理結果。
+ */
 function refreshChoiceTitles() {
   [...choicesContainer.querySelectorAll(".choice-item")].forEach((item, index) => {
     const title = item.querySelector(".choice-title");
@@ -193,6 +250,13 @@ function refreshChoiceTitles() {
   });
 }
 
+/**
+ * DBから読んだ問題と選択肢を編集フォームに表示します。
+ *
+ * @param {any} question - この関数に渡す値。
+ * @param {Array} choices - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function displayQuestion(question, choices) {
   currentQuestion = { ...question, choices };
   originalChoiceIds = new Set(choices.map(choice => Number(choice.id)).filter(Boolean));
@@ -210,6 +274,11 @@ function displayQuestion(question, choices) {
   });
 }
 
+/**
+ * URL の questionId を使い、編集対象の問題と選択肢を読み込みます。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function loadQuestion() {
   if (!questionId || Number.isNaN(questionId)) {
     setStatus("編集する問題が指定されていません。", "error");
@@ -254,6 +323,11 @@ async function loadQuestion() {
   }
 }
 
+/**
+ * 編集フォームに入力された値を保存用のデータへまとめます。
+ *
+ * @returns {object} 処理結果。
+ */
 function collectFormData() {
   const category = document.getElementById("category").value.trim();
   const question = document.getElementById("question").value.trim();
@@ -294,6 +368,11 @@ function collectFormData() {
   return { category, question, explanation, choices };
 }
 
+/**
+ * フォーム内容を DB に保存し、既存選択肢の更新や新規追加も行います。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function saveQuestion() {
   if (!currentQuestion) {
     return;
@@ -375,6 +454,11 @@ async function saveQuestion() {
   }
 }
 
+/**
+ * 現在編集中の問題と、その問題に紐づく選択肢を削除します。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function deleteQuestion() {
   if (!currentQuestion) {
     return;

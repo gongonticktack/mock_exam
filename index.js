@@ -21,10 +21,23 @@
 let supabaseClient = null;
 const TOP_HISTORY_ACTIVITY_MAX_LENGTH = 80;
 
+/**
+ * トップ画面の履歴表示用に画像マークアップを短く置き換えます。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function stripMediaMarkup(text) {
   return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[画像]');
 }
 
+/**
+ * 長い文字列をカード表示に収まる長さへ省略します。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @param {number} maxLength - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function truncateText(text, maxLength) {
   const normalized = stripMediaMarkup(text).replace(/\s+/g, ' ').trim();
 
@@ -35,6 +48,11 @@ function truncateText(text, maxLength) {
   return `${normalized.slice(0, maxLength)}...`;
 }
 
+/**
+ * トップ画面で使う Supabase クライアントを初期化します。
+ *
+ * @returns {boolean} 処理結果。
+ */
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
   if (!config || !config.url || !config.key) {
@@ -52,6 +70,12 @@ initSupabase();
 // 問題数をDBから取得
 // ======================================
 
+/**
+ * 指定資格に登録されている問題数を取得します。
+ *
+ * @param {number} examId - この関数に渡す値。
+ * @returns {number} 処理結果。
+ */
 async function fetchQuestionCount(examId) {
   // 指定された資格ID（examId）に紐づく問題数だけをDBから数えます。
   // head: true を使うと、行データ本体を取らずに件数だけ取得できます。
@@ -75,6 +99,13 @@ async function fetchQuestionCount(examId) {
   }
 }
 
+/**
+ * トップ画面に表示する直近の学習履歴を取得します。
+ *
+ * @param {number} examId - この関数に渡す値。
+ * @param {number} limit  - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 async function fetchExamHistory(examId, limit = 3) {
   // トップ画面の「最近の学習履歴」に表示するため、
   // 新しい回答履歴から limit 件だけ取得します。
@@ -102,6 +133,12 @@ async function fetchExamHistory(examId, limit = 3) {
   }
 }
 
+/**
+ * 学習履歴から正答率を計算して取得します。
+ *
+ * @param {number} examId - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function fetchExamAccuracy(examId) {
   // 正答率を計算します。
   // 古いDB形式（correct_count / total_count）と新しいDB形式（is_correct）の両方に対応しています。
@@ -165,6 +202,12 @@ async function fetchExamAccuracy(examId) {
   }
 }
 
+/**
+ * 正答率、学習時間、学習日数などの概要を取得します。
+ *
+ * @param {number} examId - この関数に渡す値。
+ * @returns {object} 処理結果。
+ */
 async function fetchExamSummary(examId) {
   // 問題数・正答率・学習時間・学習日数をまとめて計算します。
   // トップページの統計カードに表示する値を作る関数です。
@@ -238,6 +281,12 @@ async function fetchExamSummary(examId) {
   }
 }
 
+/**
+ * 履歴レコードを正解数と回答数に変換します。
+ *
+ * @param {any} item - この関数に渡す値。
+ * @returns {object} 処理結果。
+ */
 function getHistoryResultCounts(item) {
   if (typeof item.is_correct === 'boolean') {
     return {
@@ -295,6 +344,13 @@ function getHistoryResultCounts(item) {
   };
 }
 
+/**
+ * 正解数と回答数から表示ラベルと CSS クラスを決めます。
+ *
+ * @param {number} correctCount - この関数に渡す値。
+ * @param {number} totalCount - この関数に渡す値。
+ * @returns {object} 処理結果。
+ */
 function getHistoryResultLabel(correctCount, totalCount) {
   if (totalCount <= 0) {
     return {
@@ -323,6 +379,12 @@ function getHistoryResultLabel(correctCount, totalCount) {
   };
 }
 
+/**
+ * 苦手分野計算の元データをデバッグ表示に描画します。
+ *
+ * @param {Array} logs - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function renderWeaknessDebugLogs(logs) {
   if (!debugLogSummary || !debugLogList) {
     return;
@@ -363,6 +425,12 @@ function renderWeaknessDebugLogs(logs) {
   });
 }
 
+/**
+ * 学習履歴から苦手カテゴリを計算して取得します。
+ *
+ * @param {number} examId - この関数に渡す値。
+ * @returns {Array} 処理結果。
+ */
 async function fetchExamWeaknesses(examId) {
   // すべての回答履歴を見て、カテゴリごとの正答率を計算します。
   // exam_histories に question_id があれば questions テーブルからカテゴリを引きます。
@@ -611,16 +679,33 @@ const debugLogList =
 let weaknessDebugLogs = [];
 let selectedTopUnansweredPeriod = "7";
 
+/**
+ * 現在選択中の資格カードのインデックスを取得します。
+ *
+ * @returns {number} 処理結果。
+ */
 function getActiveExamIndex() {
   const activeCard = document.querySelector(".exam-card.active");
   const index = Array.from(examCards).indexOf(activeCard);
   return index >= 0 ? index : 0;
 }
 
+/**
+ * 現在選択中の資格データを取得します。
+ *
+ * @returns {object} 処理結果。
+ */
 function getActiveExam() {
   return exams[getActiveExamIndex()] || exams[0];
 }
 
+/**
+ * 選択中の資格と条件から学習画面の URL を作ります。
+ *
+ * @param {any} exam - この関数に渡す値。
+ * @param {any} params  - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function buildStudyUrl(exam, params = {}) {
   const searchParams = new URLSearchParams({
     examId: exam.id,
@@ -643,6 +728,12 @@ function buildStudyUrl(exam, params = {}) {
   return `study.html?${searchParams.toString()}`;
 }
 
+/**
+ * トップ画面の復習ボタンから、指定モードで学習を開始します。
+ *
+ * @param {Event} mode - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function startTopPractice(mode) {
   const exam = getActiveExam();
   let periodDays = null;
@@ -675,6 +766,12 @@ function startTopPractice(mode) {
 // 画面更新
 // ======================================
 
+/**
+ * 選択された資格カードに合わせてトップ画面の表示を更新します。
+ *
+ * @param {number} index - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function updateExam(index) {
   // 資格カードをクリックしたときに呼ばれます。
   // 画面右側のタイトル・説明・統計・履歴・苦手分野をまとめて更新します。

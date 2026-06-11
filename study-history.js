@@ -14,10 +14,23 @@ const startIncorrectButton = document.getElementById("start-incorrect-btn");
 const startRecentIncorrectButton = document.getElementById("start-recent-incorrect-btn");
 let selectedUnansweredPeriod = "7";
 
+/**
+ * 履歴表示用に、本文中の画像マークアップを短い表示へ置き換えます。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function stripMediaMarkup(text) {
   return String(text || "").replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, "[画像]");
 }
 
+/**
+ * 長すぎるテキストを指定文字数で省略します。
+ *
+ * @param {string} text - この関数に渡す値。
+ * @param {number} maxLength - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function truncateText(text, maxLength) {
   const normalized = stripMediaMarkup(text).replace(/\s+/g, " ").trim();
 
@@ -28,6 +41,12 @@ function truncateText(text, maxLength) {
   return `${normalized.slice(0, maxLength)}...`;
 }
 
+/**
+ * メッセージを表示してトップ画面へ戻ります。
+ *
+ * @param {Event} message - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function returnToTop(message) {
   if (message) {
     alert(message);
@@ -36,6 +55,11 @@ function returnToTop(message) {
   window.location.replace("index.html");
 }
 
+/**
+ * Supabase クライアントを初期化し、履歴を読み込める状態にします。
+ *
+ * @returns {boolean} 処理結果。
+ */
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
   if (!config || !config.url || !config.key) {
@@ -47,6 +71,12 @@ function initSupabase() {
   return true;
 }
 
+/**
+ * 履歴日時を日本語環境で読みやすい日付表示に変換します。
+ *
+ * @param {Event} value - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function formatDate(value) {
   if (!value) {
     return "日時不明";
@@ -59,6 +89,12 @@ function formatDate(value) {
   });
 }
 
+/**
+ * 履歴レコードから正解/不正解の表示情報を作ります。
+ *
+ * @param {any} item - この関数に渡す値。
+ * @returns {object} 処理結果。
+ */
 function getResult(item) {
   if (typeof item.is_correct === "boolean") {
     return item.is_correct;
@@ -71,6 +107,13 @@ function getResult(item) {
   return null;
 }
 
+/**
+ * 履歴から該当問題をもう一度開くための学習URLを作ります。
+ *
+ * @param {any} item - この関数に渡す値。
+ * @param {any} category - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function buildStudyUrl(item, category) {
   const searchParams = new URLSearchParams({
     examId,
@@ -85,6 +128,12 @@ function buildStudyUrl(item, category) {
   return `study.html?${searchParams.toString()}`;
 }
 
+/**
+ * 復習モードを開始するための学習URLを作ります。
+ *
+ * @param {Event} mode - この関数に渡す値。
+ * @returns {string} 処理結果。
+ */
 function buildPracticeUrl(mode) {
   const searchParams = new URLSearchParams({
     examId,
@@ -99,6 +148,12 @@ function buildPracticeUrl(mode) {
   return `study.html?${searchParams.toString()}`;
 }
 
+/**
+ * 指定された復習モードで学習画面へ移動します。
+ *
+ * @param {Event} mode - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function startPractice(mode) {
   localStorage.setItem("selectedExamId", examId);
   localStorage.setItem("selectedExam", selectedExam);
@@ -125,6 +180,13 @@ if (startRecentIncorrectButton) {
   startRecentIncorrectButton.addEventListener("click", () => startPractice("recent-incorrect"));
 }
 
+/**
+ * 学習履歴の一覧を画面に描画します。
+ *
+ * @param {Array} items - この関数に渡す値。
+ * @param {any} categoryMap - この関数に渡す値。
+ * @returns {void} 処理結果。
+ */
 function renderHistory(items, categoryMap) {
   historyListElement.innerHTML = "";
   historyCountElement.textContent = `${items.length}件`;
@@ -185,6 +247,12 @@ function renderHistory(items, categoryMap) {
   });
 }
 
+/**
+ * 履歴の question_id からカテゴリ名を引くための対応表を作ります。
+ *
+ * @param {Array} items - この関数に渡す値。
+ * @returns {Promise<void>} 処理結果。
+ */
 async function fetchCategoryMap(items) {
   const questionIds = [...new Set(items.map(item => item.question_id).filter(Boolean))];
   if (questionIds.length === 0) {
@@ -206,6 +274,11 @@ async function fetchCategoryMap(items) {
   }, {});
 }
 
+/**
+ * Supabase から学習履歴を取得し、画面に表示します。
+ *
+ * @returns {Promise<void>} 処理結果。
+ */
 async function loadHistory() {
   examNameElement.textContent = selectedExam;
   historyCountElement.textContent = "読み込み中";
