@@ -333,7 +333,7 @@ async function loadQuestions() {
     const { data: questionsData, error: questionsError } =
       await supabaseClient
         .from('questions')
-        .select('*')
+        .select('*,choices(*)')
         .eq('exam_id', currentExamId)
         .order('id', { ascending: false });
 
@@ -349,6 +349,16 @@ async function loadQuestions() {
       displayNoQuestions();
       return;
     }
+
+    questions = questionsData.map(question => ({
+      ...question,
+      choices: [...(question.choices || [])]
+        .sort((a, b) => (a.choice_index || 0) - (b.choice_index || 0))
+    }));
+    updateDuplicateCandidates();
+    hideLoading();
+    displayQuestionsList();
+    return;
 
     // 各問題に対して選択肢を取得
     const questionsWithChoices = [];

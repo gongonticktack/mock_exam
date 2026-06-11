@@ -333,7 +333,7 @@ async function loadQuestions() {
     // 問題を取得
     let query = supabaseClient
       .from('questions')
-      .select('*')
+      .select('*,choices(*)')
       .eq('exam_id', currentExamId);
 
     if (currentCategoryFilter) {
@@ -362,6 +362,9 @@ async function loadQuestions() {
 
     }
 
+    loadingProgress = 40;
+    updateLoadingProgress();
+
     const questionsData = await filterQuestionsForStudyMode(loadedQuestionsData);
 
     if (questionsData.length === 0) {
@@ -370,8 +373,27 @@ async function loadQuestions() {
       return false;
     }
 
+    const questionsWithChoices = questionsData.map(question => ({
+      ...question,
+      choices: [...(question.choices || [])]
+        .sort((a, b) => (a.choice_index || 0) - (b.choice_index || 0))
+    }));
+
+    const questionWithoutChoices = questionsWithChoices.find(question => !question.choices.length);
+    if (questionWithoutChoices) {
+      stopLoading();
+      returnToTop('驕ｸ謚櫁い縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲ゅヨ繝・・縺ｸ謌ｻ繧翫∪縺吶・);
+      return false;
+    }
+
+    loadingProgress = 100;
+    updateLoadingProgress();
+    questions = questionsWithChoices;
+    stopLoading();
+    return true;
+
     // 各問題に対して選択肢を取得
-    const questionsWithChoices = [];
+    const legacyQuestionsWithChoices = [];
     const total = questionsData.length;
 
     for (let i = 0; i < total; i++) {
@@ -407,7 +429,7 @@ async function loadQuestions() {
 
       }
 
-      questionsWithChoices.push({
+      legacyQuestionsWithChoices.push({
 
         ...question,
         choices: choicesData
@@ -421,7 +443,7 @@ async function loadQuestions() {
 
     }
 
-    questions = questionsWithChoices;
+    questions = legacyQuestionsWithChoices;
 
     stopLoading();
 

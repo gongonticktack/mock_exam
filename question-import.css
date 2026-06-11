@@ -260,6 +260,37 @@ body {
   resize: vertical;
 }
 
+.direct-question-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.direct-question-suggestions[hidden] {
+  display: none;
+}
+
+.direct-question-suggestion-btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 125, 255, 0.38);
+  color: var(--text);
+  background: rgba(139, 125, 255, 0.14);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.direct-question-suggestion-btn:hover,
+.direct-question-suggestion-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(139, 125, 255, 0.22);
+}
+
 .direct-field input:focus,
 .direct-field textarea:focus,
 .direct-choice-input:focus {

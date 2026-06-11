@@ -250,7 +250,19 @@ const directFormState = {
   ocrCandidates: [],
   categoriesLoaded: false,
   duplicateCheckTimer: null,
-  duplicateCheckSequence: 0
+  duplicateCheckSequence: 0,
+  questionSuggestionTrigger: null
+};
+
+const DIRECT_QUESTION_SUGGESTIONS = {
+  "\u3082": [
+    "\u6700\u3082\u9069\u5207\u306a\u3082\u306e\u3092\u9078\u3079",
+    "\u6700\u3082\u4e0d\u9069\u5207\u306a\u3082\u306e\u3092\u9078\u3079"
+  ],
+  "\u305f": [
+    "\u6b63\u3057\u3044\u3082\u306e\u3092\u3059\u3079\u3066\u9078\u3079",
+    "\u6b63\u3057\u304f\u306a\u3044\u3082\u306e\u3092\u3059\u3079\u3066\u9078\u3079"
+  ]
 };
 
 function renderRichText(container, text) {
@@ -661,16 +673,16 @@ function createDirectAddForm() {
 
   const card = document.createElement("section");
   card.id = "direct-add-card";
-  card.className = "direct-add-card collapsible-card is-collapsed";
+  card.className = "direct-add-card collapsible-card";
   card.innerHTML = `
     <div class="direct-add-header">
       <div>
         <h2>問題を追加</h2>
         <p>問題と選択肢を入力して問題追加できます。</p>
       </div>
-      <button type="button" id="direct-add-toggle-btn" class="collapse-toggle-btn" aria-expanded="false">
-        <i class="fa-solid fa-chevron-down"></i>
-        \u958b\u304f
+      <button type="button" id="direct-add-toggle-btn" class="collapse-toggle-btn" aria-expanded="true">
+        <i class="fa-solid fa-chevron-up"></i>
+        \u9589\u3058\u308b
       </button>
     </div>
 
@@ -692,6 +704,7 @@ function createDirectAddForm() {
         <div class="direct-field direct-field-wide">
           <span>\u554f\u984c\u6587</span>
           <textarea id="direct-question" rows="5" placeholder="\u554f\u984c\u6587\u3092\u5165\u529b"></textarea>
+          <div id="direct-question-suggestions" class="direct-question-suggestions" hidden></div>
           <button type="button" class="direct-inline-tool" data-target="direct-question">
             <i class="fa-solid fa-image"></i>
             \u554f\u984c\u6587\u306b\u753b\u50cf\u3092\u8ffd\u52a0
@@ -789,6 +802,7 @@ function createDirectAddForm() {
   form.addEventListener("keydown", handleDirectFormKeydown);
   form.addEventListener("submit", (event) => event.preventDefault());
   form.addEventListener("input", scheduleDirectDuplicateCheck);
+  setupDirectQuestionSuggestions();
   document.querySelectorAll(".direct-inline-tool").forEach((button) => {
     button.addEventListener("click", () => insertDirectImage(button.dataset.target));
   });
@@ -796,6 +810,94 @@ function createDirectAddForm() {
   loadCategoryOptions();
 
   resetDirectForm();
+}
+
+function setupDirectQuestionSuggestions() {
+  const questionInput = document.getElementById("direct-question");
+  const suggestions = document.getElementById("direct-question-suggestions");
+  if (!questionInput || !suggestions) {
+    return;
+  }
+
+  questionInput.addEventListener("input", updateDirectQuestionSuggestions);
+  questionInput.addEventListener("keyup", updateDirectQuestionSuggestions);
+  questionInput.addEventListener("click", updateDirectQuestionSuggestions);
+  questionInput.addEventListener("blur", () => {
+    window.setTimeout(hideDirectQuestionSuggestions, 120);
+  });
+
+  suggestions.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+  });
+
+  suggestions.addEventListener("click", (event) => {
+    const button = event.target.closest(".direct-question-suggestion-btn");
+    if (!button) {
+      return;
+    }
+
+    applyDirectQuestionSuggestion(button.dataset.suggestion || "");
+  });
+}
+
+function updateDirectQuestionSuggestions() {
+  const questionInput = document.getElementById("direct-question");
+  const suggestions = document.getElementById("direct-question-suggestions");
+  if (!questionInput || !suggestions) {
+    return;
+  }
+
+  const cursor = questionInput.selectionStart || 0;
+  const trigger = questionInput.value.slice(0, cursor).slice(-1);
+  const options = DIRECT_QUESTION_SUGGESTIONS[trigger] || [];
+
+  directFormState.questionSuggestionTrigger = options.length
+    ? { trigger, index: cursor - trigger.length }
+    : null;
+
+  suggestions.innerHTML = "";
+  if (!options.length) {
+    hideDirectQuestionSuggestions();
+    return;
+  }
+
+  options.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "direct-question-suggestion-btn";
+    button.dataset.suggestion = option;
+    button.textContent = option;
+    suggestions.appendChild(button);
+  });
+
+  suggestions.hidden = false;
+}
+
+function hideDirectQuestionSuggestions() {
+  const suggestions = document.getElementById("direct-question-suggestions");
+  if (suggestions) {
+    suggestions.hidden = true;
+    suggestions.innerHTML = "";
+  }
+  directFormState.questionSuggestionTrigger = null;
+}
+
+function applyDirectQuestionSuggestion(suggestion) {
+  const questionInput = document.getElementById("direct-question");
+  const trigger = directFormState.questionSuggestionTrigger;
+  if (!questionInput || !suggestion || !trigger) {
+    return;
+  }
+
+  const before = questionInput.value.slice(0, trigger.index);
+  const after = questionInput.value.slice(trigger.index + trigger.trigger.length);
+  questionInput.value = `${before}${suggestion}${after}`;
+
+  const cursor = before.length + suggestion.length;
+  questionInput.focus();
+  questionInput.setSelectionRange(cursor, cursor);
+  questionInput.dispatchEvent(new Event("input", { bubbles: true }));
+  hideDirectQuestionSuggestions();
 }
 
 function handleDirectFormKeydown(event) {
