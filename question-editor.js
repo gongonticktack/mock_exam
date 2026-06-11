@@ -31,6 +31,14 @@ let displayNumberByQuestionId = new Map();
 let selectedQuestionIds = new Set();
 const MAX_INLINE_IMAGE_BYTES = 1024 * 1024;
 
+/**
+ * Supabase クライアントを初期化します。
+ *
+ * `window.SUPABASE_CONFIG` に入っている URL とキーを使って、
+ * 以降の DB 操作で使う `supabaseClient` を作ります。
+ *
+ * @returns {boolean} 初期化できたら true、設定が足りなければ false。
+ */
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
   if (!config || !config.url || !config.key) {
@@ -45,24 +53,62 @@ function initSupabase() {
 // ローディング画面制御
 // ======================================
 
+/**
+ * 読み込み中のオーバーレイを表示します。
+ *
+ * DB通信など、ユーザーに少し待ってもらう処理の前に呼びます。
+ *
+ * @returns {void}
+ */
 function showLoading() {
   document.getElementById('loading-overlay').style.display = 'flex';
 }
 
+/**
+ * 読み込み中のオーバーレイを非表示にします。
+ *
+ * DB通信が終わったあとや、エラーで処理を止めるときに呼びます。
+ *
+ * @returns {void}
+ */
 function hideLoading() {
   document.getElementById('loading-overlay').style.display = 'none';
 }
 
+/**
+ * 本文中の画像マークアップを短い表示用テキストに置き換えます。
+ *
+ * 一覧表示では画像の data URI をそのまま出すと長すぎるため、
+ * `![...](...)` を `[画像]` に変換します。
+ *
+ * @param {string} text - 変換したい問題文や解説文。
+ * @returns {string} 画像部分を省略した表示用テキスト。
+ */
 function stripMediaMarkup(text) {
   // 問題一覧では画像そのものを表示せず、[画像] という短い表示に置き換えます。
   // 一覧が長くなりすぎるのを防ぐためです。
   return String(text || '').replace(/!\[[^\]]*]\((data:image\/[^)]+|https?:\/\/[^)]+)\)/g, '[\u753b\u50cf]');
 }
 
+/**
+ * 問題に解説が入力されているか判定します。
+ *
+ * @param {object} question - 判定する問題データ。
+ * @returns {boolean} 解説が空でなければ true。
+ */
 function hasExplanation(question) {
   return !!String(question?.explanation || '').trim();
 }
 
+/**
+ * 重複チェックで比較しやすい文字列に整えます。
+ *
+ * 大文字小文字や記号の違いで別問題扱いになりにくいよう、
+ * 小文字化し、記号を取り除きます。
+ *
+ * @param {string} text - 正規化したい文字列。
+ * @returns {string} 比較用に整えた文字列。
+ */
 function normalizeForDuplicateCheck(text) {
   return stripMediaMarkup(text)
     .toLowerCase()
@@ -70,6 +116,12 @@ function normalizeForDuplicateCheck(text) {
     .trim();
 }
 
+/**
+ * 問題文と選択肢をまとめて、重複チェック用の文字列を作ります。
+ *
+ * @param {object} question - 問題データ。
+ * @returns {string} 問題文と選択肢を正規化した比較用テキスト。
+ */
 function getDuplicateCheckText(question) {
   const choicesText = (question.choices || [])
     .map(choice => choice.content || '')
@@ -78,6 +130,14 @@ function getDuplicateCheckText(question) {
   return normalizeForDuplicateCheck(`${question.question || ''} ${choicesText}`);
 }
 
+/**
+ * 文字列を2文字ずつのトークンに分解します。
+ *
+ * 似ている文章かどうかをざっくり比べるために使います。
+ *
+ * @param {string} text - 分解したい文字列。
+ * @returns {Set<string>} 2文字単位のトークン集合。
+ */
 function getTextTokens(text) {
   const tokens = new Set();
 
@@ -88,6 +148,15 @@ function getTextTokens(text) {
   return tokens;
 }
 
+/**
+ * 2つの文字列がどれくらい似ているかを計算します。
+ *
+ * 2文字トークンの重なり具合から、0から1までの近さを返します。
+ *
+ * @param {string} leftText - 比較する文字列の片方。
+ * @param {string} rightText - 比較する文字列のもう片方。
+ * @returns {number} 0に近いほど別物、1に近いほど似ています。
+ */
 function getTokenSimilarity(leftText, rightText) {
   const leftTokens = getTextTokens(leftText);
   const rightTokens = getTextTokens(rightText);
@@ -106,6 +175,14 @@ function getTokenSimilarity(leftText, rightText) {
   return (2 * intersection) / (leftTokens.size + rightTokens.size);
 }
 
+/**
+ * 読み込み済みの問題一覧から、重複していそうな問題を探します。
+ *
+ * 結果は `duplicateCandidateIds` と `duplicateCandidateMeta` に保存し、
+ * 一覧表示や重複フィルターで使います。
+ *
+ * @returns {void}
+ */
 function updateDuplicateCandidates() {
   duplicateCandidateIds = new Set();
   duplicateCandidateMeta = new Map();
@@ -144,6 +221,15 @@ function updateDuplicateCandidates() {
   }
 
   const parent = new Map(comparableQuestions.map(item => [item.id, item.id]));
+
+  /**
+   * 重複グループの代表IDを探します。
+   *
+   * Union-Find という「同じ仲間をまとめる」ための小さな仕組みです。
+   *
+   * @param {number} id - 代表を探したい問題ID。
+   * @returns {number} その問題が属するグループの代表ID。
+   */
   const findParent = (id) => {
     let current = id;
     while (parent.get(current) !== current) {
@@ -151,6 +237,14 @@ function updateDuplicateCandidates() {
     }
     return current;
   };
+
+  /**
+   * 2つの問題IDを同じ重複グループとして結合します。
+   *
+   * @param {number} leftId - 結合する問題IDの片方。
+   * @param {number} rightId - 結合する問題IDのもう片方。
+   * @returns {void}
+   */
   const unite = (leftId, rightId) => {
     const leftRoot = findParent(leftId);
     const rightRoot = findParent(rightId);
@@ -189,6 +283,15 @@ function updateDuplicateCandidates() {
   });
 }
 
+/**
+ * textarea のカーソル位置に指定した文字列を挿入します。
+ *
+ * 画像マークアップを問題文や解説の途中へ差し込むときに使います。
+ *
+ * @param {HTMLTextAreaElement} textarea - 文字列を挿入する入力欄。
+ * @param {string} text - 挿入する文字列。
+ * @returns {void}
+ */
 function insertAtCursor(textarea, text) {
   // textarea のカーソル位置に文字列を差し込みます。
   // 画像を追加するとき、本文の末尾ではなくカーソル位置へ入れられるようにしています。
@@ -204,6 +307,14 @@ function insertAtCursor(textarea, text) {
   textarea.setSelectionRange(cursor, cursor);
 }
 
+/**
+ * 問題文と解説欄に「画像を追加」ボタンを差し込みます。
+ *
+ * ユーザーが画像を選ぶと FileReader で data URI に変換し、
+ * Markdown 風の `![alt](data:image/...)` として本文へ挿入します。
+ *
+ * @returns {void}
+ */
 function setupImageInsertControls() {
   // HTMLを直接大きく変えず、JavaScriptで「画像追加」ボタンを差し込みます。
   // 選んだ画像はFileReaderでData URIに変換し、本文へMarkdown風に挿入します。
@@ -267,6 +378,14 @@ function setupImageInsertControls() {
 // 初期化処理
 // ======================================
 
+/**
+ * 問題編集画面を初期化します。
+ *
+ * Supabase 接続、URLパラメータの読み取り、資格名の表示、
+ * 画像追加ボタンの準備、問題一覧の読み込みを順番に行います。
+ *
+ * @returns {Promise<void>}
+ */
 async function initPage() {
   // URLやlocalStorageから編集対象の資格を決めて、問題一覧を読み込みます。
   // Supabase初期化
@@ -323,6 +442,14 @@ async function initPage() {
 // DBから問題一覧を読み込む
 // ======================================
 
+/**
+ * DB から問題と選択肢を読み込み、画面の一覧を再描画します。
+ *
+ * `questions` と紐づく `choices` をまとめて取得することで、
+ * 問題数ぶんの追加通信が発生しないようにしています。
+ *
+ * @returns {Promise<void>}
+ */
 async function loadQuestions() {
   // questions テーブルから問題を取得し、
   // 各問題に紐づく choices テーブルの選択肢も一緒に読み込みます。
@@ -360,38 +487,6 @@ async function loadQuestions() {
     displayQuestionsList();
     return;
 
-    // 各問題に対して選択肢を取得
-    const questionsWithChoices = [];
-    const total = questionsData.length;
-
-    for (let i = 0; i < total; i++) {
-      const question = questionsData[i];
-
-      const { data: choicesData, error: choicesError } =
-        await supabaseClient
-          .from('choices')
-          .select('*')
-          .eq('question_id', question.id)
-          .order('choice_index', { ascending: true });
-
-      if (choicesError) {
-        console.error('選択肢取得エラー:', choicesError);
-        continue;
-      }
-
-      questionsWithChoices.push({
-        ...question,
-        choices: choicesData || []
-      });
-    }
-
-    questions = questionsWithChoices;
-    updateDuplicateCandidates();
-    hideLoading();
-
-    // 問題一覧を表示
-    displayQuestionsList();
-
   } catch (error) {
     console.error('問題読み込みエラー:', error);
     alert('問題の読み込み中にエラーが発生しました');
@@ -403,6 +498,13 @@ async function loadQuestions() {
 // 問題が無い場合の表示
 // ======================================
 
+/**
+ * 問題が1件もないときの空表示を出します。
+ *
+ * 選択状態や一括削除ボタンも、空の状態に戻します。
+ *
+ * @returns {void}
+ */
 function displayNoQuestions() {
   const listContainer = document.getElementById('questions-list');
   listContainer.innerHTML = '<p class="no-questions">問題がありません</p>';
@@ -411,6 +513,13 @@ function displayNoQuestions() {
   updateBulkDeleteButton();
 }
 
+/**
+ * 一覧上の問題を選択状態にし、編集フォームへ表示します。
+ *
+ * @param {HTMLElement} item - 左側一覧の問題要素。
+ * @param {object} question - 選択された問題データ。
+ * @returns {void}
+ */
 function selectQuestionItem(item, question) {
   document.querySelectorAll('.question-item').forEach(el => {
     el.classList.remove('active');
@@ -420,6 +529,13 @@ function selectQuestionItem(item, question) {
   displayQuestionEditor(question);
 }
 
+/**
+ * URL の `questionId` で指定された問題を自動選択します。
+ *
+ * 回答画面など別画面から「この問題を編集」と遷移したときに使います。
+ *
+ * @returns {void}
+ */
 function selectTargetQuestion() {
   if (!targetQuestionId) {
     return;
@@ -440,6 +556,14 @@ function selectTargetQuestion() {
 // 問題一覧を表示
 // ======================================
 
+/**
+ * 左側の問題一覧を作り直します。
+ *
+ * 問題番号、カテゴリ、短い問題文、重複候補バッジ、
+ * 一括削除用チェックボックスを DOM として生成します。
+ *
+ * @returns {void}
+ */
 function displayQuestionsList() {
   // 左側の問題一覧を作ります。
   // クリックされた問題だけが active 表示になり、右側の編集フォームへ内容が入ります。
@@ -543,6 +667,13 @@ function displayQuestionsList() {
   selectTargetQuestion();
 }
 
+/**
+ * 現在のフィルター状態に合わせて、一覧の並び順を整えます。
+ *
+ * 通常時は登録順、重複候補フィルター中は重複グループ順に並べます。
+ *
+ * @returns {void}
+ */
 function sortQuestionItemsForCurrentFilter() {
   const listContainer = document.getElementById('questions-list');
   const items = Array.from(listContainer.querySelectorAll('.question-item'));
@@ -562,6 +693,15 @@ function sortQuestionItemsForCurrentFilter() {
 // 問題の詳細をエディタに表示
 // ======================================
 
+/**
+ * 選択された問題を右側の編集フォームに表示します。
+ *
+ * 問題文、カテゴリ、解説、選択肢をフォームへ流し込み、
+ * ユーザーがすぐ編集できる状態にします。
+ *
+ * @param {object} question - 編集フォームに表示する問題データ。
+ * @returns {void}
+ */
 function displayQuestionEditor(question) {
   // 選択された問題データを、右側の編集フォームへ流し込みます。
   // 既存の選択肢も createChoiceElement() で1行ずつ作ります。
@@ -602,6 +742,15 @@ function displayQuestionEditor(question) {
 // 選択肢要素を作成
 // ======================================
 
+/**
+ * 選択肢1行分の入力UIを作ります。
+ *
+ * 選択肢テキスト、正解チェック、削除ボタンをまとめた DOM 要素を返します。
+ *
+ * @param {object} choice - 選択肢データ。新規追加時は空のオブジェクトも可。
+ * @param {number} index - 画面上の並び順。
+ * @returns {HTMLDivElement} 選択肢1行分の要素。
+ */
 function createChoiceElement(choice, index) {
   // 選択肢1件分の入力欄を作る関数です。
   // 既存の選択肢にも、新しく追加した空の選択肢にも使います。
@@ -659,7 +808,13 @@ function createChoiceElement(choice, index) {
 // 新しい選択肢を追加
 // ======================================
 
-document.getElementById('add-choice-btn').addEventListener('click', (e) => {
+/**
+ * 「選択肢を追加」ボタンが押されたときに空の選択肢行を追加します。
+ *
+ * @param {MouseEvent} e - クリックイベント。
+ * @returns {void}
+ */
+function handleAddChoiceClick(e) {
   e.preventDefault();
 
   const choicesContainer = document.getElementById('choices-container');
@@ -673,13 +828,24 @@ document.getElementById('add-choice-btn').addEventListener('click', (e) => {
 
   const choiceDiv = createChoiceElement(newChoice, choiceCount);
   choicesContainer.appendChild(choiceDiv);
-});
+}
+
+document.getElementById('add-choice-btn').addEventListener('click', handleAddChoiceClick);
 
 // ======================================
 // フォーム送信（保存）
 // ======================================
 
-document.getElementById('editor-form').addEventListener('submit', async (e) => {
+/**
+ * 編集フォームの保存処理を行います。
+ *
+ * 入力チェックを行い、問題本体を更新したあと、
+ * 既存の選択肢は更新し、新しい選択肢は追加します。
+ *
+ * @param {SubmitEvent} e - フォーム送信イベント。
+ * @returns {Promise<void>}
+ */
+async function handleEditorFormSubmit(e) {
   // 保存ボタンが押されたときの処理です。
   // まず入力チェックを行い、questions を更新し、choices は既存更新と新規追加に分けて保存します。
   e.preventDefault();
@@ -810,7 +976,16 @@ document.getElementById('editor-form').addEventListener('submit', async (e) => {
 // 削除ボタン
 // ======================================
 
-document.getElementById('delete-btn').addEventListener('click', async (e) => {
+/**
+ * 現在選択中の問題を削除します。
+ *
+ * 選択肢は問題に紐づいているため、先に choices を削除し、
+ * そのあと questions の本体レコードを削除します。
+ *
+ * @param {MouseEvent} e - クリックイベント。
+ * @returns {Promise<void>}
+ */
+async function handleDeleteQuestionClick(e) {
   // 削除ボタンが押されたときの処理です。
   // choices は questions に紐づくため、先に選択肢を消してから問題を消します。
   e.preventDefault();
@@ -862,13 +1037,23 @@ document.getElementById('delete-btn').addEventListener('click', async (e) => {
     console.error('削除エラー:', error);
     alert('エラーが発生しました: ' + error.message);
   }
-});
+}
+
+document.getElementById('delete-btn').addEventListener('click', handleDeleteQuestionClick);
 
 // ======================================
 // キャンセルボタン
 // ======================================
 
-document.getElementById('cancel-btn').addEventListener('click', (e) => {
+/**
+ * 編集中の選択を解除し、未選択状態の画面に戻します。
+ *
+ * DBには触らず、画面上の選択状態だけをリセットします。
+ *
+ * @param {MouseEvent} e - クリックイベント。
+ * @returns {void}
+ */
+function handleCancelEditClick(e) {
   e.preventDefault();
   currentSelectedQuestion = null;
   document.getElementById('editor-form').style.display = 'none';
@@ -876,13 +1061,22 @@ document.getElementById('cancel-btn').addEventListener('click', (e) => {
   document.querySelectorAll('.question-item').forEach(el => {
     el.classList.remove('active');
   });
-});
+}
+
+document.getElementById('cancel-btn').addEventListener('click', handleCancelEditClick);
 
 // ======================================
 // JSONエクスポート
 // ======================================
 
-document.getElementById('export-json-btn').addEventListener('click', () => {
+/**
+ * 読み込み済みの問題を JSON ファイルとして出力します。
+ *
+ * バックアップや別環境への移行に使える形式で保存します。
+ *
+ * @returns {void}
+ */
+function handleExportJsonClick() {
   // 現在読み込んでいる問題一覧をJSONファイルとして書き出します。
   // バックアップや別環境への移行に使えます。
   if (questions.length === 0) {
@@ -908,13 +1102,22 @@ document.getElementById('export-json-btn').addEventListener('click', () => {
   const jsonString = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json' });
   downloadFile(blob, 'questions.json');
-});
+}
+
+document.getElementById('export-json-btn').addEventListener('click', handleExportJsonClick);
 
 // ======================================
 // Excelエクスポート
 // ======================================
 
-document.getElementById('export-excel-btn').addEventListener('click', () => {
+/**
+ * 読み込み済みの問題を Excel ファイルとして出力します。
+ *
+ * SheetJS の `XLSX` を使い、ブラウザ上で xlsx ファイルを生成します。
+ *
+ * @returns {void}
+ */
+function handleExportExcelClick() {
   // 現在読み込んでいる問題一覧をExcelファイルとして書き出します。
   // SheetJS(XLSX)ライブラリを使ってブラウザ上で生成しています。
   if (questions.length === 0) {
@@ -943,12 +1146,23 @@ document.getElementById('export-excel-btn').addEventListener('click', () => {
 
   // Excelファイルをダウンロード
   XLSX.writeFile(wb, 'questions.xlsx');
-});
+}
+
+document.getElementById('export-excel-btn').addEventListener('click', handleExportExcelClick);
 
 // ======================================
 // ファイルダウンロード
 // ======================================
 
+/**
+ * Blob から一時URLを作り、ブラウザにファイルをダウンロードさせます。
+ *
+ * JSON出力で作ったデータを保存するときに使います。
+ *
+ * @param {Blob} blob - ダウンロードさせたいファイル内容。
+ * @param {string} filename - 保存時のファイル名。
+ * @returns {void}
+ */
 function downloadFile(blob, filename) {
   // Blob（ブラウザ上のファイルのようなデータ）を一時URLにしてダウンロードさせます。
   const url = URL.createObjectURL(blob);
@@ -965,6 +1179,13 @@ function downloadFile(blob, filename) {
 // 検索機能
 // ======================================
 
+/**
+ * 検索欄とフィルターボタンの状態に合わせて、問題一覧を絞り込みます。
+ *
+ * 非表示にするだけで `questions` 配列自体は変更しません。
+ *
+ * @returns {void}
+ */
 function applyQuestionFilters() {
   const searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
   sortQuestionItemsForCurrentFilter();
@@ -990,6 +1211,12 @@ function applyQuestionFilters() {
   updateQuestionsCount(visibleCount);
 }
 
+/**
+ * 一覧の件数表示を更新します。
+ *
+ * @param {number} visibleCount - 現在フィルター後に表示されている件数。
+ * @returns {void}
+ */
 function updateQuestionsCount(visibleCount) {
   const countLabel = document.getElementById('questions-count');
   if (!countLabel) {
@@ -999,6 +1226,13 @@ function updateQuestionsCount(visibleCount) {
   countLabel.textContent = `${visibleCount} / ${questions.length}件`;
 }
 
+/**
+ * 一括削除ボタンの有効/無効と表示文言を更新します。
+ *
+ * 選択中の問題がないときはボタンを押せない状態にします。
+ *
+ * @returns {void}
+ */
 function updateBulkDeleteButton() {
   const bulkDeleteButton = document.getElementById('bulk-delete-btn');
   if (!bulkDeleteButton) {
@@ -1011,13 +1245,29 @@ function updateBulkDeleteButton() {
     `<i class="fa-solid fa-trash-can"></i>${selectedCount > 0 ? `${selectedCount}件を削除` : '選択した問題を削除'}`;
 }
 
-document.getElementById('search-input').addEventListener('input', () => {
+/**
+ * 検索欄の入力に合わせて、問題一覧を再フィルターします。
+ *
+ * @returns {void}
+ */
+function handleSearchInput() {
   applyQuestionFilters();
-});
+}
+
+document.getElementById('editor-form').addEventListener('submit', handleEditorFormSubmit);
+document.getElementById('search-input').addEventListener('input', handleSearchInput);
 
 const bulkDeleteButton = document.getElementById('bulk-delete-btn');
 if (bulkDeleteButton) {
-  bulkDeleteButton.addEventListener('click', async () => {
+  /**
+   * チェックされた複数の問題をまとめて削除します。
+   *
+   * 選択肢を先に削除してから問題本体を削除し、
+   * 最後に一覧を再読み込みします。
+   *
+   * @returns {Promise<void>}
+   */
+  async function handleBulkDeleteClick() {
     const targetIds = [...selectedQuestionIds];
     if (targetIds.length === 0) {
       return;
@@ -1068,27 +1318,43 @@ if (bulkDeleteButton) {
       alert('一括削除中にエラーが発生しました: ' + error.message);
       hideLoading();
     }
-  });
+  }
+
+  bulkDeleteButton.addEventListener('click', handleBulkDeleteClick);
 }
 
 const missingExplanationFilterButton = document.getElementById('missing-explanation-filter-btn');
 if (missingExplanationFilterButton) {
-  missingExplanationFilterButton.addEventListener('click', () => {
+  /**
+   * 「解説なし」フィルターのオン/オフを切り替えます。
+   *
+   * @returns {void}
+   */
+  function handleMissingExplanationFilterClick() {
     showOnlyMissingExplanation = !showOnlyMissingExplanation;
     missingExplanationFilterButton.classList.toggle('active', showOnlyMissingExplanation);
     missingExplanationFilterButton.setAttribute('aria-pressed', String(showOnlyMissingExplanation));
     applyQuestionFilters();
-  });
+  }
+
+  missingExplanationFilterButton.addEventListener('click', handleMissingExplanationFilterClick);
 }
 
 const duplicateFilterButton = document.getElementById('duplicate-filter-btn');
 if (duplicateFilterButton) {
-  duplicateFilterButton.addEventListener('click', () => {
+  /**
+   * 「重複候補」フィルターのオン/オフを切り替えます。
+   *
+   * @returns {void}
+   */
+  function handleDuplicateFilterClick() {
     showOnlyDuplicateCandidates = !showOnlyDuplicateCandidates;
     duplicateFilterButton.classList.toggle('active', showOnlyDuplicateCandidates);
     duplicateFilterButton.setAttribute('aria-pressed', String(showOnlyDuplicateCandidates));
     applyQuestionFilters();
-  });
+  }
+
+  duplicateFilterButton.addEventListener('click', handleDuplicateFilterClick);
 }
 
 // ======================================
