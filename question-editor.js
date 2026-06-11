@@ -970,7 +970,7 @@ async function handleEditorFormSubmit(e) {
     console.error('保存エラー:', error);
     alert('エラーが発生しました: ' + error.message);
   }
-});
+}
 
 // ======================================
 // 削除ボタン

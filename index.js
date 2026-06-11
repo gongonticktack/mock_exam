@@ -440,29 +440,11 @@ async function fetchExamWeaknesses(examId) {
   }
 
   try {
-    const selectAttempts = [
-      'question_id,activity,answered_at,is_correct,correct_count,total_count,result_rate',
-      'question_id,activity,answered_at,is_correct',
-      'question_id,activity,answered_at,correct_count,total_count,result_rate',
-      'activity,answered_at,is_correct,correct_count,total_count,result_rate',
-      'activity,answered_at,is_correct',
-      'activity,answered_at,correct_count,total_count,result_rate'
-    ];
-
-    let data = null;
-    let error = null;
-
-    for (const columns of selectAttempts) {
-      ({ data, error } = await supabaseClient
-        .from('exam_histories')
-        .select(columns)
-        .eq('exam_id', examId)
-        .order('answered_at', { ascending: false }));
-
-      if (!error) {
-        break;
-      }
-    }
+    const { data, error } = await supabaseClient
+      .from('exam_histories')
+      .select('*')
+      .eq('exam_id', examId)
+      .order('answered_at', { ascending: false });
 
     if (error) {
       console.error('苦手分野取得エラー:', error);
