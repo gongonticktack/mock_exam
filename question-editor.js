@@ -510,7 +510,7 @@ function displayNoQuestions() {
   listContainer.innerHTML = '<p class="no-questions">問題がありません</p>';
   selectedQuestionIds = new Set();
   updateQuestionsCount(0);
-  updateBulkDeleteButton();
+  updateSelectionActionButtons();
 }
 
 /**
@@ -596,12 +596,12 @@ function displayQuestionsList() {
 
     const selectLabel = document.createElement('label');
     selectLabel.className = 'question-select';
-    selectLabel.title = '削除対象に選択';
+    selectLabel.title = '出力/削除対象に選択';
 
     const selectCheckbox = document.createElement('input');
     selectCheckbox.type = 'checkbox';
     selectCheckbox.checked = selectedQuestionIds.has(questionId);
-    selectCheckbox.setAttribute('aria-label', `問題 ${index + 1} を選択`);
+    selectCheckbox.setAttribute('aria-label', `問題 ${index + 1} を出力/削除対象に選択`);
 
     const selectMark = document.createElement('span');
     selectMark.className = 'question-select-mark';
@@ -652,7 +652,7 @@ function displayQuestionsList() {
       }
 
       item.classList.toggle('selected', selectCheckbox.checked);
-      updateBulkDeleteButton();
+      updateSelectionActionButtons();
     });
 
     item.addEventListener('click', () => {
@@ -663,7 +663,7 @@ function displayQuestionsList() {
   });
 
   applyQuestionFilters();
-  updateBulkDeleteButton();
+  updateSelectionActionButtons();
   selectTargetQuestion();
 }
 
@@ -1070,6 +1070,21 @@ document.getElementById('cancel-btn').addEventListener('click', handleCancelEdit
 // ======================================
 
 /**
+ * エクスポート対象の問題を返します。
+ *
+ * 一覧のチェックがある場合はチェック済みの問題だけ、ない場合は全件を対象にします。
+ *
+ * @returns {Array<object>} エクスポート対象の問題一覧。
+ */
+function getExportTargetQuestions() {
+  if (selectedQuestionIds.size === 0) {
+    return questions;
+  }
+
+  return questions.filter(q => selectedQuestionIds.has(Number(q.id)));
+}
+
+/**
  * 読み込み済みの問題を JSON ファイルとして出力します。
  *
  * バックアップや別環境への移行に使える形式で保存します。
@@ -1084,10 +1099,17 @@ function handleExportJsonClick() {
     return;
   }
 
+  const targetQuestions = getExportTargetQuestions();
+
+  if (targetQuestions.length === 0) {
+    alert('エクスポートする問題がありません');
+    return;
+  }
+
   // JSON形式にフォーマット
   const exportData = {
     exam_id: currentExamId,
-    questions: questions.map(q => ({
+    questions: targetQuestions.map(q => ({
       category: q.category,
       question: q.question,
       explanation: q.explanation,
@@ -1125,8 +1147,15 @@ function handleExportExcelClick() {
     return;
   }
 
+  const targetQuestions = getExportTargetQuestions();
+
+  if (targetQuestions.length === 0) {
+    alert('エクスポートする問題がありません');
+    return;
+  }
+
   // Excelデータを作成
-  const excelData = questions.map(q => ({
+  const excelData = targetQuestions.map(q => ({
     category: q.category,
     question: q.question,
     choices: q.choices.map(c => c.content).join(','),
@@ -1243,6 +1272,37 @@ function updateBulkDeleteButton() {
   bulkDeleteButton.disabled = selectedCount === 0;
   bulkDeleteButton.innerHTML =
     `<i class="fa-solid fa-trash-can"></i>${selectedCount > 0 ? `${selectedCount}件を削除` : '選択した問題を削除'}`;
+}
+
+/**
+ * JSON / Excel 出力ボタンの表示文言を、チェック状態に合わせて更新します。
+ *
+ * @returns {void}
+ */
+function updateExportButtons() {
+  const selectedCount = selectedQuestionIds.size;
+  const jsonButton = document.getElementById('export-json-btn');
+  const excelButton = document.getElementById('export-excel-btn');
+
+  if (jsonButton) {
+    jsonButton.innerHTML =
+      `<i class="fa-solid fa-download"></i>${selectedCount > 0 ? `チェックした${selectedCount}件をJSON出力` : '全件をJSON出力'}`;
+  }
+
+  if (excelButton) {
+    excelButton.innerHTML =
+      `<i class="fa-solid fa-download"></i>${selectedCount > 0 ? `チェックした${selectedCount}件をExcel出力` : '全件をExcel出力'}`;
+  }
+}
+
+/**
+ * チェック状態に依存する操作ボタンをまとめて更新します。
+ *
+ * @returns {void}
+ */
+function updateSelectionActionButtons() {
+  updateBulkDeleteButton();
+  updateExportButtons();
 }
 
 /**
