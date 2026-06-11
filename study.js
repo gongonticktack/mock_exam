@@ -29,8 +29,11 @@ let currentStudyMode = "";
 let currentUnansweredPeriodDays = "7";
 let answered = false;
 let loadingProgress = 0;
+let loadingStartedAt = 0;
 let currentStudySessionStartedAt = null;
 let examHistoryColumnSupport = {};
+
+const MIN_LOADING_VISIBLE_MS = 1000;
 
 /**
  * メッセージを表示して、トップ画面へ戻します。
@@ -73,7 +76,7 @@ function initSupabase() {
 }
 
 // ======================================
-// � ローディング画面制御
+// ローディング画面制御
 // ======================================
 
 /**
@@ -85,10 +88,33 @@ function startLoading() {
 
   document.getElementById('loading-overlay').style.display = 'flex';
 
-  loadingProgress = 0;
+  loadingStartedAt = performance.now();
+
+  loadingProgress = 10;
 
   updateLoadingProgress();
 
+}
+
+/**
+ * 指定した時間だけ処理を待ちます。
+ *
+ * @param {number} ms - 待機時間（ミリ秒）。
+ * @returns {Promise<void>} 処理結果。
+ */
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 読み込み進捗を指定値まで進めます。
+ *
+ * @param {number} progress - 表示したい進捗率。
+ * @returns {void} 処理結果。
+ */
+function setLoadingProgress(progress) {
+  loadingProgress = Math.max(0, Math.min(100, progress));
+  updateLoadingProgress();
 }
 
 /**
@@ -109,7 +135,14 @@ function updateLoadingProgress() {
  *
  * @returns {void} 処理結果。
  */
-function stopLoading() {
+async function stopLoading() {
+
+  const elapsed = performance.now() - loadingStartedAt;
+  const remaining = Math.max(0, MIN_LOADING_VISIBLE_MS - elapsed);
+
+  if (remaining > 0) {
+    await wait(remaining);
+  }
 
   document.getElementById('loading-overlay').style.display = 'none';
 
@@ -201,7 +234,7 @@ function setLengthClass(element, baseClass, text, thresholds) {
 }
 
 // ======================================
-// �🚀 アプリケーション開始
+// アプリケーション開始
 // ======================================
 
 /**
@@ -419,9 +452,9 @@ async function loadQuestions() {
 
     if (questionsError) {
 
-      returnToTop('問題の取得に失敗しました。トップへ戻ります。');
+      await stopLoading();
 
-      stopLoading();
+      returnToTop('問題の取得に失敗しました。トップへ戻ります。');
 
       return false;
 
@@ -429,21 +462,20 @@ async function loadQuestions() {
 
     if (!loadedQuestionsData || loadedQuestionsData.length === 0) {
 
-      returnToTop('該当する問題が見つかりませんでした。トップへ戻ります。');
+      await stopLoading();
 
-      stopLoading();
+      returnToTop('該当する問題が見つかりませんでした。トップへ戻ります。');
 
       return false;
 
     }
 
-    loadingProgress = 40;
-    updateLoadingProgress();
+    setLoadingProgress(45);
 
     const questionsData = await filterQuestionsForStudyMode(loadedQuestionsData);
 
     if (questionsData.length === 0) {
-      stopLoading();
+      await stopLoading();
       returnToTop(getEmptyStudyModeMessage());
       return false;
     }
@@ -456,22 +488,21 @@ async function loadQuestions() {
 
     const questionWithoutChoices = questionsWithChoices.find(question => !question.choices.length);
     if (questionWithoutChoices) {
-      stopLoading();
+      await stopLoading();
       returnToTop('選択肢が見つかりませんでした。トップへ戻ります。');
       return false;
     }
 
-    loadingProgress = 100;
-    updateLoadingProgress();
+    setLoadingProgress(100);
     questions = questionsWithChoices;
-    stopLoading();
+    await stopLoading();
     return true;
 
   } catch (error) {
 
     console.error('問題の読み込み中にエラーが発生しました', error);
 
-    stopLoading();
+    await stopLoading();
 
     const message = error.message === "回答履歴に question_id 列がないため、復習モードを利用できません。"
       ? `${error.message}トップへ戻ります。`
