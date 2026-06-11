@@ -457,7 +457,7 @@ async function loadQuestions() {
     const questionWithoutChoices = questionsWithChoices.find(question => !question.choices.length);
     if (questionWithoutChoices) {
       stopLoading();
-      returnToTop('驕ｸ謚櫁い縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲ゅヨ繝・・縺ｸ謌ｻ繧翫∪縺吶・);
+      returnToTop('選択肢が見つかりませんでした。トップへ戻ります。');
       return false;
     }
 
