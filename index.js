@@ -371,6 +371,31 @@ async function fetchExamWeaknesses(examId) {
   }
 
   try {
+    const { data: allQuestionsData, error: allQuestionsError } = await supabaseClient
+      .from('questions')
+      .select('id,category')
+      .eq('exam_id', examId);
+
+    const allCategories = [];
+
+    if (!allQuestionsError && allQuestionsData) {
+      allQuestionsData.forEach(question => {
+        const category = question && question.category ? question.category : '未分類';
+
+        if (!allCategories.includes(category)) {
+          allCategories.push(category);
+        }
+      });
+    }
+
+    const emptyWeaknesses = () => allCategories.map(name => ({
+      name,
+      rate: "-",
+      count: 0,
+      totalCount: 0,
+      correctRate: Number.POSITIVE_INFINITY
+    }));
+
     const { data, error } = await supabaseClient
       .from('exam_histories')
       .select('*')
@@ -380,12 +405,12 @@ async function fetchExamWeaknesses(examId) {
     if (error) {
       console.error('苦手分野取得エラー:', error);
       weaknessDebugLogs = [];
-      return [];
+      return emptyWeaknesses();
     }
 
     if (!data || data.length === 0) {
       weaknessDebugLogs = [];
-      return [];
+      return emptyWeaknesses();
     }
 
     const questionIds = [...new Set(data.map(item => item.question_id).filter(Boolean))];
@@ -461,17 +486,35 @@ async function fetchExamWeaknesses(examId) {
 
     weaknessDebugLogs = debugLogs;
 
-    const weaknesses = Object.entries(grouped)
-      .filter(([, stats]) => stats.totalCount > 0)
-      .map(([name, stats]) => ({
-        name,
-        rate: `${Math.round((stats.correctCount / stats.totalCount) * 100)}%`,
-        count: stats.correctCount,
-        totalCount: stats.totalCount,
-        correctRate: stats.correctCount / stats.totalCount
-      }))
-      .sort((a, b) => a.correctRate - b.correctRate || b.totalCount - a.totalCount || a.count - b.count)
-      .slice(0, 3);
+    Object.keys(grouped).forEach(category => {
+      if (!allCategories.includes(category)) {
+        allCategories.push(category);
+      }
+    });
+
+    const weaknesses = allCategories
+      .map(name => {
+        const stats = grouped[name];
+
+        if (!stats || stats.totalCount <= 0) {
+          return {
+            name,
+            rate: "-",
+            count: 0,
+            totalCount: 0,
+            correctRate: Number.POSITIVE_INFINITY
+          };
+        }
+
+        return {
+          name,
+          rate: `${Math.round((stats.correctCount / stats.totalCount) * 100)}%`,
+          count: stats.correctCount,
+          totalCount: stats.totalCount,
+          correctRate: stats.correctCount / stats.totalCount
+        };
+      })
+      .sort((a, b) => a.correctRate - b.correctRate || b.totalCount - a.totalCount || a.count - b.count || a.name.localeCompare(b.name, "ja"));
 
     return weaknesses;
   } catch (error) {
@@ -559,8 +602,11 @@ const heroIcon =
 const historyList =
   document.querySelector(".history-card ul");
 
-const weaknessItems =
-  document.querySelectorAll(".weak-item");
+const weaknessList =
+  document.getElementById("weak-list");
+
+const weaknessToggleButton =
+  document.getElementById("weak-toggle-btn");
 
 const historyMoreButton =
   document.querySelector(".history-more-btn");
@@ -591,6 +637,8 @@ const debugLogList =
 
 let weaknessDebugLogs = [];
 let selectedTopUnansweredPeriod = "7";
+let weaknessData = [];
+let isWeaknessExpanded = false;
 
 /**
  * 現在選択中の資格カードのインデックスを取得します。
@@ -679,6 +727,57 @@ function startTopPractice(mode) {
 // 画面更新
 // ======================================
 
+function createWeaknessItem(weakness) {
+  const item = document.createElement("button");
+  const name = document.createElement("span");
+  const rate = document.createElement("span");
+
+  item.type = "button";
+  item.className = "weak-item";
+  item.dataset.category = weakness.name || "";
+  item.disabled = !weakness.name;
+
+  name.textContent = weakness.name || "未分類";
+  rate.textContent = weakness.rate || "-";
+
+  item.appendChild(name);
+  item.appendChild(rate);
+
+  return item;
+}
+
+function renderWeaknessList() {
+  if (!weaknessList) {
+    return;
+  }
+
+  const visibleWeaknesses = isWeaknessExpanded
+    ? weaknessData
+    : weaknessData.slice(0, 3);
+
+  weaknessList.innerHTML = "";
+
+  if (visibleWeaknesses.length === 0) {
+    weaknessList.appendChild(createWeaknessItem({
+      name: "",
+      rate: "-"
+    }));
+  } else {
+    visibleWeaknesses.forEach(weakness => {
+      weaknessList.appendChild(createWeaknessItem(weakness));
+    });
+  }
+
+  if (!weaknessToggleButton) {
+    return;
+  }
+
+  const canToggle = weaknessData.length > 3;
+  weaknessToggleButton.hidden = !canToggle;
+  weaknessToggleButton.textContent = isWeaknessExpanded ? "閉じる" : "もっと見る";
+  weaknessToggleButton.setAttribute("aria-expanded", String(isWeaknessExpanded));
+}
+
 /**
  * 選択された資格カードに合わせてトップ画面の表示を更新します。
  *
@@ -750,22 +849,10 @@ async function updateExam(index) {
   }
 
   // 苦手分野
-  const weaknessData = await fetchExamWeaknesses(exam.id);
+  weaknessData = await fetchExamWeaknesses(exam.id);
+  isWeaknessExpanded = false;
   renderWeaknessDebugLogs(weaknessDebugLogs);
-  weaknessItems.forEach((item, i) => {
-    const weakness = weaknessData[i];
-    if (weakness) {
-      item.querySelector("span:first-child").textContent = weakness.name;
-      item.querySelector("span:last-child").textContent = weakness.rate;
-      item.dataset.category = weakness.name;
-      item.disabled = false;
-    } else {
-      item.querySelector("span:first-child").textContent = "未分類";
-      item.querySelector("span:last-child").textContent = "-";
-      item.dataset.category = "";
-      item.disabled = true;
-    }
-  });
+  renderWeaknessList();
 
   // localStorage に選択中の資格を保存
   localStorage.setItem("selectedExamId", exam.id);
@@ -803,8 +890,14 @@ examCards.forEach((card, index) => {
 
 });
 
-weaknessItems.forEach((item) => {
-  item.addEventListener("click", () => {
+if (weaknessList) {
+  weaknessList.addEventListener("click", event => {
+    const item = event.target.closest(".weak-item");
+
+    if (!item || !weaknessList.contains(item)) {
+      return;
+    }
+
     const category = item.dataset.category;
     const exam = getActiveExam();
 
@@ -817,7 +910,14 @@ weaknessItems.forEach((item) => {
 
     window.location.href = buildStudyUrl(exam, { category });
   });
-});
+}
+
+if (weaknessToggleButton) {
+  weaknessToggleButton.addEventListener("click", () => {
+    isWeaknessExpanded = !isWeaknessExpanded;
+    renderWeaknessList();
+  });
+}
 
 if (historyMoreButton) {
   historyMoreButton.addEventListener("click", () => {

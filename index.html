@@ -330,19 +330,25 @@
           苦手分野 TOP3
         </h2>
 
-        <button type="button" class="weak-item">
-          <span>IAM</span>
-          <span>45%</span>
-        </button>
+        <div id="weak-list" class="weak-list">
+          <button type="button" class="weak-item">
+            <span>IAM</span>
+            <span>45%</span>
+          </button>
 
-        <button type="button" class="weak-item">
-          <span>VPC</span>
-          <span>55%</span>
-        </button>
+          <button type="button" class="weak-item">
+            <span>VPC</span>
+            <span>55%</span>
+          </button>
 
-        <button type="button" class="weak-item">
-          <span>セキュリティ</span>
-          <span>60%</span>
+          <button type="button" class="weak-item">
+            <span>セキュリティ</span>
+            <span>60%</span>
+          </button>
+        </div>
+
+        <button id="weak-toggle-btn" type="button" class="weak-more-btn" aria-controls="weak-list" hidden>
+          もっと見る
         </button>
 
       </div>

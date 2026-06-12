@@ -620,6 +620,11 @@ body {
   transition: color 0.3s ease, padding-left 0.3s ease;
 }
 
+.weak-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .weak-card {
   grid-column: 2;
   grid-row: 1;
@@ -641,6 +646,23 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.weak-more-btn {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-top: 14px;
+  padding: 0;
+}
+
+.weak-more-btn:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 1200px) {
