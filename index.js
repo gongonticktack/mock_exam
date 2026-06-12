@@ -435,16 +435,12 @@ async function fetchExamWeaknesses(examId) {
     const debugLogs = [];
 
     const grouped = data.reduce((acc, item) => {
-      const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : item.activity || '未分類';
-      if (!acc[key]) {
-        acc[key] = { correctCount: 0, totalCount: 0 };
-      }
-
+      const key = item.question_id && categoryMap[item.question_id] ? categoryMap[item.question_id] : "";
       const { correctCount, totalCount } = getHistoryResultCounts(item);
       const result = getHistoryResultLabel(correctCount, totalCount);
       const answeredAt = item.answered_at ? new Date(item.answered_at) : null;
 
-      if (!item.question_id || !categoryMap[item.question_id]) {
+      if (!key) {
         debugLogs.push({
           category: "対象外",
           questionId: item.question_id,
@@ -461,6 +457,10 @@ async function fetchExamWeaknesses(examId) {
           rawTotalCount: item.total_count === undefined ? "-" : String(item.total_count)
         });
         return acc;
+      }
+
+      if (!acc[key]) {
+        acc[key] = { correctCount: 0, totalCount: 0 };
       }
 
       debugLogs.push({
@@ -639,6 +639,7 @@ let weaknessDebugLogs = [];
 let selectedTopUnansweredPeriod = "7";
 let weaknessData = [];
 let isWeaknessExpanded = false;
+let examUpdateSequence = 0;
 
 /**
  * 現在選択中の資格カードのインデックスを取得します。
@@ -658,6 +659,32 @@ function getActiveExamIndex() {
  */
 function getActiveExam() {
   return exams[getActiveExamIndex()] || exams[0];
+}
+
+function setExamCardMetadata() {
+  examCards.forEach((card, index) => {
+    const exam = exams[index];
+
+    if (!exam) {
+      return;
+    }
+
+    card.dataset.examId = String(exam.id);
+    card.dataset.examShortName = exam.shortName;
+  });
+}
+
+function setActiveExamCard(index) {
+  examCards.forEach((card, cardIndex) => {
+    card.classList.toggle("active", cardIndex === index);
+  });
+}
+
+function getSavedExamIndex() {
+  const selectedExamId = Number(localStorage.getItem("selectedExamId"));
+  const index = exams.findIndex(exam => exam.id === selectedExamId);
+
+  return index >= 0 ? index : 0;
 }
 
 /**
@@ -785,6 +812,9 @@ function renderWeaknessList() {
  * @returns {Promise<void>} 処理結果。
  */
 async function updateExam(index) {
+  const updateSequence = ++examUpdateSequence;
+  const isCurrentUpdate = () => updateSequence === examUpdateSequence;
+
   // 資格カードをクリックしたときに呼ばれます。
   // 画面右側のタイトル・説明・統計・履歴・苦手分野をまとめて更新します。
 
@@ -804,6 +834,9 @@ async function updateExam(index) {
 
   // 問題数をDBから取得して更新
   const dbQuestionCount = await fetchQuestionCount(exam.id);
+  if (!isCurrentUpdate()) {
+    return;
+  }
   const displayQuestionCount = dbQuestionCount !== null ? dbQuestionCount : exam.stats.questions;
 
   // ステータス
@@ -811,6 +844,9 @@ async function updateExam(index) {
     `${displayQuestionCount}問`;
 
   const examSummary = await fetchExamSummary(exam.id);
+  if (!isCurrentUpdate()) {
+    return;
+  }
   statAccuracy.textContent =
     examSummary && examSummary.accuracy !== null ? `${examSummary.accuracy}%` : exam.stats.accuracy;
   statStudyTime.textContent =
@@ -821,6 +857,9 @@ async function updateExam(index) {
   // 学習履歴
   historyList.innerHTML = "";
   const historyItems = await fetchExamHistory(exam.id);
+  if (!isCurrentUpdate()) {
+    return;
+  }
 
   if (historyItems.length > 0) {
     historyItems.forEach(item => {
@@ -850,6 +889,9 @@ async function updateExam(index) {
 
   // 苦手分野
   weaknessData = await fetchExamWeaknesses(exam.id);
+  if (!isCurrentUpdate()) {
+    return;
+  }
   isWeaknessExpanded = false;
   renderWeaknessDebugLogs(weaknessDebugLogs);
   renderWeaknessList();
@@ -868,15 +910,7 @@ examCards.forEach((card, index) => {
 
   card.addEventListener("click", async () => {
 
-    // active削除
-    examCards.forEach((c) => {
-
-      c.classList.remove("active");
-
-    });
-
-    // active追加
-    card.classList.add("active");
+    setActiveExamCard(index);
 
     // 👆 クリックされた試験の情報をメイン表示に反映
     // 更新
@@ -1111,5 +1145,9 @@ editButton.addEventListener("click", () => {
 
 // 最初に表示する試験（HTML5 L1：id=0）
 (async () => {
-  await updateExam(0);
+  setExamCardMetadata();
+
+  const initialExamIndex = getSavedExamIndex();
+  setActiveExamCard(initialExamIndex);
+  await updateExam(initialExamIndex);
 })();
