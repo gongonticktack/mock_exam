@@ -5,13 +5,13 @@ let calendarCursor = new Date();
 
 const exams = [
   { id: 3, shortName: "HTML5 L1", title: "HTML5 Professional Level1" },
-  { id: 4, shortName: "UML L2", title: "UMLモデリング技能認定試験 L2" },
+  { id: 4, shortName: "UML L2", title: "UML L2" },
   { id: 5, shortName: "AWS SAA", title: "AWS Certified Solutions Architect - Associate" },
   { id: 6, shortName: "JCSQE 初級", title: "JCSQE 初級" }
 ];
 
 const params = new URLSearchParams(window.location.search);
-const examSelect = document.getElementById("exam-select");
+const examNameInput = document.getElementById("exam-name-input");
 const examDateInput = document.getElementById("exam-date-input");
 const saveExamDateButton = document.getElementById("save-exam-date-btn");
 const selectedExamLabel = document.getElementById("selected-exam-label");
@@ -23,8 +23,6 @@ const prevMonthButton = document.getElementById("prev-month-btn");
 const nextMonthButton = document.getElementById("next-month-btn");
 const todayDateLabel = document.getElementById("today-date-label");
 const todayTaskList = document.getElementById("today-task-list");
-const allTaskList = document.getElementById("all-task-list");
-const taskCountLabel = document.getElementById("task-count-label");
 const jsonFileInput = document.getElementById("json-file-input");
 const importJsonButton = document.getElementById("import-json-btn");
 const statusMessage = document.getElementById("status-message");
@@ -84,30 +82,32 @@ function formatDate(value) {
 }
 
 function getSelectedExamId() {
-  return Number(examSelect.value) || 3;
+  return Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
 }
 
 function getExamById(examId) {
   return exams.find(exam => exam.id === Number(examId)) || exams[0];
 }
 
-function renderExamOptions() {
-  const savedExamId = Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
+function getCurrentExamName() {
+  const typedName = examNameInput.value.trim();
+  if (typedName) {
+    return typedName;
+  }
 
-  examSelect.innerHTML = "";
-  exams.forEach(exam => {
-    const option = document.createElement("option");
-    option.value = String(exam.id);
-    option.textContent = `${exam.shortName} - ${exam.title}`;
-    examSelect.appendChild(option);
-  });
+  if (activeSchedule && activeSchedule.exam_name) {
+    return activeSchedule.exam_name;
+  }
 
-  examSelect.value = String(getExamById(savedExamId).id);
+  return localStorage.getItem("selectedExam") || getExamById(getSelectedExamId()).shortName;
+}
+
+function initializeExamNameInput() {
+  examNameInput.value = localStorage.getItem("selectedExam") || getExamById(getSelectedExamId()).shortName;
 }
 
 function updateCountdown() {
-  const exam = getExamById(getSelectedExamId());
-  selectedExamLabel.textContent = exam.title;
+  selectedExamLabel.textContent = getCurrentExamName();
 
   if (!activeSchedule || !activeSchedule.exam_date) {
     daysLeftElement.textContent = "--";
@@ -132,7 +132,6 @@ function updateCountdown() {
 
 async function loadSchedule() {
   const examId = getSelectedExamId();
-  const exam = getExamById(examId);
   showStatus("スケジュールを読み込み中...");
 
   const { data: scheduleData, error: scheduleError } = await supabaseClient
@@ -152,13 +151,14 @@ async function loadSchedule() {
 
   activeSchedule = scheduleData || null;
   examDateInput.value = activeSchedule && activeSchedule.exam_date ? activeSchedule.exam_date : "";
-  localStorage.setItem("selectedExamId", String(exam.id));
-  localStorage.setItem("selectedExam", exam.shortName);
+  examNameInput.value = activeSchedule && activeSchedule.exam_name ? activeSchedule.exam_name : getCurrentExamName();
+  localStorage.setItem("selectedExamId", String(examId));
+  localStorage.setItem("selectedExam", getCurrentExamName());
 
   if (!activeSchedule) {
     studyTasks = [];
     renderAll();
-    showStatus("試験日を設定すると、勉強スケジュールを登録できます。");
+    showStatus("試験日を設定すると、今日のタスクを登録できます。");
     return;
   }
 
@@ -172,7 +172,7 @@ async function loadSchedule() {
   if (taskError) {
     studyTasks = [];
     renderAll();
-    showStatus("勉強スケジュールの読み込みに失敗しました。", "error");
+    showStatus("タスクの読み込みに失敗しました。", "error");
     console.error("Task load error:", taskError);
     return;
   }
@@ -184,28 +184,33 @@ async function loadSchedule() {
 
 async function saveExamDate() {
   const examId = getSelectedExamId();
-  const exam = getExamById(examId);
+  const examName = getCurrentExamName();
   const examDate = examDateInput.value;
+
+  if (!examName) {
+    showStatus("試験名を入力してください。", "error");
+    return;
+  }
 
   if (!examDate) {
     showStatus("試験日を入力してください。", "error");
     return;
   }
 
-  showStatus("試験日を保存中...");
+  showStatus("試験スケジュールを保存中...");
 
   if (activeSchedule) {
     const { error } = await supabaseClient
       .from("exam_schedules")
       .update({
-        exam_name: exam.shortName,
+        exam_name: examName,
         exam_date: examDate,
         updated_at: new Date().toISOString()
       })
       .eq("id", activeSchedule.id);
 
     if (error) {
-      showStatus("試験日の保存に失敗しました。", "error");
+      showStatus("試験スケジュールの保存に失敗しました。", "error");
       console.error("Schedule update error:", error);
       return;
     }
@@ -214,14 +219,14 @@ async function saveExamDate() {
       .from("exam_schedules")
       .insert({
         exam_id: examId,
-        exam_name: exam.shortName,
+        exam_name: examName,
         exam_date: examDate
       })
       .select("*")
       .single();
 
     if (error) {
-      showStatus("試験日の保存に失敗しました。", "error");
+      showStatus("試験スケジュールの保存に失敗しました。", "error");
       console.error("Schedule insert error:", error);
       return;
     }
@@ -229,8 +234,9 @@ async function saveExamDate() {
     activeSchedule = data;
   }
 
+  localStorage.setItem("selectedExam", examName);
   await loadSchedule();
-  showStatus("試験日を保存しました。", "success");
+  showStatus("試験スケジュールを保存しました。", "success");
 }
 
 function normalizeImportedTasks(json) {
@@ -241,29 +247,21 @@ function normalizeImportedTasks(json) {
 
   return rawTasks.map((task, index) => {
     const taskDate = task.date || task.task_date;
-    const title = task.title || task.name || task.task;
+    const title = task.task || task.title || task.name;
 
     if (!taskDate || !parseDateKey(taskDate)) {
       throw new Error(`${index + 1}件目の date が不正です。`);
     }
 
     if (!title) {
-      throw new Error(`${index + 1}件目の title が空です。`);
-    }
-
-    const estimatedMinutes = task.estimated_minutes === undefined || task.estimated_minutes === null || task.estimated_minutes === ""
-      ? null
-      : Number(task.estimated_minutes);
-
-    if (estimatedMinutes !== null && (!Number.isFinite(estimatedMinutes) || estimatedMinutes < 0)) {
-      throw new Error(`${index + 1}件目の estimated_minutes が不正です。`);
+      throw new Error(`${index + 1}件目の task が空です。`);
     }
 
     return {
       task_date: String(taskDate).slice(0, 10),
       title: String(title),
-      details: task.details ? String(task.details) : null,
-      estimated_minutes: estimatedMinutes,
+      details: null,
+      estimated_minutes: null,
       sort_order: Number.isFinite(Number(task.sort_order)) ? Number(task.sort_order) : index,
       is_completed: Boolean(task.is_completed)
     };
@@ -272,10 +270,10 @@ function normalizeImportedTasks(json) {
 
 async function ensureScheduleFromImport(json) {
   const importedExam = json && json.exam ? json.exam : {};
-  const importedExamId = Number(importedExam.exam_id || importedExam.examId);
+  const importedExamName = importedExam.exam_name || importedExam.examName || json.exam_name || json.examName;
 
-  if (importedExamId && getExamById(importedExamId)) {
-    examSelect.value = String(importedExamId);
+  if (importedExamName) {
+    examNameInput.value = String(importedExamName);
   }
 
   const examDate = importedExam.exam_date || importedExam.examDate || json.exam_date || json.examDate || examDateInput.value;
@@ -334,7 +332,7 @@ async function importJson() {
     }
 
     await loadSchedule();
-    showStatus(`${rows.length}件の勉強スケジュールをインポートしました。`, "success");
+    showStatus(`${rows.length}件のタスクをインポートしました。`, "success");
   } catch (error) {
     showStatus(error.message || "JSONインポートに失敗しました。", "error");
     console.error("JSON import error:", error);
@@ -418,39 +416,28 @@ function renderCalendar() {
   }
 }
 
-function createTaskItem(task, withCheckbox) {
+function createTaskItem(task) {
   const item = document.createElement("article");
   const row = document.createElement("label");
+  const checkbox = document.createElement("input");
   const textWrap = document.createElement("div");
   const title = document.createElement("p");
   const meta = document.createElement("p");
 
   item.className = "task-item";
   row.className = "task-checkbox-row";
+  checkbox.type = "checkbox";
+  checkbox.checked = Boolean(task.is_completed);
+  checkbox.addEventListener("change", () => toggleTask(task.id, checkbox.checked));
+
   title.className = `task-title${task.is_completed ? " is-completed" : ""}`;
   title.textContent = task.title;
-
   meta.className = "task-meta";
-  meta.textContent = `${formatDate(task.task_date)}${task.estimated_minutes ? ` / ${task.estimated_minutes}分` : ""}`;
-
-  if (withCheckbox) {
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = Boolean(task.is_completed);
-    checkbox.addEventListener("change", () => toggleTask(task.id, checkbox.checked));
-    row.appendChild(checkbox);
-  }
+  meta.textContent = formatDate(task.task_date);
 
   textWrap.appendChild(title);
   textWrap.appendChild(meta);
-
-  if (task.details) {
-    const details = document.createElement("p");
-    details.className = "task-details";
-    details.textContent = task.details;
-    textWrap.appendChild(details);
-  }
-
+  row.appendChild(checkbox);
   row.appendChild(textWrap);
   item.appendChild(row);
   return item;
@@ -459,31 +446,22 @@ function createTaskItem(task, withCheckbox) {
 function renderTasks() {
   const todayKey = getTodayKey();
   const todayTasks = studyTasks.filter(task => task.task_date === todayKey);
-  const sortedTasks = [...studyTasks].sort((a, b) => a.task_date.localeCompare(b.task_date) || a.sort_order - b.sort_order);
-  const completedCount = studyTasks.filter(task => task.is_completed).length;
+  const completedTodayCount = todayTasks.filter(task => task.is_completed).length;
 
-  todayDateLabel.textContent = formatDate(todayKey);
-  taskCountLabel.textContent = `${completedCount}/${studyTasks.length} 完了`;
+  todayDateLabel.textContent = todayTasks.length > 0
+    ? `${formatDate(todayKey)} / ${completedTodayCount}/${todayTasks.length} 完了`
+    : formatDate(todayKey);
   todayTaskList.innerHTML = "";
-  allTaskList.innerHTML = "";
 
   if (todayTasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-message";
     empty.textContent = "今日のタスクはありません。";
     todayTaskList.appendChild(empty);
-  } else {
-    todayTasks.forEach(task => todayTaskList.appendChild(createTaskItem(task, true)));
+    return;
   }
 
-  if (sortedTasks.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-message";
-    empty.textContent = "勉強スケジュールはまだ登録されていません。";
-    allTaskList.appendChild(empty);
-  } else {
-    sortedTasks.forEach(task => allTaskList.appendChild(createTaskItem(task, task.task_date === todayKey)));
-  }
+  todayTasks.forEach(task => todayTaskList.appendChild(createTaskItem(task)));
 }
 
 function renderAll() {
@@ -492,11 +470,8 @@ function renderAll() {
   renderTasks();
 }
 
-examSelect.addEventListener("change", () => {
-  const exam = getExamById(getSelectedExamId());
-  localStorage.setItem("selectedExamId", String(exam.id));
-  localStorage.setItem("selectedExam", exam.shortName);
-  loadSchedule();
+examNameInput.addEventListener("input", () => {
+  selectedExamLabel.textContent = getCurrentExamName();
 });
 
 saveExamDateButton.addEventListener("click", saveExamDate);
@@ -513,6 +488,6 @@ nextMonthButton.addEventListener("click", () => {
 });
 
 if (initSupabase()) {
-  renderExamOptions();
+  initializeExamNameInput();
   loadSchedule();
 }

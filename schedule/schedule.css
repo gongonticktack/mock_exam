@@ -116,6 +116,7 @@ label span {
 }
 
 select,
+input[type="text"],
 input[type="date"],
 input[type="file"] {
   background: rgba(255, 255, 255, 0.06);
@@ -192,13 +193,6 @@ select option {
 .calendar-panel,
 .today-card,
 .import-card,
-.all-task-card {
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 22px;
-}
-
 .task-panel {
   display: grid;
   gap: 16px;
@@ -333,7 +327,6 @@ select option {
 }
 
 .task-meta,
-.task-details,
 .empty-message {
   color: var(--text-muted);
   font-size: 0.84rem;
@@ -406,7 +399,6 @@ select option {
   .calendar-panel,
   .today-card,
   .import-card,
-  .all-task-card,
   .overview-panel {
     border-radius: 18px;
     padding: 16px;

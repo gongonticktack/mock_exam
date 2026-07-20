@@ -143,6 +143,8 @@ body {
 
 .topbar {
   display: flex;
+  align-items: center;
+  gap: 10px;
   justify-content: flex-end;
   margin-bottom: 26px;
 }
@@ -162,6 +164,32 @@ body {
 .login-btn:hover {
   background: rgba(139, 125, 255, 0.14);
   transform: translateY(-1px);
+}
+
+.top-schedule-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.86rem;
+  gap: 7px;
+  padding: 9px 13px;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+}
+
+.top-schedule-btn:hover {
+  background: rgba(139, 125, 255, 0.14);
+  border-color: rgba(139, 125, 255, 0.38);
+  transform: translateY(-1px);
+}
+
+.hero-buttons .schedule-btn {
+  display: none;
 }
 
 .hero-card {

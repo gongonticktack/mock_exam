@@ -36,7 +36,7 @@
       <div class="exam-controls">
         <label>
           <span>試験</span>
-          <select id="exam-select"></select>
+          <input id="exam-name-input" type="text" placeholder="例: AWS SAA" />
         </label>
 
         <label>
@@ -96,7 +96,7 @@
             <h2>JSONインポート</h2>
           </div>
           <p class="helper-text">
-            日付、タイトル、詳細、目安時間を含むJSONから勉強スケジュールを登録できます。
+            試験名、試験日、日付ごとのタスクを含むJSONから今日のタスクを登録できます。
           </p>
           <input id="json-file-input" type="file" accept=".json,application/json" />
           <button id="import-json-btn" type="button" class="secondary-btn">
@@ -107,28 +107,17 @@
             <summary>JSONサンプル</summary>
             <pre>{
   "exam": {
-    "exam_id": 3,
     "exam_name": "HTML5 L1",
     "exam_date": "2026-10-18"
   },
   "tasks": [
     {
       "date": "2026-09-01",
-      "title": "HTML基礎を復習",
-      "details": "セマンティック要素とフォーム",
-      "estimated_minutes": 60
+      "task": "HTML基礎を復習"
     }
   ]
 }</pre>
           </details>
-        </section>
-
-        <section class="all-task-card">
-          <div class="panel-heading panel-heading-left">
-            <h2>勉強スケジュール</h2>
-            <span id="task-count-label"></span>
-          </div>
-          <div id="all-task-list" class="task-list compact"></div>
         </section>
       </aside>
     </section>

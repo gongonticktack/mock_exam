@@ -1015,7 +1015,7 @@ function getSelectedExamFromActiveCard() {
 }
 
 const scheduleButton =
-  document.querySelector(".schedule-btn");
+  document.querySelector(".top-schedule-btn");
 
 if (scheduleButton) {
   scheduleButton.addEventListener("click", () => {
