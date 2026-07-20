@@ -16,6 +16,8 @@ const params = new URLSearchParams(window.location.search);
 const selectedExamLabel = document.getElementById("selected-exam-label");
 const calendarTitle = document.getElementById("calendar-title");
 const calendarGrid = document.getElementById("calendar-grid");
+const daysLeftElement = document.getElementById("days-left");
+const examDateText = document.getElementById("exam-date-text");
 const prevMonthButton = document.getElementById("prev-month-btn");
 const nextMonthButton = document.getElementById("next-month-btn");
 const taskPanelTitle = document.getElementById("task-panel-title");
@@ -107,6 +109,28 @@ function getCurrentExamName() {
 
 function updateExamLabel() {
   selectedExamLabel.textContent = getCurrentExamName();
+}
+
+function updateCountdown() {
+  if (!activeSchedule || !activeSchedule.exam_date) {
+    daysLeftElement.textContent = "--";
+    examDateText.textContent = "試験日未設定";
+    return;
+  }
+
+  const today = parseDateKey(toDateKey(new Date()));
+  const examDate = parseDateKey(activeSchedule.exam_date);
+  const diffDays = Math.ceil((examDate - today) / 86400000);
+
+  if (diffDays > 0) {
+    daysLeftElement.textContent = `あと${diffDays}日`;
+  } else if (diffDays === 0) {
+    daysLeftElement.textContent = "試験日";
+  } else {
+    daysLeftElement.textContent = `${Math.abs(diffDays)}日経過`;
+  }
+
+  examDateText.textContent = formatDate(activeSchedule.exam_date);
 }
 
 async function loadSchedule() {
@@ -521,6 +545,7 @@ function renderTasks() {
 
 function renderAll() {
   updateExamLabel();
+  updateCountdown();
   renderCalendar();
   renderTasks();
 }
