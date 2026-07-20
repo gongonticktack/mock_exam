@@ -2,18 +2,17 @@ let supabaseClient = null;
 let activeSchedule = null;
 let studyTasks = [];
 let calendarCursor = new Date();
+let selectedTaskId = null;
 
 const exams = [
-  { id: 3, shortName: "HTML5 L1", title: "HTML5 Professional Level1" },
-  { id: 4, shortName: "UML L2", title: "UML L2" },
-  { id: 5, shortName: "AWS SAA", title: "AWS Certified Solutions Architect - Associate" },
-  { id: 6, shortName: "JCSQE 初級", title: "JCSQE 初級" }
+  { id: 3, shortName: "HTML5 L1" },
+  { id: 4, shortName: "UML L2" },
+  { id: 5, shortName: "AWS SAA" },
+  { id: 6, shortName: "JCSQE 初級" }
 ];
 
 const params = new URLSearchParams(window.location.search);
-const examNameInput = document.getElementById("exam-name-input");
 const examDateInput = document.getElementById("exam-date-input");
-const saveExamDateButton = document.getElementById("save-exam-date-btn");
 const selectedExamLabel = document.getElementById("selected-exam-label");
 const daysLeftElement = document.getElementById("days-left");
 const examDateText = document.getElementById("exam-date-text");
@@ -26,6 +25,14 @@ const todayTaskList = document.getElementById("today-task-list");
 const jsonFileInput = document.getElementById("json-file-input");
 const importJsonButton = document.getElementById("import-json-btn");
 const statusMessage = document.getElementById("status-message");
+const taskModal = document.getElementById("task-modal");
+const closeTaskModalButton = document.getElementById("close-task-modal-btn");
+const taskSelectField = document.getElementById("task-select-field");
+const taskSelect = document.getElementById("task-select");
+const taskDateInput = document.getElementById("task-date-input");
+const taskTitleInput = document.getElementById("task-title-input");
+const saveTaskButton = document.getElementById("save-task-btn");
+const deleteTaskButton = document.getElementById("delete-task-btn");
 
 function initSupabase() {
   const config = window.SUPABASE_CONFIG;
@@ -85,25 +92,22 @@ function getSelectedExamId() {
   return Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
 }
 
-function getExamById(examId) {
-  return exams.find(exam => exam.id === Number(examId)) || exams[0];
+function getDefaultExamName() {
+  const selectedExam = localStorage.getItem("selectedExam");
+  if (selectedExam) {
+    return selectedExam;
+  }
+
+  const examId = getSelectedExamId();
+  return (exams.find(exam => exam.id === examId) || exams[0]).shortName;
 }
 
 function getCurrentExamName() {
-  const typedName = examNameInput.value.trim();
-  if (typedName) {
-    return typedName;
-  }
-
   if (activeSchedule && activeSchedule.exam_name) {
     return activeSchedule.exam_name;
   }
 
-  return localStorage.getItem("selectedExam") || getExamById(getSelectedExamId()).shortName;
-}
-
-function initializeExamNameInput() {
-  examNameInput.value = localStorage.getItem("selectedExam") || getExamById(getSelectedExamId()).shortName;
+  return getDefaultExamName();
 }
 
 function updateCountdown() {
@@ -151,7 +155,6 @@ async function loadSchedule() {
 
   activeSchedule = scheduleData || null;
   examDateInput.value = activeSchedule && activeSchedule.exam_date ? activeSchedule.exam_date : "";
-  examNameInput.value = activeSchedule && activeSchedule.exam_name ? activeSchedule.exam_name : getCurrentExamName();
   localStorage.setItem("selectedExamId", String(examId));
   localStorage.setItem("selectedExam", getCurrentExamName());
 
@@ -182,22 +185,16 @@ async function loadSchedule() {
   showStatus("");
 }
 
-async function saveExamDate() {
+async function saveExamSchedule(examName = getCurrentExamName()) {
   const examId = getSelectedExamId();
-  const examName = getCurrentExamName();
   const examDate = examDateInput.value;
-
-  if (!examName) {
-    showStatus("試験名を入力してください。", "error");
-    return;
-  }
 
   if (!examDate) {
     showStatus("試験日を入力してください。", "error");
-    return;
+    return null;
   }
 
-  showStatus("試験スケジュールを保存中...");
+  showStatus("試験日を保存中...");
 
   if (activeSchedule) {
     const { error } = await supabaseClient
@@ -210,9 +207,9 @@ async function saveExamDate() {
       .eq("id", activeSchedule.id);
 
     if (error) {
-      showStatus("試験スケジュールの保存に失敗しました。", "error");
+      showStatus("試験日の保存に失敗しました。", "error");
       console.error("Schedule update error:", error);
-      return;
+      return null;
     }
   } else {
     const { data, error } = await supabaseClient
@@ -226,9 +223,9 @@ async function saveExamDate() {
       .single();
 
     if (error) {
-      showStatus("試験スケジュールの保存に失敗しました。", "error");
+      showStatus("試験日の保存に失敗しました。", "error");
       console.error("Schedule insert error:", error);
-      return;
+      return null;
     }
 
     activeSchedule = data;
@@ -236,7 +233,8 @@ async function saveExamDate() {
 
   localStorage.setItem("selectedExam", examName);
   await loadSchedule();
-  showStatus("試験スケジュールを保存しました。", "success");
+  showStatus("試験日を保存しました。", "success");
+  return activeSchedule;
 }
 
 function normalizeImportedTasks(json) {
@@ -270,23 +268,18 @@ function normalizeImportedTasks(json) {
 
 async function ensureScheduleFromImport(json) {
   const importedExam = json && json.exam ? json.exam : {};
-  const importedExamName = importedExam.exam_name || importedExam.examName || json.exam_name || json.examName;
-
-  if (importedExamName) {
-    examNameInput.value = String(importedExamName);
-  }
-
+  const importedExamName = importedExam.exam_name || importedExam.examName || json.exam_name || json.examName || getCurrentExamName();
   const examDate = importedExam.exam_date || importedExam.examDate || json.exam_date || json.examDate || examDateInput.value;
+
   if (!examDate || !parseDateKey(examDate)) {
     if (!activeSchedule) {
-      throw new Error("試験日が未設定です。画面で試験日を保存するか、JSONに exam.exam_date を含めてください。");
+      throw new Error("試験日が未設定です。JSONに exam.exam_date を含めてください。");
     }
     return activeSchedule;
   }
 
   examDateInput.value = String(examDate).slice(0, 10);
-  await saveExamDate();
-  return activeSchedule;
+  return saveExamSchedule(String(importedExamName));
 }
 
 async function importJson() {
@@ -363,6 +356,105 @@ async function toggleTask(taskId, checked) {
   showStatus("タスクを更新しました。", "success");
 }
 
+function getTaskById(taskId) {
+  return studyTasks.find(task => String(task.id) === String(taskId)) || null;
+}
+
+function fillTaskModal(task) {
+  selectedTaskId = task.id;
+  taskDateInput.value = task.task_date;
+  taskTitleInput.value = task.title;
+}
+
+function openTaskModal(dateKey, preferredTaskId = null) {
+  const tasksForDate = studyTasks.filter(task => task.task_date === dateKey);
+  if (tasksForDate.length === 0) {
+    showStatus("この日のタスクはありません。", "error");
+    return;
+  }
+
+  taskSelect.innerHTML = "";
+  tasksForDate.forEach(task => {
+    const option = document.createElement("option");
+    option.value = String(task.id);
+    option.textContent = task.title;
+    taskSelect.appendChild(option);
+  });
+
+  taskSelectField.hidden = tasksForDate.length <= 1;
+  const firstTask = preferredTaskId ? getTaskById(preferredTaskId) || tasksForDate[0] : tasksForDate[0];
+  taskSelect.value = String(firstTask.id);
+  fillTaskModal(firstTask);
+  taskModal.hidden = false;
+  taskTitleInput.focus();
+}
+
+function closeTaskModal() {
+  selectedTaskId = null;
+  taskModal.hidden = true;
+}
+
+async function saveSelectedTask() {
+  const task = getTaskById(selectedTaskId);
+  const title = taskTitleInput.value.trim();
+  const taskDate = taskDateInput.value;
+
+  if (!task) {
+    return;
+  }
+
+  if (!title || !taskDate || !parseDateKey(taskDate)) {
+    showStatus("日付と内容を入力してください。", "error");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("study_schedule_tasks")
+    .update({
+      task_date: taskDate,
+      title,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", task.id);
+
+  if (error) {
+    showStatus("タスクの変更に失敗しました。", "error");
+    console.error("Task save error:", error);
+    return;
+  }
+
+  closeTaskModal();
+  await loadSchedule();
+  showStatus("タスクを変更しました。", "success");
+}
+
+async function deleteSelectedTask() {
+  const task = getTaskById(selectedTaskId);
+  if (!task) {
+    return;
+  }
+
+  const confirmed = window.confirm("このタスクを削除しますか？");
+  if (!confirmed) {
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("study_schedule_tasks")
+    .delete()
+    .eq("id", task.id);
+
+  if (error) {
+    showStatus("タスクの削除に失敗しました。", "error");
+    console.error("Task delete error:", error);
+    return;
+  }
+
+  closeTaskModal();
+  await loadSchedule();
+  showStatus("タスクを削除しました。", "success");
+}
+
 function renderCalendar() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
@@ -386,6 +478,7 @@ function renderCalendar() {
     day.classList.toggle("is-outside", date.getMonth() !== month);
     day.classList.toggle("is-today", dateKey === todayKey);
     day.classList.toggle("is-exam", dateKey === examDateKey);
+    day.addEventListener("dblclick", () => openTaskModal(dateKey));
 
     dayNumber.className = "day-number";
     dayNumber.textContent = String(date.getDate());
@@ -402,6 +495,11 @@ function renderCalendar() {
       const taskBadge = document.createElement("div");
       taskBadge.className = `day-task${task.is_completed ? " is-completed" : ""}`;
       taskBadge.textContent = task.title;
+      taskBadge.title = "ダブルクリックで変更/削除";
+      taskBadge.addEventListener("dblclick", event => {
+        event.stopPropagation();
+        openTaskModal(dateKey, task.id);
+      });
       day.appendChild(taskBadge);
     });
 
@@ -470,11 +568,10 @@ function renderAll() {
   renderTasks();
 }
 
-examNameInput.addEventListener("input", () => {
-  selectedExamLabel.textContent = getCurrentExamName();
+examDateInput.addEventListener("change", () => {
+  saveExamSchedule();
 });
 
-saveExamDateButton.addEventListener("click", saveExamDate);
 importJsonButton.addEventListener("click", importJson);
 
 prevMonthButton.addEventListener("click", () => {
@@ -487,7 +584,22 @@ nextMonthButton.addEventListener("click", () => {
   renderCalendar();
 });
 
+taskSelect.addEventListener("change", () => {
+  const task = getTaskById(taskSelect.value);
+  if (task) {
+    fillTaskModal(task);
+  }
+});
+
+saveTaskButton.addEventListener("click", saveSelectedTask);
+deleteTaskButton.addEventListener("click", deleteSelectedTask);
+closeTaskModalButton.addEventListener("click", closeTaskModal);
+taskModal.addEventListener("click", event => {
+  if (event.target.matches("[data-close-modal]")) {
+    closeTaskModal();
+  }
+});
+
 if (initSupabase()) {
-  initializeExamNameInput();
   loadSchedule();
 }

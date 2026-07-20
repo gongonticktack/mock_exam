@@ -32,23 +32,11 @@
       </a>
     </header>
 
-    <section class="overview-panel">
-      <div class="exam-controls">
-        <label>
-          <span>試験</span>
-          <input id="exam-name-input" type="text" placeholder="例: AWS SAA" />
-        </label>
-
-        <label>
-          <span>試験日</span>
-          <input id="exam-date-input" type="date" />
-        </label>
-
-        <button id="save-exam-date-btn" type="button" class="primary-btn">
-          <i class="fa-solid fa-floppy-disk"></i>
-          保存
-        </button>
-      </div>
+    <section class="overview-panel compact-overview">
+      <label class="exam-date-field">
+        <span>試験日</span>
+        <input id="exam-date-input" type="date" />
+      </label>
 
       <div class="countdown-card">
         <p>試験日まで</p>
@@ -124,6 +112,44 @@
 
     <p id="status-message" class="status-message" role="status"></p>
   </main>
+
+  <div id="task-modal" class="task-modal" hidden>
+    <div class="task-modal-backdrop" data-close-modal></div>
+    <section class="task-modal-panel" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <div class="panel-heading">
+        <h2 id="task-modal-title">タスク編集</h2>
+        <button id="close-task-modal-btn" type="button" class="icon-btn" aria-label="閉じる">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <label id="task-select-field">
+        <span>タスク</span>
+        <select id="task-select"></select>
+      </label>
+
+      <label>
+        <span>日付</span>
+        <input id="task-date-input" type="date" />
+      </label>
+
+      <label>
+        <span>内容</span>
+        <input id="task-title-input" type="text" />
+      </label>
+
+      <div class="modal-actions">
+        <button id="delete-task-btn" type="button" class="danger-btn">
+          <i class="fa-solid fa-trash"></i>
+          削除
+        </button>
+        <button id="save-task-btn" type="button" class="primary-btn">
+          <i class="fa-solid fa-floppy-disk"></i>
+          変更
+        </button>
+      </div>
+    </section>
+  </div>
 
   <script>
     fetch('../supabase-config.json')
