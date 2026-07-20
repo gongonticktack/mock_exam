@@ -35,7 +35,7 @@ select {
 .schedule-shell {
   margin: 0 auto;
   max-width: 1240px;
-  padding: 28px;
+  padding: 14px 28px 28px;
 }
 
 .schedule-header,
@@ -54,7 +54,7 @@ select {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .brand {
@@ -214,6 +214,10 @@ select option {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
 }
 
+.calendar-heading {
+  margin-bottom: 10px;
+}
+
 .calendar-panel,
 .today-card,
 .import-card,
@@ -273,6 +277,7 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
   color: var(--text);
+  cursor: pointer;
   min-height: 106px;
   padding: 9px;
 }
@@ -287,6 +292,11 @@ select option {
 
 .calendar-day.is-today {
   border-color: rgba(94, 234, 212, 0.75);
+}
+
+.calendar-day.is-selected {
+  border-color: rgba(139, 125, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(139, 125, 255, 0.45);
 }
 
 .calendar-day.is-exam {

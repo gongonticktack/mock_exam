@@ -3,6 +3,7 @@ let activeSchedule = null;
 let studyTasks = [];
 let calendarCursor = new Date();
 let selectedTaskId = null;
+let selectedTaskDate = toDateKey(new Date());
 
 const exams = [
   { id: 3, shortName: "HTML5 L1" },
@@ -12,16 +13,14 @@ const exams = [
 ];
 
 const params = new URLSearchParams(window.location.search);
-const examDateInput = document.getElementById("exam-date-input");
 const selectedExamLabel = document.getElementById("selected-exam-label");
-const daysLeftElement = document.getElementById("days-left");
-const examDateText = document.getElementById("exam-date-text");
 const calendarTitle = document.getElementById("calendar-title");
 const calendarGrid = document.getElementById("calendar-grid");
 const prevMonthButton = document.getElementById("prev-month-btn");
 const nextMonthButton = document.getElementById("next-month-btn");
-const todayDateLabel = document.getElementById("today-date-label");
-const todayTaskList = document.getElementById("today-task-list");
+const taskPanelTitle = document.getElementById("task-panel-title");
+const selectedDateLabel = document.getElementById("today-date-label");
+const selectedTaskList = document.getElementById("today-task-list");
 const jsonFileInput = document.getElementById("json-file-input");
 const importJsonButton = document.getElementById("import-json-btn");
 const statusMessage = document.getElementById("status-message");
@@ -70,10 +69,6 @@ function parseDateKey(value) {
   return new Date(year, month - 1, day);
 }
 
-function getTodayKey() {
-  return toDateKey(new Date());
-}
-
 function formatDate(value) {
   const date = parseDateKey(value);
   if (!date) {
@@ -110,28 +105,8 @@ function getCurrentExamName() {
   return getDefaultExamName();
 }
 
-function updateCountdown() {
+function updateExamLabel() {
   selectedExamLabel.textContent = getCurrentExamName();
-
-  if (!activeSchedule || !activeSchedule.exam_date) {
-    daysLeftElement.textContent = "--";
-    examDateText.textContent = "試験日を設定してください";
-    return;
-  }
-
-  const today = parseDateKey(getTodayKey());
-  const examDate = parseDateKey(activeSchedule.exam_date);
-  const diffDays = Math.ceil((examDate - today) / 86400000);
-
-  if (diffDays > 0) {
-    daysLeftElement.textContent = `${diffDays}日`;
-  } else if (diffDays === 0) {
-    daysLeftElement.textContent = "今日";
-  } else {
-    daysLeftElement.textContent = `${Math.abs(diffDays)}日経過`;
-  }
-
-  examDateText.textContent = formatDate(activeSchedule.exam_date);
 }
 
 async function loadSchedule() {
@@ -154,14 +129,13 @@ async function loadSchedule() {
   }
 
   activeSchedule = scheduleData || null;
-  examDateInput.value = activeSchedule && activeSchedule.exam_date ? activeSchedule.exam_date : "";
   localStorage.setItem("selectedExamId", String(examId));
   localStorage.setItem("selectedExam", getCurrentExamName());
 
   if (!activeSchedule) {
     studyTasks = [];
     renderAll();
-    showStatus("試験日を設定すると、今日のタスクを登録できます。");
+    showStatus("JSONをインポートするとタスクを登録できます。");
     return;
   }
 
@@ -185,31 +159,25 @@ async function loadSchedule() {
   showStatus("");
 }
 
-async function saveExamSchedule(examName = getCurrentExamName()) {
-  const examId = getSelectedExamId();
-  const examDate = examDateInput.value;
-
-  if (!examDate) {
-    showStatus("試験日を入力してください。", "error");
-    return null;
+async function saveExamSchedule(examName, examDate) {
+  const normalizedExamDate = String(examDate || "").slice(0, 10);
+  if (!examName || !normalizedExamDate || !parseDateKey(normalizedExamDate)) {
+    throw new Error("JSONに exam.exam_name と exam.exam_date を含めてください。");
   }
 
-  showStatus("試験日を保存中...");
-
+  const examId = getSelectedExamId();
   if (activeSchedule) {
     const { error } = await supabaseClient
       .from("exam_schedules")
       .update({
         exam_name: examName,
-        exam_date: examDate,
+        exam_date: normalizedExamDate,
         updated_at: new Date().toISOString()
       })
       .eq("id", activeSchedule.id);
 
     if (error) {
-      showStatus("試験日の保存に失敗しました。", "error");
-      console.error("Schedule update error:", error);
-      return null;
+      throw error;
     }
   } else {
     const { data, error } = await supabaseClient
@@ -217,23 +185,19 @@ async function saveExamSchedule(examName = getCurrentExamName()) {
       .insert({
         exam_id: examId,
         exam_name: examName,
-        exam_date: examDate
+        exam_date: normalizedExamDate
       })
       .select("*")
       .single();
 
     if (error) {
-      showStatus("試験日の保存に失敗しました。", "error");
-      console.error("Schedule insert error:", error);
-      return null;
+      throw error;
     }
 
     activeSchedule = data;
   }
 
   localStorage.setItem("selectedExam", examName);
-  await loadSchedule();
-  showStatus("試験日を保存しました。", "success");
   return activeSchedule;
 }
 
@@ -266,22 +230,6 @@ function normalizeImportedTasks(json) {
   });
 }
 
-async function ensureScheduleFromImport(json) {
-  const importedExam = json && json.exam ? json.exam : {};
-  const importedExamName = importedExam.exam_name || importedExam.examName || json.exam_name || json.examName || getCurrentExamName();
-  const examDate = importedExam.exam_date || importedExam.examDate || json.exam_date || json.examDate || examDateInput.value;
-
-  if (!examDate || !parseDateKey(examDate)) {
-    if (!activeSchedule) {
-      throw new Error("試験日が未設定です。JSONに exam.exam_date を含めてください。");
-    }
-    return activeSchedule;
-  }
-
-  examDateInput.value = String(examDate).slice(0, 10);
-  return saveExamSchedule(String(importedExamName));
-}
-
 async function importJson() {
   const file = jsonFileInput.files && jsonFileInput.files[0];
   if (!file) {
@@ -293,11 +241,8 @@ async function importJson() {
     showStatus("JSONを読み込み中...");
     const json = JSON.parse(await file.text());
     const normalizedTasks = normalizeImportedTasks(json);
-    const schedule = await ensureScheduleFromImport(json);
-
-    if (!schedule) {
-      throw new Error("スケジュールを作成できませんでした。");
-    }
+    const exam = json.exam || {};
+    const schedule = await saveExamSchedule(String(exam.exam_name || ""), exam.exam_date);
 
     const rows = normalizedTasks.map(task => ({
       ...task,
@@ -324,6 +269,8 @@ async function importJson() {
       }
     }
 
+    selectedTaskDate = rows[0] ? rows[0].task_date : selectedTaskDate;
+    calendarCursor = parseDateKey(selectedTaskDate) || calendarCursor;
     await loadSchedule();
     showStatus(`${rows.length}件のタスクをインポートしました。`, "success");
   } catch (error) {
@@ -423,6 +370,7 @@ async function saveSelectedTask() {
     return;
   }
 
+  selectedTaskDate = taskDate;
   closeTaskModal();
   await loadSchedule();
   showStatus("タスクを変更しました。", "success");
@@ -455,12 +403,18 @@ async function deleteSelectedTask() {
   showStatus("タスクを削除しました。", "success");
 }
 
+function selectTaskDate(dateKey) {
+  selectedTaskDate = dateKey;
+  renderCalendar();
+  renderTasks();
+}
+
 function renderCalendar() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
   const firstDay = new Date(year, month, 1);
   const startDate = new Date(year, month, 1 - firstDay.getDay());
-  const todayKey = getTodayKey();
+  const todayKey = toDateKey(new Date());
   const examDateKey = activeSchedule && activeSchedule.exam_date ? activeSchedule.exam_date : "";
 
   calendarTitle.textContent = `${year}年${month + 1}月`;
@@ -477,7 +431,9 @@ function renderCalendar() {
     day.className = "calendar-day";
     day.classList.toggle("is-outside", date.getMonth() !== month);
     day.classList.toggle("is-today", dateKey === todayKey);
+    day.classList.toggle("is-selected", dateKey === selectedTaskDate);
     day.classList.toggle("is-exam", dateKey === examDateKey);
+    day.addEventListener("click", () => selectTaskDate(dateKey));
     day.addEventListener("dblclick", () => openTaskModal(dateKey));
 
     dayNumber.className = "day-number";
@@ -486,7 +442,7 @@ function renderCalendar() {
 
     if (dateKey === examDateKey) {
       const examMark = document.createElement("div");
-      examMark.className = "day-task";
+      examMark.className = "day-task exam-mark";
       examMark.textContent = "試験日";
       day.appendChild(examMark);
     }
@@ -542,35 +498,32 @@ function createTaskItem(task) {
 }
 
 function renderTasks() {
-  const todayKey = getTodayKey();
-  const todayTasks = studyTasks.filter(task => task.task_date === todayKey);
-  const completedTodayCount = todayTasks.filter(task => task.is_completed).length;
+  const selectedTasks = studyTasks.filter(task => task.task_date === selectedTaskDate);
+  const completedCount = selectedTasks.filter(task => task.is_completed).length;
+  const todayKey = toDateKey(new Date());
 
-  todayDateLabel.textContent = todayTasks.length > 0
-    ? `${formatDate(todayKey)} / ${completedTodayCount}/${todayTasks.length} 完了`
-    : formatDate(todayKey);
-  todayTaskList.innerHTML = "";
+  taskPanelTitle.textContent = selectedTaskDate === todayKey ? "今日のタスク" : "選択日のタスク";
+  selectedDateLabel.textContent = selectedTasks.length > 0
+    ? `${formatDate(selectedTaskDate)} / ${completedCount}/${selectedTasks.length} 完了`
+    : formatDate(selectedTaskDate);
+  selectedTaskList.innerHTML = "";
 
-  if (todayTasks.length === 0) {
+  if (selectedTasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-message";
-    empty.textContent = "今日のタスクはありません。";
-    todayTaskList.appendChild(empty);
+    empty.textContent = "この日のタスクはありません。";
+    selectedTaskList.appendChild(empty);
     return;
   }
 
-  todayTasks.forEach(task => todayTaskList.appendChild(createTaskItem(task)));
+  selectedTasks.forEach(task => selectedTaskList.appendChild(createTaskItem(task)));
 }
 
 function renderAll() {
-  updateCountdown();
+  updateExamLabel();
   renderCalendar();
   renderTasks();
 }
-
-examDateInput.addEventListener("change", () => {
-  saveExamSchedule();
-});
 
 importJsonButton.addEventListener("click", importJson);
 

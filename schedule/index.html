@@ -32,22 +32,9 @@
       </a>
     </header>
 
-    <section class="overview-panel compact-overview">
-      <label class="exam-date-field">
-        <span>試験日</span>
-        <input id="exam-date-input" type="date" />
-      </label>
-
-      <div class="countdown-card">
-        <p>試験日まで</p>
-        <strong id="days-left">--</strong>
-        <span id="exam-date-text">試験日を設定してください</span>
-      </div>
-    </section>
-
     <section class="content-grid">
       <section class="calendar-panel">
-        <div class="panel-heading">
+        <div class="panel-heading calendar-heading">
           <button id="prev-month-btn" type="button" class="icon-btn" aria-label="前の月">
             <i class="fa-solid fa-chevron-left"></i>
           </button>
@@ -73,7 +60,7 @@
       <aside class="task-panel">
         <section class="today-card">
           <div class="panel-heading panel-heading-left">
-            <h2>今日のタスク</h2>
+            <h2 id="task-panel-title">今日のタスク</h2>
             <span id="today-date-label"></span>
           </div>
           <div id="today-task-list" class="task-list"></div>
@@ -84,7 +71,7 @@
             <h2>JSONインポート</h2>
           </div>
           <p class="helper-text">
-            試験名、試験日、日付ごとのタスクを含むJSONから今日のタスクを登録できます。
+            試験名、試験日、日付ごとのタスクを含むJSONからタスクを登録できます。
           </p>
           <input id="json-file-input" type="file" accept=".json,application/json" />
           <button id="import-json-btn" type="button" class="secondary-btn">
