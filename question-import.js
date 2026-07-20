@@ -222,7 +222,11 @@ const selectedExamName =
   || "HTML5 L1";
 
 // exams 配列から ID を取得
-const selectedExam = exams.find(exam => exam.shortName === selectedExamName)?.id || 1;
+const selectedExamIdFromStorage = Number(localStorage.getItem("selectedExamId"));
+const selectedExam =
+  Number.isFinite(selectedExamIdFromStorage) && selectedExamIdFromStorage > 0
+    ? selectedExamIdFromStorage
+    : exams.find(exam => exam.shortName === selectedExamName)?.id || 1;
 
 // 資格名表示
 const examName =

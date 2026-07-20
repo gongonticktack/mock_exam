@@ -571,12 +571,94 @@ const exams = [
   }
 ];
 
+const CUSTOM_EXAMS_STORAGE_KEY = "qualistudyCustomExams";
+
+function getDefaultExamStats() {
+  return {
+    questions: 0,
+    accuracy: "-",
+    studyTime: "-",
+    studyDays: "-"
+  };
+}
+
+function normalizeCustomExam(rawExam) {
+  const name = String(rawExam?.shortName || rawExam?.title || "").trim();
+  const id = Number(rawExam?.id);
+
+  if (!name || !Number.isFinite(id)) {
+    return null;
+  }
+
+  return {
+    id,
+    shortName: name,
+    title: String(rawExam?.title || name).trim(),
+    description: String(rawExam?.description || `${name} の学習を開始します。`).trim(),
+    icon: rawExam?.icon || "fa-book-open",
+    stats: {
+      ...getDefaultExamStats(),
+      ...(rawExam?.stats || {})
+    },
+    history: Array.isArray(rawExam?.history) ? rawExam.history : [],
+    weakness: Array.isArray(rawExam?.weakness) ? rawExam.weakness : [],
+    isCustom: true
+  };
+}
+
+function loadCustomExams() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CUSTOM_EXAMS_STORAGE_KEY) || "[]");
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map(normalizeCustomExam)
+      .filter(Boolean)
+      .filter((exam, index, list) => list.findIndex(item => item.id === exam.id) === index);
+  } catch (error) {
+    console.warn("Failed to load custom exams:", error);
+    return [];
+  }
+}
+
+function saveCustomExams() {
+  const customExams = exams.filter(exam => exam.isCustom);
+  localStorage.setItem(CUSTOM_EXAMS_STORAGE_KEY, JSON.stringify(customExams));
+}
+
+function createCustomExam(name) {
+  const trimmedName = name.trim();
+  const nextId = Math.max(1000, ...exams.map(exam => Number(exam.id) || 0)) + 1;
+
+  return {
+    id: nextId,
+    shortName: trimmedName,
+    title: trimmedName,
+    description: `${trimmedName} の学習を開始します。`,
+    icon: "fa-book-open",
+    stats: getDefaultExamStats(),
+    history: [],
+    weakness: [],
+    isCustom: true
+  };
+}
+
+exams.push(...loadCustomExams());
+
 // ======================================
 // HTML取得
 // ======================================
 
-const examCards =
+let examCards =
   document.querySelectorAll(".exam-card");
+
+const examMenu =
+  document.querySelector(".menu");
+
+const addExamButton =
+  document.getElementById("add-exam-btn");
 
 const examTitle =
   document.getElementById("exam-title");
@@ -641,12 +723,53 @@ let weaknessData = [];
 let isWeaknessExpanded = false;
 let examUpdateSequence = 0;
 
+function refreshExamCards() {
+  examCards = document.querySelectorAll(".exam-card");
+}
+
+function createExamCard(exam) {
+  const button = document.createElement("button");
+  const icon = document.createElement("i");
+  const body = document.createElement("div");
+  const title = document.createElement("h3");
+  const description = document.createElement("p");
+
+  button.type = "button";
+  button.className = "exam-card";
+  icon.className = `fa-solid ${exam.icon || "fa-book-open"}`;
+  title.textContent = exam.shortName || exam.title;
+  description.textContent = exam.title || exam.description || exam.shortName;
+
+  body.appendChild(title);
+  body.appendChild(description);
+  button.appendChild(icon);
+  button.appendChild(body);
+
+  return button;
+}
+
+function renderExamCards() {
+  if (!examMenu || !addExamButton) {
+    refreshExamCards();
+    setExamCardMetadata();
+    return;
+  }
+
+  examMenu.querySelectorAll(".exam-card").forEach(card => card.remove());
+  exams.forEach(exam => {
+    examMenu.insertBefore(createExamCard(exam), addExamButton);
+  });
+  refreshExamCards();
+  setExamCardMetadata();
+}
+
 /**
  * 現在選択中の資格カードのインデックスを取得します。
  *
  * @returns {number} 処理結果。
  */
 function getActiveExamIndex() {
+  refreshExamCards();
   const activeCard = document.querySelector(".exam-card.active");
   const index = Array.from(examCards).indexOf(activeCard);
   return index >= 0 ? index : 0;
@@ -662,6 +785,7 @@ function getActiveExam() {
 }
 
 function setExamCardMetadata() {
+  refreshExamCards();
   examCards.forEach((card, index) => {
     const exam = exams[index];
 
@@ -675,6 +799,7 @@ function setExamCardMetadata() {
 }
 
 function setActiveExamCard(index) {
+  refreshExamCards();
   examCards.forEach((card, cardIndex) => {
     card.classList.toggle("active", cardIndex === index);
   });
@@ -924,6 +1049,65 @@ examCards.forEach((card, index) => {
 
 });
 
+if (examMenu) {
+  examMenu.addEventListener("click", async event => {
+    const card = event.target.closest(".exam-card");
+
+    if (!card || !examMenu.contains(card)) {
+      return;
+    }
+
+    refreshExamCards();
+    const index = Array.from(examCards).indexOf(card);
+
+    if (index < 0 || !exams[index]) {
+      return;
+    }
+
+    setActiveExamCard(index);
+    await updateExam(index);
+
+    localStorage.setItem("selectedExamId", exams[index].id);
+    localStorage.setItem("selectedExam", exams[index].shortName);
+  });
+}
+
+if (addExamButton) {
+  addExamButton.addEventListener("click", async () => {
+    const name = prompt("追加する資格名を入力してください");
+
+    if (name === null) {
+      return;
+    }
+
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      alert("資格名を入力してください。");
+      return;
+    }
+
+    const exists = exams.some(exam => exam.shortName === trimmedName || exam.title === trimmedName);
+
+    if (exists) {
+      alert("同じ名前の資格がすでにあります。");
+      return;
+    }
+
+    const exam = createCustomExam(trimmedName);
+    exams.push(exam);
+    saveCustomExams();
+    renderExamCards();
+
+    const index = exams.length - 1;
+    setActiveExamCard(index);
+    await updateExam(index);
+
+    localStorage.setItem("selectedExamId", exam.id);
+    localStorage.setItem("selectedExam", exam.shortName);
+  });
+}
+
 if (weaknessList) {
   weaknessList.addEventListener("click", event => {
     const item = event.target.closest(".weak-item");
@@ -1155,7 +1339,7 @@ editButton.addEventListener("click", () => {
 
 // 最初に表示する試験（HTML5 L1：id=0）
 (async () => {
-  setExamCardMetadata();
+  renderExamCards();
 
   const initialExamIndex = getSavedExamIndex();
   setActiveExamCard(initialExamIndex);

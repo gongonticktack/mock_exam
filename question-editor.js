@@ -428,7 +428,11 @@ async function initPage() {
     ? questionIdFromQuery
     : null;
   const selectedExam = exams.find(e => e.id === selectedExamId);
-  const selectedExamName = selectedExam?.shortName || "HTML5 L1";
+  const selectedExamName =
+    selectedExamFromQuery
+    || localStorage.getItem("selectedExam")
+    || selectedExam?.shortName
+    || "HTML5 L1";
 
   // 資格名を表示
   document.getElementById("exam-name").textContent = selectedExamName;
