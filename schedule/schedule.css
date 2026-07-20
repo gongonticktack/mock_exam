@@ -531,15 +531,28 @@ select option {
   }
 
   .calendar-grid {
-    gap: 5px;
+    gap: 8px;
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-weekdays {
+    display: none;
   }
 
   .calendar-day {
-    min-height: 84px;
-    padding: 7px;
+    min-height: 72px;
+    padding: 10px;
+  }
+
+  .calendar-day.is-outside {
+    opacity: 1;
+  }
+
+  .calendar-day .day-number {
+    margin-bottom: 6px;
   }
 
   .day-task {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
   }
 }

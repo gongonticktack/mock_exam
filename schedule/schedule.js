@@ -5,19 +5,11 @@ let calendarCursor = new Date();
 let selectedTaskId = null;
 let selectedTaskDate = toDateKey(new Date());
 
-const exams = [
-  { id: 3, shortName: "HTML5 L1" },
-  { id: 4, shortName: "UML L2" },
-  { id: 5, shortName: "AWS SAA" },
-  { id: 6, shortName: "JCSQE 初級" }
-];
+const GLOBAL_SCHEDULE_EXAM_ID = 0;
 
-const params = new URLSearchParams(window.location.search);
 const selectedExamLabel = document.getElementById("selected-exam-label");
 const calendarTitle = document.getElementById("calendar-title");
 const calendarGrid = document.getElementById("calendar-grid");
-const daysLeftElement = document.getElementById("days-left");
-const examDateText = document.getElementById("exam-date-text");
 const prevMonthButton = document.getElementById("prev-month-btn");
 const nextMonthButton = document.getElementById("next-month-btn");
 const taskPanelTitle = document.getElementById("task-panel-title");
@@ -26,6 +18,8 @@ const selectedTaskList = document.getElementById("today-task-list");
 const jsonFileInput = document.getElementById("json-file-input");
 const importJsonButton = document.getElementById("import-json-btn");
 const statusMessage = document.getElementById("status-message");
+const daysLeftElement = document.getElementById("days-left");
+const examDateText = document.getElementById("exam-date-text");
 const taskModal = document.getElementById("task-modal");
 const closeTaskModalButton = document.getElementById("close-task-modal-btn");
 const taskSelectField = document.getElementById("task-select-field");
@@ -86,17 +80,7 @@ function formatDate(value) {
 }
 
 function getSelectedExamId() {
-  return Number(params.get("examId")) || Number(localStorage.getItem("selectedExamId")) || 3;
-}
-
-function getDefaultExamName() {
-  const selectedExam = localStorage.getItem("selectedExam");
-  if (selectedExam) {
-    return selectedExam;
-  }
-
-  const examId = getSelectedExamId();
-  return (exams.find(exam => exam.id === examId) || exams[0]).shortName;
+  return GLOBAL_SCHEDULE_EXAM_ID;
 }
 
 function getCurrentExamName() {
@@ -104,7 +88,17 @@ function getCurrentExamName() {
     return activeSchedule.exam_name;
   }
 
-  return getDefaultExamName();
+  return "試験スケジュール";
+}
+
+function isMobileCalendar() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function getWeekStart(date) {
+  const weekStart = new Date(date);
+  weekStart.setDate(date.getDate() - date.getDay());
+  return weekStart;
 }
 
 function updateExamLabel() {
@@ -153,8 +147,6 @@ async function loadSchedule() {
   }
 
   activeSchedule = scheduleData || null;
-  localStorage.setItem("selectedExamId", String(examId));
-  localStorage.setItem("selectedExam", getCurrentExamName());
 
   if (!activeSchedule) {
     studyTasks = [];
@@ -221,7 +213,6 @@ async function saveExamSchedule(examName, examDate) {
     activeSchedule = data;
   }
 
-  localStorage.setItem("selectedExam", examName);
   return activeSchedule;
 }
 
@@ -433,64 +424,76 @@ function selectTaskDate(dateKey) {
   renderTasks();
 }
 
+function createCalendarDay(date, currentMonth, todayKey, examDateKey) {
+  const dateKey = toDateKey(date);
+  const dayTasks = studyTasks.filter(task => task.task_date === dateKey);
+  const day = document.createElement("article");
+  const dayNumber = document.createElement("span");
+
+  day.className = "calendar-day";
+  day.classList.toggle("is-outside", !isMobileCalendar() && date.getMonth() !== currentMonth);
+  day.classList.toggle("is-today", dateKey === todayKey);
+  day.classList.toggle("is-selected", dateKey === selectedTaskDate);
+  day.classList.toggle("is-exam", dateKey === examDateKey);
+  day.addEventListener("click", () => selectTaskDate(dateKey));
+  day.addEventListener("dblclick", () => openTaskModal(dateKey));
+
+  dayNumber.className = "day-number";
+  dayNumber.textContent = isMobileCalendar()
+    ? date.toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit", weekday: "short" })
+    : String(date.getDate());
+  day.appendChild(dayNumber);
+
+  if (dateKey === examDateKey) {
+    const examMark = document.createElement("div");
+    examMark.className = "day-task exam-mark";
+    examMark.textContent = "試験日";
+    day.appendChild(examMark);
+  }
+
+  dayTasks.slice(0, 3).forEach(task => {
+    const taskBadge = document.createElement("div");
+    taskBadge.className = `day-task${task.is_completed ? " is-completed" : ""}`;
+    taskBadge.textContent = task.title;
+    taskBadge.title = "ダブルクリックで変更/削除";
+    taskBadge.addEventListener("dblclick", event => {
+      event.stopPropagation();
+      openTaskModal(dateKey, task.id);
+    });
+    day.appendChild(taskBadge);
+  });
+
+  if (dayTasks.length > 3) {
+    const more = document.createElement("div");
+    more.className = "day-task";
+    more.textContent = `+${dayTasks.length - 3}件`;
+    day.appendChild(more);
+  }
+
+  return day;
+}
+
 function renderCalendar() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
   const firstDay = new Date(year, month, 1);
-  const startDate = new Date(year, month, 1 - firstDay.getDay());
+  const monthStartDate = new Date(year, month, 1 - firstDay.getDay());
+  const weekStartDate = getWeekStart(calendarCursor);
+  const startDate = isMobileCalendar() ? weekStartDate : monthStartDate;
+  const visibleDays = isMobileCalendar() ? 7 : 42;
   const todayKey = toDateKey(new Date());
   const examDateKey = activeSchedule && activeSchedule.exam_date ? activeSchedule.exam_date : "";
 
-  calendarTitle.textContent = `${year}年${month + 1}月`;
+  calendarGrid.classList.toggle("is-week-view", isMobileCalendar());
+  calendarTitle.textContent = isMobileCalendar()
+    ? `${formatDate(toDateKey(weekStartDate))} 週`
+    : `${year}年${month + 1}月`;
   calendarGrid.innerHTML = "";
 
-  for (let index = 0; index < 42; index += 1) {
+  for (let index = 0; index < visibleDays; index += 1) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + index);
-    const dateKey = toDateKey(date);
-    const dayTasks = studyTasks.filter(task => task.task_date === dateKey);
-    const day = document.createElement("article");
-    const dayNumber = document.createElement("span");
-
-    day.className = "calendar-day";
-    day.classList.toggle("is-outside", date.getMonth() !== month);
-    day.classList.toggle("is-today", dateKey === todayKey);
-    day.classList.toggle("is-selected", dateKey === selectedTaskDate);
-    day.classList.toggle("is-exam", dateKey === examDateKey);
-    day.addEventListener("click", () => selectTaskDate(dateKey));
-    day.addEventListener("dblclick", () => openTaskModal(dateKey));
-
-    dayNumber.className = "day-number";
-    dayNumber.textContent = String(date.getDate());
-    day.appendChild(dayNumber);
-
-    if (dateKey === examDateKey) {
-      const examMark = document.createElement("div");
-      examMark.className = "day-task exam-mark";
-      examMark.textContent = "試験日";
-      day.appendChild(examMark);
-    }
-
-    dayTasks.slice(0, 3).forEach(task => {
-      const taskBadge = document.createElement("div");
-      taskBadge.className = `day-task${task.is_completed ? " is-completed" : ""}`;
-      taskBadge.textContent = task.title;
-      taskBadge.title = "ダブルクリックで変更/削除";
-      taskBadge.addEventListener("dblclick", event => {
-        event.stopPropagation();
-        openTaskModal(dateKey, task.id);
-      });
-      day.appendChild(taskBadge);
-    });
-
-    if (dayTasks.length > 3) {
-      const more = document.createElement("div");
-      more.className = "day-task";
-      more.textContent = `+${dayTasks.length - 3}件`;
-      day.appendChild(more);
-    }
-
-    calendarGrid.appendChild(day);
+    calendarGrid.appendChild(createCalendarDay(date, month, todayKey, examDateKey));
   }
 }
 
@@ -553,12 +556,16 @@ function renderAll() {
 importJsonButton.addEventListener("click", importJson);
 
 prevMonthButton.addEventListener("click", () => {
-  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+  calendarCursor = isMobileCalendar()
+    ? new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), calendarCursor.getDate() - 7)
+    : new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
   renderCalendar();
 });
 
 nextMonthButton.addEventListener("click", () => {
-  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+  calendarCursor = isMobileCalendar()
+    ? new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), calendarCursor.getDate() + 7)
+    : new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
   renderCalendar();
 });
 
@@ -577,6 +584,8 @@ taskModal.addEventListener("click", event => {
     closeTaskModal();
   }
 });
+
+window.addEventListener("resize", renderCalendar);
 
 if (initSupabase()) {
   loadSchedule();
