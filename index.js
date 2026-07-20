@@ -998,6 +998,37 @@ if (topStartRecentIncorrectButton) {
   topStartRecentIncorrectButton.addEventListener("click", () => startTopPractice("recent-incorrect"));
 }
 
+function getSelectedExamFromActiveCard() {
+  const activeCard = document.querySelector(".exam-card.active");
+  let selectedExamId = activeCard ? Number(activeCard.dataset.examId) : NaN;
+  let selectedExam = activeCard ? activeCard.dataset.examShortName : null;
+
+  if (!selectedExamId || Number.isNaN(selectedExamId)) {
+    selectedExamId = Number(localStorage.getItem("selectedExamId")) || 3;
+  }
+
+  if (!selectedExam) {
+    selectedExam = localStorage.getItem("selectedExam") || "HTML5 L1";
+  }
+
+  return { selectedExamId, selectedExam };
+}
+
+const scheduleButton =
+  document.querySelector(".schedule-btn");
+
+if (scheduleButton) {
+  scheduleButton.addEventListener("click", () => {
+    const { selectedExamId, selectedExam } = getSelectedExamFromActiveCard();
+
+    localStorage.setItem("selectedExamId", selectedExamId);
+    localStorage.setItem("selectedExam", selectedExam);
+
+    window.location.href =
+      `/schedule?examId=${selectedExamId}&selectedExam=${encodeURIComponent(selectedExam)}`;
+  });
+}
+
 // ======================================
 // 問題追加ボタン
 // ======================================

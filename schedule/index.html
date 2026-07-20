@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>試験スケジュール | QualiStudy</title>
+  <link rel="stylesheet" href="/schedule/schedule.css" />
+  <link rel="icon" type="image/png" href="/exam_icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <main class="schedule-shell">
+    <header class="schedule-header">
+      <div>
+        <a href="/index.html" class="brand">
+          <i class="fa-solid fa-graduation-cap"></i>
+          QualiStudy
+        </a>
+        <p id="selected-exam-label" class="exam-label">試験スケジュール</p>
+      </div>
+
+      <a href="/index.html" class="back-link">
+        <i class="fa-solid fa-arrow-left"></i>
+        トップへ戻る
+      </a>
+    </header>
+
+    <section class="overview-panel">
+      <div class="exam-controls">
+        <label>
+          <span>試験</span>
+          <select id="exam-select"></select>
+        </label>
+
+        <label>
+          <span>試験日</span>
+          <input id="exam-date-input" type="date" />
+        </label>
+
+        <button id="save-exam-date-btn" type="button" class="primary-btn">
+          <i class="fa-solid fa-floppy-disk"></i>
+          保存
+        </button>
+      </div>
+
+      <div class="countdown-card">
+        <p>試験日まで</p>
+        <strong id="days-left">--</strong>
+        <span id="exam-date-text">試験日を設定してください</span>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <section class="calendar-panel">
+        <div class="panel-heading">
+          <button id="prev-month-btn" type="button" class="icon-btn" aria-label="前の月">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <h1 id="calendar-title">カレンダー</h1>
+          <button id="next-month-btn" type="button" class="icon-btn" aria-label="次の月">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>日</span>
+          <span>月</span>
+          <span>火</span>
+          <span>水</span>
+          <span>木</span>
+          <span>金</span>
+          <span>土</span>
+        </div>
+
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+
+      <aside class="task-panel">
+        <section class="today-card">
+          <div class="panel-heading panel-heading-left">
+            <h2>今日のタスク</h2>
+            <span id="today-date-label"></span>
+          </div>
+          <div id="today-task-list" class="task-list"></div>
+        </section>
+
+        <section class="import-card">
+          <div class="panel-heading panel-heading-left">
+            <h2>JSONインポート</h2>
+          </div>
+          <p class="helper-text">
+            日付、タイトル、詳細、目安時間を含むJSONから勉強スケジュールを登録できます。
+          </p>
+          <input id="json-file-input" type="file" accept=".json,application/json" />
+          <button id="import-json-btn" type="button" class="secondary-btn">
+            <i class="fa-solid fa-file-import"></i>
+            インポート
+          </button>
+          <details class="sample-json">
+            <summary>JSONサンプル</summary>
+            <pre>{
+  "exam": {
+    "exam_id": 3,
+    "exam_name": "HTML5 L1",
+    "exam_date": "2026-10-18"
+  },
+  "tasks": [
+    {
+      "date": "2026-09-01",
+      "title": "HTML基礎を復習",
+      "details": "セマンティック要素とフォーム",
+      "estimated_minutes": 60
+    }
+  ]
+}</pre>
+          </details>
+        </section>
+
+        <section class="all-task-card">
+          <div class="panel-heading panel-heading-left">
+            <h2>勉強スケジュール</h2>
+            <span id="task-count-label"></span>
+          </div>
+          <div id="all-task-list" class="task-list compact"></div>
+        </section>
+      </aside>
+    </section>
+
+    <p id="status-message" class="status-message" role="status"></p>
+  </main>
+
+  <script>
+    fetch('/supabase-config.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('supabase-config.json が見つかりません');
+        }
+        return response.json();
+      })
+      .then(config => {
+        window.SUPABASE_CONFIG = config.supabase;
+        const script = document.createElement('script');
+        script.src = '/schedule/schedule.js';
+        document.body.appendChild(script);
+      })
+      .catch(error => {
+        console.error('Supabase設定エラー:', error);
+        document.getElementById('status-message').textContent = 'Supabase設定を読み込めませんでした。';
+      });
+  </script>
+</body>
+
+</html>

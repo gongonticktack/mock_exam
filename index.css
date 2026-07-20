@@ -233,7 +233,8 @@ body {
   box-shadow: 0 20px 42px rgba(107, 93, 255, 0.42);
 }
 
-.import-btn {
+.import-btn,
+.schedule-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text);
@@ -244,9 +245,16 @@ body {
   transition: all 0.3s ease;
 }
 
-.import-btn:hover {
+.import-btn:hover,
+.schedule-btn:hover {
   background: rgba(139, 125, 255, 0.14);
   border-color: rgba(139, 125, 255, 0.4);
+}
+
+.schedule-btn {
+  align-items: center;
+  display: flex;
+  gap: 8px;
 }
 
 .edit-btn {
