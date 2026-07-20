@@ -19,8 +19,15 @@
   padding: 0;
 }
 
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
+  max-width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
   background: radial-gradient(circle at top left, rgba(139, 125, 255, 0.18), transparent 30%), linear-gradient(135deg, #04050c 0%, #0b1121 45%, #090912 100%);
   color: var(--text);
   font-family: "Noto Sans JP", sans-serif;
@@ -36,6 +43,7 @@ select {
   margin: 0 auto;
   max-width: 1240px;
   padding: 14px 28px 28px;
+  width: 100%;
 }
 
 .schedule-header,
@@ -45,6 +53,10 @@ select {
 .panel-heading,
 .calendar-weekdays,
 .calendar-grid,
+.calendar-panel,
+.today-card,
+.import-card,
+.task-panel,
 .task-list {
   min-width: 0;
 }
@@ -65,6 +77,7 @@ select {
   font-weight: 800;
   gap: 10px;
   margin-bottom: 8px;
+  min-width: 0;
   text-decoration: none;
 }
 
@@ -138,7 +151,9 @@ input[type="file"] {
   border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--text);
+  max-width: 100%;
   min-height: 42px;
+  min-width: 0;
   padding: 9px 11px;
   width: 100%;
 }
@@ -224,6 +239,7 @@ select option {
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  width: 100%;
 }
 
 .calendar-heading {
@@ -362,6 +378,7 @@ select option {
   align-items: flex-start;
   display: flex;
   gap: 10px;
+  min-width: 0;
 }
 
 .task-checkbox-row input {
@@ -373,6 +390,7 @@ select option {
   font-weight: 700;
   line-height: 1.45;
   overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .task-title.is-completed {
@@ -414,6 +432,7 @@ select option {
   border-radius: 12px;
   color: var(--text);
   font-size: 0.78rem;
+  max-width: 100%;
   overflow: auto;
   padding: 12px;
 }
@@ -504,14 +523,31 @@ select option {
 }
 
 @media (max-width: 640px) {
-  .schedule-shell {
-    padding: 14px;
+  body {
+    width: 100%;
   }
 
-  .schedule-header,
-  .panel-heading {
+  .schedule-shell {
+    padding: 10px;
+    width: 100%;
+  }
+
+  .schedule-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .calendar-heading h1 {
+    font-size: 1.05rem;
+    min-width: 0;
+    text-align: center;
   }
 
   .calendar-panel,
@@ -519,7 +555,30 @@ select option {
   .import-card,
   .overview-panel {
     border-radius: 18px;
-    padding: 16px;
+    padding: 12px;
+    width: 100%;
+  }
+
+  .brand {
+    font-size: 1.35rem;
+  }
+
+  .back-link {
+    border-radius: 12px;
+    font-size: 0.86rem;
+    padding: 9px 12px;
+  }
+
+  .content-grid,
+  .task-panel {
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .task-countdown-card strong {
+    font-size: clamp(2.1rem, 12vw, 3rem);
+    overflow-wrap: anywhere;
   }
 
   .compact-overview {
@@ -532,7 +591,8 @@ select option {
 
   .calendar-grid {
     gap: 8px;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
   }
 
   .calendar-weekdays {
@@ -542,6 +602,7 @@ select option {
   .calendar-day {
     min-height: 72px;
     padding: 10px;
+    width: 100%;
   }
 
   .calendar-day.is-outside {
@@ -554,5 +615,16 @@ select option {
 
   .day-task {
     font-size: 0.76rem;
+    max-width: 100%;
+  }
+
+  .task-modal {
+    padding: 10px;
+  }
+
+  .task-modal-panel {
+    max-width: 100%;
+    min-width: 0;
+    padding: 16px;
   }
 }
