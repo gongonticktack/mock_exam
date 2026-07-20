@@ -5,8 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>試験スケジュール | QualiStudy</title>
+  <link rel="stylesheet" href="./schedule.css" />
   <link rel="stylesheet" href="/schedule/schedule.css" />
-  <link rel="icon" type="image/png" href="/exam_icon.png" />
+  <link rel="icon" type="image/png" href="../exam_icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -18,14 +19,14 @@
   <main class="schedule-shell">
     <header class="schedule-header">
       <div>
-        <a href="/index.html" class="brand">
+        <a href="../index.html" class="brand">
           <i class="fa-solid fa-graduation-cap"></i>
           QualiStudy
         </a>
         <p id="selected-exam-label" class="exam-label">試験スケジュール</p>
       </div>
 
-      <a href="/index.html" class="back-link">
+      <a href="../index.html" class="back-link">
         <i class="fa-solid fa-arrow-left"></i>
         トップへ戻る
       </a>
@@ -136,7 +137,7 @@
   </main>
 
   <script>
-    fetch('/supabase-config.json')
+    fetch('../supabase-config.json')
       .then(response => {
         if (!response.ok) {
           throw new Error('supabase-config.json が見つかりません');
@@ -146,7 +147,9 @@
       .then(config => {
         window.SUPABASE_CONFIG = config.supabase;
         const script = document.createElement('script');
-        script.src = '/schedule/schedule.js';
+        script.src = window.location.pathname === '/schedule'
+          ? '/schedule/schedule.js'
+          : './schedule.js';
         document.body.appendChild(script);
       })
       .catch(error => {
