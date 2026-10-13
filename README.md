@@ -1,3 +1,5 @@
+🌐 **Webアプリ：[資格試験学習アプリを開く](https://mockexam.gongonticktack.workers.dev/)**
+
 # mock_exam — 資格試験学習プラットフォーム
 
 ## 概要
